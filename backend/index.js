@@ -228,8 +228,8 @@ async function seedData() {
 
   // 7. Seed Announcements
   announcements.push(
-    { _id: genId(), title: 'JEE Advanced Mock Test schedule released', body: 'The mock test series starts on March 25. Attendance is mandatory for all enrolled students.', cat: 'Important', date: 'Today, 10:00 AM', urgent: true },
-    { _id: genId(), title: 'Weekly doubt resolution sessions schedule', body: 'Doubt sessions will happen every Wednesday and Friday from 4 PM to 6 PM online.', cat: 'Academic', date: 'Yesterday', urgent: false }
+    { _id: genId(), title: 'JEE Advanced Mock Test schedule released', body: 'The mock test series starts on March 25. Attendance is mandatory for all enrolled students.', cat: 'Important', date: 'Today, 10:00 AM', urgent: true, target: 'student' },
+    { _id: genId(), title: 'Weekly doubt resolution sessions schedule', body: 'Doubt sessions will happen every Wednesday and Friday from 4 PM to 6 PM online.', cat: 'Academic', date: 'Yesterday', urgent: false, target: 'faculty' }
   );
 
   // 8. Seed Quiz Results
@@ -635,14 +635,15 @@ app.post('/api/announcements', protect, (req, res) => {
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Admin only' });
   }
-  const { title, body, cat, urgent } = req.body;
+  const { title, body, cat, urgent, target } = req.body;
   const newAnn = {
     _id: genId(),
     title,
     body,
     cat: cat || 'Notice',
     date: 'Just now',
-    urgent: !!urgent
+    urgent: !!urgent,
+    target: target || 'all'
   };
   announcements.unshift(newAnn);
   res.status(201).json(newAnn);

@@ -1666,14 +1666,42 @@ window.filterDoubts = function() {
 
 // ──────────────── STUDENT ANNOUNCEMENTS (ENHANCED v3) ────────────────
 PAGES['student_announcements'] = function() {
-  var anns = [
-    { id: 'ann-1', title:'JEE Advanced 2025 — Registration Open', body:'Registration for JEE Advanced 2025 is now open. Last date: April 15, 2025. Submit your application through the official portal. For assistance, contact the admin office.', date:'2026-06-19', cat:'Important', type:'warning', pinned:true },
-    { id: 'ann-2', title:'Campus Sports Day — March 25', body:'Annual sports day celebrations. All students are encouraged to participate. Register with your batch coordinator before March 20.', date:'2026-06-18', cat:'Events', type:'info', pinned:true },
-    { id: 'ann-3', title:'Holiday Notice — Holi Festival', body:'Campus will remain closed on March 14 (Holi). Classes resume on March 15. Online classes will continue as scheduled. Enjoy the festival!', date:'2026-06-14', cat:'Notice', type:'info', pinned:false },
-    { id: 'ann-4', title:'New Study Material Uploaded — Physics', body:'Electrostatics complete notes and DPP have been uploaded. Check the Materials section for Gauss Law, Coulomb Law, and Electric Field notes.', date:'2026-06-10', cat:'Academic', type:'info', pinned:false },
-    { id: 'ann-5', title:'Mock Test Schedule — March 2025', body:'Monthly mock test schedule has been published. 4 full-syllabus tests planned this month. Check your test series section for details.', date:'2026-06-08', cat:'Academic', type:'info', pinned:false },
-    { id: 'ann-6', title:'Parent-Teacher Meeting — March 28', body:'PTM scheduled for all batches. Parents can connect with batch coordinators via the portal or visit campus between 10 AM - 4 PM.', date:'2026-06-05', cat:'Important', type:'warning', pinned:false }
-  ];
+  var rawAnns = window.LMS_ANNOUNCEMENTS || [];
+  
+  // Filter for students: target is 'all' or 'student'
+  var studentAnns = rawAnns.filter(function(a) {
+    var target = (a.target || 'all').toLowerCase();
+    return target === 'all' || target === 'student';
+  });
+  
+  var anns = studentAnns.map(function(a) {
+    var dateString = a.date || a.d || '2026-06-25';
+    // Normalize date format if it contains relative strings
+    if (dateString.toLowerCase().indexOf('today') !== -1) dateString = '2026-06-19';
+    else if (dateString.toLowerCase().indexOf('yesterday') !== -1) dateString = '2026-06-18';
+    else if (dateString.toLowerCase().indexOf('just now') !== -1) dateString = '2026-06-19';
+
+    return {
+      id: a._id || a.id || String(Math.random()),
+      title: a.title || a.t || 'Announcement',
+      body: a.body || a.b || '',
+      date: dateString,
+      cat: a.cat || 'Notice',
+      type: a.urgent || a.pri === 'Important' || a.pri === 'Urgent' ? 'warning' : 'info',
+      pinned: !!a.pinned
+    };
+  });
+  
+  if (anns.length === 0) {
+    anns = [
+      { id: 'ann-1', title:'JEE Advanced 2025 — Registration Open', body:'Registration for JEE Advanced 2025 is now open. Last date: April 15, 2025. Submit your application through the official portal. For assistance, contact the admin office.', date:'2026-06-19', cat:'Important', type:'warning', pinned:true },
+      { id: 'ann-2', title:'Campus Sports Day — March 25', body:'Annual sports day celebrations. All students are encouraged to participate. Register with your batch coordinator before March 20.', date:'2026-06-18', cat:'Events', type:'info', pinned:true },
+      { id: 'ann-3', title:'Holiday Notice — Holi Festival', body:'Campus will remain closed on March 14 (Holi). Classes resume on March 15. Online classes will continue as scheduled. Enjoy the festival!', date:'2026-06-14', cat:'Notice', type:'info', pinned:false },
+      { id: 'ann-4', title:'New Study Material Uploaded — Physics', body:'Electrostatics complete notes and DPP have been uploaded. Check the Materials section for Gauss Law, Coulomb Law, and Electric Field notes.', date:'2026-06-10', cat:'Academic', type:'info', pinned:false },
+      { id: 'ann-5', title:'Mock Test Schedule — March 2025', body:'Monthly mock test schedule has been published. 4 full-syllabus tests planned this month. Check your test series section for details.', date:'2026-06-08', cat:'Academic', type:'info', pinned:false },
+      { id: 'ann-6', title:'Parent-Teacher Meeting — March 28', body:'PTM scheduled for all batches. Parents can connect with batch coordinators via the portal or visit campus between 10 AM - 4 PM.', date:'2026-06-05', cat:'Important', type:'warning', pinned:false }
+    ];
+  }
 
   // Initialize state
   if (!window.announcementsState) {
@@ -1705,10 +1733,15 @@ PAGES['student_announcements'] = function() {
       ? '<p class="stu-ann-content animate-fadeIn" style="white-space:pre-wrap;margin-top:8px">' + a.body + '</p>'
       : '<p class="stu-ann-content" style="overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;margin-top:8px">' + a.body + '</p>';
 
+    var dateString = 'Just now';
     var dateObj = new Date(a.date);
-    var dateString = dateObj.toLocaleDateString("en-IN", {day:"2-digit", month:"short", year:"numeric"});
-    if (a.date === '2026-06-19') dateString = 'Today';
-    else if (a.date === '2026-06-18') dateString = 'Yesterday';
+    if (!isNaN(dateObj.getTime())) {
+      dateString = dateObj.toLocaleDateString("en-IN", {day:"2-digit", month:"short", year:"numeric"});
+      if (a.date === '2026-06-19') dateString = 'Today';
+      else if (a.date === '2026-06-18') dateString = 'Yesterday';
+    } else {
+      dateString = a.date || 'Just now';
+    }
 
     return '<div class="' + cardClasses + '" style="cursor:pointer;transition:all 0.2s ease;opacity:' + opacity + ';margin-bottom:12px" data-id="' + a.id + '" data-title="' + a.title.replace(/"/g,'&quot;') + '" data-body="' + a.body.replace(/"/g,'&quot;') + '" data-category="' + a.cat + '" onclick="window.toggleAnnouncement(\'' + a.id + '\')">'
       + '<div class="stu-ann-line"></div>'
@@ -4580,34 +4613,17 @@ function exportNotifications() {
 }
 
 PAGES['admin_announcements'] = function() {
-  var rawAnn = window.LMS_ANNOUNCEMENTS || [];
-  var listData = rawAnn.map(function(a) {
-    return {
-      t: a.title || a.t || 'Announcement',
-      cat: a.cat || 'Notice',
-      pri: a.pri || (a.urgent ? 'Important' : 'Normal'),
-      d: a.date || a.d || 'Just now',
-      v: a.views || a.v || 350
-    };
-  });
-  if (listData.length === 0) {
-    listData = [
-      { t:'JEE Mock Test 14 — Sunday',       cat:'Exam',    pri:'Important',d:'Mar 12',v:342 },
-      { t:'Fee Due Date Extended to Mar 20',  cat:'Fee',     pri:'Important',d:'Mar 10',v:428 },
-      { t:'Holi Holiday — March 25',          cat:'General', pri:'Normal',   d:'Mar 8', v:895 },
-      { t:'New Physics Notes Uploaded',       cat:'Academic',pri:'Normal',   d:'Mar 7', v:267 },
-    ];
-  }
-
   var form = '<div class="card" style="margin-bottom:14px">'
     + '<div class="card-title" style="margin-bottom:14px">📢 Create Announcement</div>'
     + '<div class="inp-group"><label style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Title</label>'
     + '<input class="inp-field" id="ann-title" placeholder="e.g. Holiday Notice"></div>'
-    + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'
+    + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">'
     + '<div class="inp-group"><label style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Category</label>'
     + '<select class="inp-field" id="ann-cat"><option>General</option><option>Academic</option><option>Fee</option><option>Exam</option><option>Event</option></select></div>'
     + '<div class="inp-group"><label style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Priority</label>'
     + '<select class="inp-field" id="ann-pri"><option>Normal</option><option>Important</option><option>Urgent</option></select></div>'
+    + '<div class="inp-group"><label style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Target Audience</label>'
+    + '<select class="inp-field" id="ann-target"><option value="all">All</option><option value="student">Student</option><option value="faculty">Faculty</option></select></div>'
     + '</div>'
     + '<div class="inp-group"><label style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Message</label>'
     + '<textarea class="inp-field" id="ann-msg" rows="3" placeholder="Write announcement.."></textarea></div>'
@@ -4616,15 +4632,22 @@ PAGES['admin_announcements'] = function() {
     + '<button class="btn btn-purple" style="display:flex;align-items:center;gap:6px" onclick="toast(\'Saved as draft\',\'💾\')">💾 Draft</button></div>'
     + '</div>';
 
-  var list = '<div class="card"><div class="card-title" style="margin-bottom:14px">📋 Recent Announcements</div>'
-    + listData.map(function(a) {
-        var badgeClass = a.pri === 'Important' || a.pri === 'Urgent' ? 'badge-yellow' : 'badge-purple';
-        return '<div class="list-item" style="cursor:pointer" onclick="toast(\'' + a.t.replace(/'/g,"\\'") + '\',\'📢\')">'
-          + '<div class="li-icon" style="background:var(--surface2)">📢</div>'
-          + '<div class="li-content"><div class="li-title" style="font-weight:600">' + a.t + '</div>'
-          + '<div class="li-sub">' + a.cat + ' • ' + a.d + ' • ' + a.v + ' views</div></div>'
-          + '<span class="badge ' + badgeClass + '">' + a.pri + '</span></div>';
-      }).join('') + '</div>';
+  var list = '<div class="card">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">'
+    + '<div class="card-title" style="margin:0">📋 Recent Announcements</div>'
+    + '<div class="inner-tabs" style="margin:0">'
+    + '<button class="itab itab-ann-target ' + ((window.currentAdminAnnFilter || 'all') === 'all' ? 'active' : '') + '" onclick="window.setAdminAnnFilter(\'all\')">All</button>'
+    + '<button class="itab itab-ann-target ' + ((window.currentAdminAnnFilter || 'all') === 'student' ? 'active' : '') + '" onclick="window.setAdminAnnFilter(\'student\')">Student</button>'
+    + '<button class="itab itab-ann-target ' + ((window.currentAdminAnnFilter || 'all') === 'faculty' ? 'active' : '') + '" onclick="window.setAdminAnnFilter(\'faculty\')">Faculty</button>'
+    + '</div>'
+    + '</div>'
+    + '<div id="admin-ann-list-container"></div>'
+    + '</div>';
+
+  setTimeout(function() {
+    if (window.renderAdminAnnList) window.renderAdminAnnList();
+  }, 0);
+
   return form + list;
 };
 
@@ -5066,6 +5089,7 @@ async function publishAnnouncement() {
   var titleInput = document.getElementById('ann-title');
   var catSelect = document.getElementById('ann-cat');
   var priSelect = document.getElementById('ann-pri');
+  var targetSelect = document.getElementById('ann-target');
   var msgText = document.getElementById('ann-msg');
   
   if (!titleInput || !titleInput.value.trim()) {
@@ -5080,6 +5104,7 @@ async function publishAnnouncement() {
   var titleVal = titleInput.value.trim();
   var catVal = catSelect ? catSelect.value : 'General';
   var priVal = priSelect ? priSelect.value : 'Normal';
+  var targetVal = targetSelect ? targetSelect.value : 'all';
   var msgVal = msgText.value.trim();
   
   try {
@@ -5089,7 +5114,8 @@ async function publishAnnouncement() {
         title: titleVal,
         body: msgVal,
         cat: catVal,
-        urgent: priVal === 'Important' || priVal === 'Urgent'
+        urgent: priVal === 'Important' || priVal === 'Urgent',
+        target: targetVal
       })
     });
     
@@ -5099,6 +5125,7 @@ async function publishAnnouncement() {
     msgText.value = '';
     if (catSelect) catSelect.selectedIndex = 0;
     if (priSelect) priSelect.selectedIndex = 0;
+    if (targetSelect) targetSelect.selectedIndex = 0;
     
     await syncLMSData();
     loadPage('announcements');
@@ -5106,6 +5133,76 @@ async function publishAnnouncement() {
     toast('Failed to publish: ' + err.message, '❌');
   }
 }
+
+window.currentAdminAnnFilter = 'all';
+
+window.setAdminAnnFilter = function(filter) {
+  window.currentAdminAnnFilter = filter;
+  document.querySelectorAll('.itab-ann-target').forEach(function(btn) {
+    if (btn.getAttribute('onclick').indexOf("'" + filter + "'") !== -1) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+  window.renderAdminAnnList();
+};
+
+window.renderAdminAnnList = function() {
+  var rawAnn = window.LMS_ANNOUNCEMENTS || [];
+  var filterVal = window.currentAdminAnnFilter || 'all';
+  
+  var filtered = rawAnn.filter(function(a) {
+    if (filterVal === 'all') return true;
+    var target = (a.target || 'all').toLowerCase();
+    return target === filterVal;
+  });
+  
+  var listData = filtered.map(function(a) {
+    return {
+      t: a.title || a.t || 'Announcement',
+      cat: a.cat || 'Notice',
+      pri: a.pri || (a.urgent ? 'Important' : 'Normal'),
+      d: a.date || a.d || 'Just now',
+      v: a.views || a.v || 350,
+      target: a.target || 'all'
+    };
+  });
+  
+  if (listData.length === 0 && filterVal === 'all') {
+    listData = [
+      { t:'JEE Mock Test 14 — Sunday',       cat:'Exam',    pri:'Important',d:'Mar 12',v:342, target:'student' },
+      { t:'Fee Due Date Extended to Mar 20',  cat:'Fee',     pri:'Important',d:'Mar 10',v:428, target:'student' },
+      { t:'Holi Holiday — March 25',          cat:'General', pri:'Normal',   d:'Mar 8', v:895, target:'all' },
+      { t:'New Physics Notes Uploaded',       cat:'Academic',pri:'Normal',   d:'Mar 7', v:267, target:'student' },
+    ];
+  }
+  
+  var html = '';
+  if (listData.length === 0) {
+    html = '<div class="empty" style="padding:40px;text-align:center"><div style="font-size:24px;margin-bottom:8px">📋</div><p style="color:var(--muted)">No announcements for ' + filterVal + '</p></div>';
+  } else {
+    html = listData.map(function(a) {
+      var badgeClass = a.pri === 'Important' || a.pri === 'Urgent' ? 'badge-yellow' : 'badge-purple';
+      
+      var targetBadge = '';
+      if (a.target === 'student') targetBadge = '<span class="badge badge-green" style="margin-right:6px">Student</span>';
+      else if (a.target === 'faculty') targetBadge = '<span class="badge badge-teal" style="margin-right:6px">Faculty</span>';
+      else targetBadge = '<span class="badge badge-purple" style="margin-right:6px;background:rgba(255,255,255,0.08);color:var(--muted)">All</span>';
+
+      return '<div class="list-item" style="cursor:pointer" onclick="toast(\'' + a.t.replace(/'/g,"\\'") + '\',\'📢\')">'
+        + '<div class="li-icon" style="background:var(--surface2)">📢</div>'
+        + '<div class="li-content"><div class="li-title" style="font-weight:600">' + a.t + '</div>'
+        + '<div class="li-sub" style="display:flex;align-items:center;gap:6px;margin-top:2px">' + targetBadge + '<span>' + a.cat + ' • ' + a.d + ' • ' + a.v + ' views</span></div></div>'
+        + '<span class="badge ' + badgeClass + '">' + a.pri + '</span></div>';
+    }).join('');
+  }
+  
+  var container = document.getElementById('admin-ann-list-container');
+  if (container) {
+    container.innerHTML = html;
+  }
+};
 
 
 PAGES['admin_settings'] = function() {
