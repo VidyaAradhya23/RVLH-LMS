@@ -789,6 +789,33 @@ app.delete('/api/courses/:id', protect, (req, res) => {
   res.json({ message: 'Course deleted successfully' });
 });
 
+// Media Edit / Update
+app.put('/api/videos/:id', protect, (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'faculty') return res.status(403).json({ message: 'Unauthorized' });
+  const video = videos.find(v => v._id === req.params.id);
+  if (!video) return res.status(404).json({ message: 'Video not found' });
+  const { title, sub, dur, batch } = req.body;
+  if (title !== undefined) video.title = title;
+  if (sub !== undefined) video.sub = sub;
+  if (dur !== undefined) video.dur = dur;
+  if (batch !== undefined) video.batch = batch;
+  res.json(video);
+});
+
+app.put('/api/materials/:id', protect, (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'faculty') return res.status(403).json({ message: 'Unauthorized' });
+  const material = materials.find(m => m._id === req.params.id);
+  if (!material) return res.status(404).json({ message: 'Material not found' });
+  const { title, name, type, sub, size, batch } = req.body;
+  if (name !== undefined) material.name = name;
+  else if (title !== undefined) material.name = title;
+  if (type !== undefined) material.type = type;
+  if (sub !== undefined) material.sub = sub;
+  if (size !== undefined) material.size = size;
+  if (batch !== undefined) material.batch = batch;
+  res.json(material);
+});
+
 // Media Deletion
 app.delete('/api/videos/:id', protect, (req, res) => {
   if (req.user.role !== 'admin' && req.user.role !== 'faculty') return res.status(403).json({ message: 'Unauthorized' });

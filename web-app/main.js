@@ -2342,15 +2342,45 @@ function openBatchDetail(name, icon, students, avg, col) {
 }
 
 PAGES['faculty_content'] = function() {
-  var library = [
-    { title:'Electrostatics — Gauss Law',  type:'📹',size:'245 MB',batch:'JEE Adv A',views:312 },
-    { title:'Magnetic Effects Notes',       type:'📄',size:'2.4 MB',batch:'JEE Adv A',views:189 },
-    { title:'Thermodynamics Full Lecture',  type:'📹',size:'380 MB',batch:'All',      views:421 },
-    { title:'Integration Formula Sheet',   type:'📊',size:'1.8 MB',batch:'JEE Adv B',views:156 },
-  ];
+  var myVideos = (window.LMS_VIDEOS || []).filter(function(v) { return v.fac === G.user.name; }).map(function(v) {
+    return {
+      id: v._id,
+      title: v.title,
+      type: v.thumb || '📹',
+      size: '245 MB',
+      batch: v.batch || 'General',
+      views: v.views || 0,
+      isVideo: true
+    };
+  });
+  
+  var myMaterials = (window.LMS_MATERIALS || []).filter(function(m) { return m.fac === G.user.name; }).map(function(m) {
+    var emoji = m.type === 'pdf' ? '📄' : m.type === 'ppt' ? '📊' : '📘';
+    return {
+      id: m._id,
+      title: m.name,
+      type: emoji,
+      size: m.size || '1.5 MB',
+      batch: m.batch || 'General',
+      views: m.views || 0,
+      isVideo: false
+    };
+  });
+
+  var library = myVideos.concat(myMaterials);
+
+  if (library.length === 0) {
+    library = [
+      { id: 'mock-1', title:'Electrostatics — Gauss Law',  type:'📹',size:'245 MB',batch:'JEE Adv A',views:312, isVideo:true },
+      { id: 'mock-2', title:'Magnetic Effects Notes',       type:'📄',size:'2.4 MB',batch:'JEE Adv A',views:189, isVideo:false },
+      { id: 'mock-3', title:'Thermodynamics Full Lecture',  type:'📹',size:'380 MB',batch:'All',      views:421, isVideo:true },
+      { id: 'mock-4', title:'Integration Formula Sheet',   type:'📊',size:'1.8 MB',batch:'JEE Adv B',views:156, isVideo:false },
+    ];
+  }
+
   var uploadForm = '<div class="card">'
     + '<div class="card-title" style="margin-bottom:14px">📤 Upload New Content</div>'
-    + makeInputGroup('Content Type','select','📹 Video Lecture, 📄 PDF Notes, 📊 PPT, 🖼 Image')
+    + makeInputGroup('Content Type','select','📹 Video Lecture, 📄 PDF Notes, 📊 PPT, 📘 Reference Book')
     + makeInputGroup('Title','text','e.g. Electrostatics — Gauss Law Part 1')
     + '<div class="inp-row">'
     + makeInputGroup('Subject','select','Physics, Chemistry, Maths, Biology')
@@ -2367,12 +2397,12 @@ PAGES['faculty_content'] = function() {
 
   var libHtml = '<div class="card"><div class="card-title" style="margin-bottom:14px">📚 Content Library</div>'
     + library.map(function(c) {
-        return '<div class="list-item" onclick="toast(\'Opening ' + c.title + '\',\'📂\')">'
+        return '<div class="list-item" style="cursor:pointer" onclick="window.openEditLibraryItem(\'' + c.id + '\',' + c.isVideo + ')">'
           + '<div class="li-icon" style="background:var(--surface2)">' + c.type + '</div>'
-          + '<div class="li-content"><div class="li-title">' + c.title + '</div><div class="li-sub">' + c.batch + ' • ' + c.views + ' views</div></div>'
+          + '<div class="li-content"><div class="li-title" style="font-weight:600">' + c.title + '</div><div class="li-sub">' + c.batch + ' • ' + c.views + ' views</div></div>'
           + '<div style="display:flex;gap:5px">'
-          + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Editing...\',\'✏️\')">✏️</button>'
-          + '<button class="btn btn-sm btn-red" onclick="event.stopPropagation();toast(\'Deleted\',\'🗑️\')">🗑️</button></div></div>';
+          + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();window.openEditLibraryItem(\'' + c.id + '\',' + c.isVideo + ')">✏️</button>'
+          + '<button class="btn btn-sm btn-red" onclick="event.stopPropagation();window.deleteLibraryItem(\'' + c.id + '\',' + c.isVideo + ')">🗑️</button></div></div>';
       }).join('') + '</div>';
 
   return '<div class="grid-2">' + uploadForm + libHtml + '</div>';
@@ -6460,6 +6490,113 @@ async function submitFacultyUpload() {
     toast('Upload failed: ' + err.message, '❌');
   }
 }
+
+window.openEditLibraryItem = function(id, isVideo) {
+  if (String(id).indexOf('mock') === 0) {
+    toast('Cannot edit mock library items!', '⚠️');
+    return;
+  }
+  var item;
+  if (isVideo) {
+    item = (window.LMS_VIDEOS || []).find(function(v){return v._id === id;});
+  } else {
+    item = (window.LMS_MATERIALS || []).find(function(m){return m._id === id;});
+  }
+  if (!item) { toast('Item not found', '⚠️'); return; }
+  
+  var title = isVideo ? item.title : item.name;
+  var subject = item.sub || '';
+  var batch = item.batch || 'All Batches';
+  var extraField = isVideo 
+    ? '<div class="inp-group"><label>Duration</label><input class="inp-field" id="edit-lib-dur" value="'+(item.dur || '30:00')+'"></div>'
+    : '<div class="inp-group"><label>File Size</label><input class="inp-field" id="edit-lib-size" value="'+(item.size || '1.5 MB')+'"></div>';
+
+  var body = '<div style="display:flex;flex-direction:column;gap:12px">'
+    + '<div class="inp-group"><label>Title</label><input class="inp-field" id="edit-lib-title" value="'+title.replace(/"/g,'&quot;')+'"></div>'
+    + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+    + '<div class="inp-group"><label>Subject</label>'
+    + '<select class="inp-field" id="edit-lib-sub">'
+    + ['Physics','Chemistry','Maths','Biology'].map(function(s){
+        return '<option '+(s===subject?'selected':'')+'>'+s+'</option>';
+      }).join('')
+    + '</select></div>'
+    + extraField
+    + '</div>'
+    + '<div class="inp-group"><label>Assign to Batch</label>'
+    + '<select class="inp-field" id="edit-lib-batch">'
+    + ['All Batches','JEE Advanced A','JEE Advanced B','NEET Batch'].map(function(b){
+        return '<option '+(b===batch?'selected':'')+'>'+b+'</option>';
+      }).join('')
+    + '</select></div>'
+    + '</div>';
+
+  openDetail('✏️ Edit Content', body,
+    '<button class="btn btn-solid" onclick="window.saveEditLibraryItem(\''+id+'\','+isVideo+')">💾 Save Changes</button>'
+    + '<button class="btn btn-purple" onclick="closeModal(\'modal-detail\')">Cancel</button>');
+};
+
+window.saveEditLibraryItem = async function(id, isVideo) {
+  var titleEl = document.getElementById('edit-lib-title');
+  var subEl = document.getElementById('edit-lib-sub');
+  var batchEl = document.getElementById('edit-lib-batch');
+  
+  if (!titleEl || !titleEl.value.trim()) {
+    toast('Title is required!', '⚠️');
+    return;
+  }
+  
+  var titleVal = titleEl.value.trim();
+  var subVal = subEl ? subEl.value : 'Physics';
+  var batchVal = batchEl ? batchEl.value : 'All Batches';
+  
+  var payload = {
+    title: titleVal,
+    name: titleVal,
+    sub: subVal,
+    batch: batchVal
+  };
+  
+  if (isVideo) {
+    var durEl = document.getElementById('edit-lib-dur');
+    if (durEl) payload.dur = durEl.value;
+  } else {
+    var sizeEl = document.getElementById('edit-lib-size');
+    if (sizeEl) payload.size = sizeEl.value;
+  }
+  
+  try {
+    var endpoint = isVideo ? '/api/videos/' + id : '/api/materials/' + id;
+    await api(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    
+    toast('Changes saved successfully!', '✅');
+    closeModal('modal-detail');
+    await syncLMSData();
+    loadPage('content');
+  } catch (err) {
+    toast('Save failed: ' + err.message, '❌');
+  }
+};
+
+
+window.deleteLibraryItem = async function(id, isVideo) {
+  if (String(id).indexOf('mock') === 0) {
+    toast('Cannot delete mock library items!', '⚠️');
+    return;
+  }
+  if (!confirm('Are you sure you want to delete this content item?')) return;
+  try {
+    var endpoint = isVideo ? '/api/videos/' + id : '/api/materials/' + id;
+    await api(endpoint, { method: 'DELETE' });
+    toast('Deleted successfully!', '🗑️');
+    await syncLMSData();
+    loadPage('content');
+  } catch (err) {
+    toast('Failed to delete: ' + err.message, '❌');
+  }
+};
 
 
 
