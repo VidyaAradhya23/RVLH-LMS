@@ -16,11 +16,15 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "backend/index.js"
+      "dest": "/backend/index.js"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/web-app/assets/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "web-app/$1"
+      "dest": "/web-app/$1"
     }
   ]
 }
