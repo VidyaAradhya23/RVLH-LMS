@@ -5930,6 +5930,53 @@ function downloadMaterial(title) {
   toast('Downloading: ' + title, '⬇');
 }
 
+window.downloadPaymentReceipt = function(txnId) {
+  var p = PAYMENT_HISTORY.find(function(x){return x.id===txnId;});
+  if (!p) { toast('Transaction not found','⚠️'); return; }
+  var receiptText = "RV Learning Hub - Payment Receipt\n"
+    + "=================================\n"
+    + "Transaction ID: " + p.id + "\n"
+    + "Student:        " + p.student + "\n"
+    + "Material/Course:" + p.material + "\n"
+    + "Amount:         INR " + p.amount + "\n"
+    + "Method:         " + p.method + "\n"
+    + "Date:           " + p.date + "\n"
+    + "Type:           " + p.type + "\n"
+    + "Status:         " + p.status.toUpperCase() + "\n"
+    + "=================================\n"
+    + "Thank you for your payment!";
+  var blob = new Blob([receiptText], {type: 'text/plain'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'receipt_' + p.id + '.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Receipt downloaded!', '⬇');
+};
+
+window.downloadQuizReport = function(title, score, total, correct, wrong, skip) {
+  var rows = [
+    ['Quiz Performance Report', ''],
+    ['Quiz Title', title],
+    ['Total Score', score + ' / ' + total],
+    ['Percentage', Math.round(score/total*100) + '%'],
+    ['Correct Answers', correct],
+    ['Incorrect Answers', wrong],
+    ['Skipped Questions', skip],
+    ['Generated On', new Date().toLocaleDateString("en-IN")]
+  ];
+  var csv = rows.map(function(r){return r.map(function(v){return '"'+String(v).replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob = new Blob([csv], {type: 'text/csv'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = title.replace(/[^a-z0-9]/gi, '_') + '_report.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Report downloaded!', '⬇');
+};
+
 window.deleteVideoItem = async function(id) {
   if (!confirm('Are you sure you want to delete this video?')) return;
   try {
@@ -6347,7 +6394,7 @@ function openPaymentDetail(txnId) {
         return '<div style="background:var(--surface2);border-radius:7px;padding:8px"><div style="font-size:10px;color:var(--muted)">'+e[0]+'</div><div style="font-size:13px;font-weight:600;margin-top:2px">'+e[1]+'</div></div>';
       }).join('')+'</div></div>';
   openDetail('🧾 Transaction — '+p.id, body,
-    '<button class="btn btn-teal" onclick="toast(\'Receipt downloaded!\',\'⬇\');closeModal(\'modal-detail\')">⬇ Download PDF</button>'
+    '<button class="btn btn-teal" onclick="window.downloadPaymentReceipt(\''+p.id+'\');closeModal(\'modal-detail\')">⬇ Download PDF</button>'
     + (p.status==='pending' ? '<button class="btn btn-green" onclick="toast(\'Payment marked as received!\',\'✅\');closeModal(\'modal-detail\')">✅ Mark Paid</button>' : ''));
 }
 
@@ -6534,7 +6581,7 @@ function openVideoWithNotes(title, emoji) {
 
   openDetail('▶ ' + title, body,
     '<button class="btn btn-teal" onclick="toast(\'Notes saved!\',\'📝\');closeModal(\'modal-detail\')">💾 Save Notes</button>'
-    + '<button class="btn btn-purple" onclick="toast(\'Downloaded!\',\'⬇️\')">⬇️ Download</button>');
+    + '<button class="btn btn-purple" onclick="downloadMaterial(\''+title.replace(/'/g,"\\'")+' Lecture Notes\');closeModal(\'modal-detail\')">⬇️ Download</button>');
 }
 
 // ── Material Preview Modal ──
@@ -6557,7 +6604,7 @@ function openMaterialPreview(name, type, sub, fac) {
   }
 
   openDetail('📂 ' + name, previewContent,
-    '<button class="btn btn-solid" onclick="toast(\'Downloading...\',\'⬇️\');closeModal(\'modal-detail\')">⬇️ Download</button>'
+    '<button class="btn btn-solid" onclick="downloadMaterial(\''+name.replace(/'/g,"\\'")+'\');closeModal(\'modal-detail\')">⬇️ Download</button>'
     + '<button class="btn btn-yellow" onclick="toast(\'Bookmarked!\',\'🔖\')">🔖 Bookmark</button>'
     + '<button class="btn btn-purple" onclick="toast(\'Shared!\',\'📤\')">📤 Share</button>');
 }
@@ -6619,7 +6666,7 @@ function openQuizAnalytics(title, score, total, correct, wrong, skip) {
     }).join('');
 
   openDetail('📊 ' + title + ' — Analysis', body,
-    '<button class="btn btn-teal" onclick="toast(\'Report downloaded!\',\'⬇️\');closeModal(\'modal-detail\')">⬇️ Download Report</button>'
+    '<button class="btn btn-teal" onclick="window.downloadQuizReport(\''+title.replace(/'/g,"\\'")+'\','+score+','+total+','+correct+','+wrong+','+skip+');closeModal(\'modal-detail\')">⬇️ Download Report</button>'
     + '<button class="btn btn-purple" onclick="toast(\'Shared with mentor!\',\'📤\')">📤 Share</button>');
 }
 
@@ -6788,7 +6835,7 @@ function openTestSolution(testName) {
     + '</div></div>';
 
   openDetail('📝 Answer Key & Solutions', body,
-    '<button class="btn btn-teal" onclick="toast(\'Solution PDF downloaded!\',\'⬇️\');closeModal(\'modal-detail\')">⬇️ Download PDF Solutions</button>'
+    '<button class="btn btn-teal" onclick="downloadMaterial(\''+testName.replace(/'/g,"\\'")+' Detailed Solutions\');closeModal(\'modal-detail\')">⬇️ Download PDF Solutions</button>'
     + '<button class="btn btn-purple" onclick="closeModal(\'modal-detail\')">Close</button>');
 }
 
