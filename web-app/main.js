@@ -769,9 +769,8 @@ function buildProfileContent() {
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px">'
     + extra.map(function(e) { return makeFeeCard(e[0], e[1]); }).join('')
     + '</div>'
-    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
-    + '<button class="btn btn-purple" onclick="toast(\'Profile updated!\',\'✅\');closeModal(\'modal-profile\')">✏️ Edit Profile</button>'
-    + '<button class="btn btn-purple" onclick="toast(\'Password reset email sent!\',\'📧\');closeModal(\'modal-profile\')">🔑 Change Password</button>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%">'
+    + '<button class="btn btn-solid" style="background:#ff2d6b;color:#fff;width:100%;display:flex;align-items:center;justify-content:center;gap:6px" onclick="window.doLogout();closeModal(\'modal-profile\')">🚪 Sign Out</button>'
     + '</div>';
 }
 
