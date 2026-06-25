@@ -2685,7 +2685,7 @@ function openFeeReceipt(date, amount, method, ref) {
     + '<div style="display:grid;gap:8px">'
     + [['Student','Arjun Sharma'],['Amount',amount],['Date',date],['Method',method],['Reference',ref],['Status','Paid ✅']].map(function(e) { return makeFeeCard(e[0], e[1]); }).join('')
     + '</div>';
-  openDetail('🧾 Fee Receipt', body, '<button class="btn btn-teal" onclick="toast(\'Receipt downloaded!\',\'⬇\');closeModal(\'modal-detail\')">⬇ Download</button>');
+  openDetail('🧾 Fee Receipt', body, '<button class="btn btn-teal" onclick="downloadGenericFeeReceipt(\''+date+'\',\''+amount+'\',\''+method+'\',\''+ref+'\');closeModal(\'modal-detail\')">⬇ Download</button>');
 }
 
 function openPayModal() {
@@ -2976,7 +2976,7 @@ function openTestResultsModal(title, attempts) {
     + [[1,'Sneha Patel','72/80 (90%)','24 min'],[2,'Rohan Gupta','68/80 (85%)','27 min'],[3,'Ananya Singh','65/80 (81%)','29 min']].map(function(r) {
         return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td style="color:var(--student);font-weight:700">' + r[2] + '</td><td>' + r[3] + '</td></tr>';
       }).join('') + '</tbody></table></div>';
-  openDetail('📊 Results — ' + title, body, '<button class="btn btn-teal" onclick="toast(\'Results exported!\',\'⬇\');closeModal(\'modal-detail\')">⬇ Export</button>');
+  openDetail('📊 Results — ' + title, body, '<button class="btn btn-teal" onclick="exportTestResults(\'' + title.replace(/'/g,"\\'") + '\');closeModal(\'modal-detail\')">⬇ Export</button>');
 }
 
 PAGES['faculty_tracker'] = function() {
@@ -3055,7 +3055,7 @@ PAGES['faculty_doubts'] = function() {
 PAGES['faculty_reports'] = function() {
   var cards = [['Classes Taken','42','var(--faculty)'],['Tests Created','8','var(--purple)'],['Doubts Resolved','156','var(--student)'],['Student Rating','4.7⭐','var(--yellow)']];
   return '<div class="card"><div class="card-header"><div class="card-title">📋 Monthly Performance Report</div>'
-    + '<button class="btn btn-sm btn-teal" onclick="toast(\'Report exported!\',\'⬇\')">⬇ Export</button></div>'
+    + '<button class="btn btn-sm btn-teal" onclick="exportFacultyReport()">⬇ Export</button></div>'
     + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px">'
     + cards.map(function(c) {
         return '<div class="fee-card" style="text-align:center"><div style="font-size:22px;font-weight:800;color:' + c[2] + ';font-family:Syne,sans-serif">' + c[1] + '</div><div style="font-size:11px;color:var(--muted);margin-top:3px">' + c[0] + '</div></div>';
@@ -3229,7 +3229,7 @@ function openCourseEnrollDetail(course, students, capacity, col) {
       }).join('');
   openDetail('📊 ' + course + ' — Enrollment Details', body,
     '<button class="btn btn-solid" onclick="loadPage(\'users\');closeModal(\'modal-detail\')">👥 Manage Students</button>'
-    + '<button class="btn btn-purple" onclick="toast(\'Exporting...\',\'📊\');closeModal(\'modal-detail\')">📊 Export</button>');
+    + '<button class="btn btn-purple" onclick="exportEnrollmentDetails(\'' + course.replace(/'/g,"\\'") + '\');closeModal(\'modal-detail\')">📊 Export</button>');
 }
 
 function openActivityModal(type, title, person) {
@@ -3249,14 +3249,14 @@ function openActivityModal(type, title, person) {
       actions: [
         { label:'✅ Approve Material', cls:'btn-green',  fn:'toast(\'Material approved!\',\'✅\');closeModal(\'modal-detail\')' },
         { label:'❌ Reject',           cls:'btn-red',    fn:'toast(\'Material rejected\',\'❌\');closeModal(\'modal-detail\')' },
-        { label:'📥 Download Preview',cls:'btn-purple', fn:'toast(\'Downloading...\',\'📥\')' },
+        { label:'📥 Download Preview',cls:'btn-purple', fn:'downloadMaterialFile(\''+title.replace(/'/g,"\\'")+'\')' },
       ]
     },
     purchase: {
       icon: '💳', badgeClass: 'badge-yellow', badgeLabel: 'Purchase',
       desc: 'A student has purchased course material. Payment has been received and access has been granted.',
       actions: [
-        { label:'🧾 View Receipt',    cls:'btn-purple', fn:'toast(\'Opening receipt...\',\'🧾\')' },
+        { label:'🧾 View Receipt',    cls:'btn-purple', fn:'downloadPurchaseActivityReceipt(\'' + person.replace(/'/g, "\\'") + '\',\'' + title.replace(/'/g, "\\'") + '\');closeModal(\'modal-detail\')' },
         { label:'👤 View Student',    cls:'btn-teal',   fn:'toast(\'Opening profile...\',\'👤\');closeModal(\'modal-detail\')' },
       ]
     }
@@ -3934,7 +3934,7 @@ function openFeeReceiptModal(idx) {
     + [['Student',s.n],['Roll No',s.roll],['Course',s.course.split('(')[0].trim()],['Amount Paid','₹'+s.paid.toLocaleString('en-IN')],['Payment Method',s.method],['Date',s.date],['Campus',s.campus],['Receipt No','RV-RCP-'+Math.floor(Math.random()*90000+10000)]].map(function(e){
         return '<div style="background:var(--surface2);border-radius:7px;padding:8px"><div style="font-size:10px;color:var(--muted)">'+e[0]+'</div><div style="font-size:13px;font-weight:600;margin-top:2px">'+e[1]+'</div></div>';
       }).join('') + '</div></div>';
-  openDetail('🧾 Receipt — '+s.n, body, '<button class="btn btn-teal" onclick="toast(\'Receipt downloaded!\',\'⬇\');closeModal(\'modal-detail\')">⬇ Download PDF</button>');
+  openDetail('🧾 Receipt — '+s.n, body, '<button class="btn btn-teal" onclick="downloadStudentFeeReceipt(\'' + s.roll + '\');closeModal(\'modal-detail\')">⬇ Download PDF</button>');
 }
 
 function openRecordPaymentModal() {
@@ -4028,6 +4028,165 @@ function downloadMaterialFile(title) {
   a.href = url; a.download = title.replace(/[^a-z0-9 ]/gi,'').replace(/ /g,'_').slice(0,40) + '.pdf';
   document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
   toast(title.slice(0,25) + ' downloaded!', 'OK');
+}
+
+function exportFacultyReport() {
+  var cards = [
+    ['Classes Taken', '42'],
+    ['Tests Created', '8'],
+    ['Doubts Resolved', '156'],
+    ['Student Rating', '4.7']
+  ];
+  var rows = [['Metric', 'Value']];
+  cards.forEach(function(c) {
+    rows.push([c[0], c[1]]);
+  });
+  var csv = rows.map(function(r) { return r.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'faculty_monthly_performance_report.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Faculty performance report exported!', '⬇');
+}
+
+function exportTestResults(title) {
+  var attempts = 98;
+  var avgScore = '74%';
+  var passRate = '68%';
+  var rows = [
+    ['Test Name', title],
+    ['Attempts', attempts],
+    ['Average Score', avgScore],
+    ['Pass Rate', passRate],
+    [],
+    ['Rank', 'Student', 'Score', 'Time']
+  ];
+  var results = [
+    [1, 'Sneha Patel', '72/80 (90%)', '24 min'],
+    [2, 'Rohan Gupta', '68/80 (85%)', '27 min'],
+    [3, 'Ananya Singh', '65/80 (81%)', '29 min']
+  ];
+  results.forEach(function(r) {
+    rows.push([r[0], r[1], r[2], r[3]]);
+  });
+  var csv = rows.map(function(r) { return r.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'test_results_' + title.replace(/[^a-z0-9]/gi, '_') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Test results exported!', '⬇');
+}
+
+function exportEnrollmentDetails(courseName) {
+  var students = typeof ADMIN_STUDENTS !== 'undefined' ? ADMIN_STUDENTS : [];
+  var courseStudents = students.filter(function(s) { return s.course.toLowerCase().indexOf(courseName.toLowerCase()) !== -1; });
+  if (courseStudents.length === 0) {
+    courseStudents = [
+      { roll: 'RV2026S01', n: 'Sneha Patel', email: 'sneha@rvhub.com', campus: 'RV Road', fee: 'Paid', st: 'Active' },
+      { roll: 'RV2026S02', n: 'Rohan Gupta', email: 'rohan@rvhub.com', campus: 'Jayanagar', fee: 'Due', st: 'Active' },
+      { roll: 'RV2026S03', n: 'Ananya Singh', email: 'ananya@rvhub.com', campus: 'RV Road', fee: 'Paid', st: 'Active' }
+    ];
+  }
+  var rows = [
+    ['Course', courseName],
+    ['Total Enrolled', courseStudents.length],
+    [],
+    ['Roll No', 'Name', 'Email', 'Campus', 'Fee Status', 'Status']
+  ];
+  courseStudents.forEach(function(s) {
+    rows.push([s.roll || '', s.n || '', s.email || '', s.campus || '', s.fee || '', s.st || '']);
+  });
+  var csv = rows.map(function(r) { return r.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'enrollment_details_' + courseName.replace(/[^a-z0-9]/gi, '_') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Enrollment details exported!', '⬇');
+}
+
+function downloadPurchaseActivityReceipt(student, item) {
+  var receiptText = "RV Learning Hub - Purchase Receipt\n"
+    + "===================================\n"
+    + "Transaction ID: TXN" + Math.floor(Math.random()*90000+10000) + "\n"
+    + "Student:        " + student + "\n"
+    + "Material/Course:" + item + "\n"
+    + "Amount:         INR 499 (Standard)\n"
+    + "Method:         UPI\n"
+    + "Date:           " + new Date().toLocaleDateString() + "\n"
+    + "Status:         SUCCESS\n"
+    + "===================================\n"
+    + "Thank you for your purchase!";
+  var blob = new Blob([receiptText], {type: 'text/plain'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'purchase_receipt_' + student.replace(/[^a-z0-9]/gi, '_') + '.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Receipt downloaded!', '⬇');
+}
+
+function downloadStudentFeeReceipt(roll) {
+  var students = window.FEE_STUDENTS || FEE_STUDENTS || [];
+  var s = students.find(function(x){return x.roll===roll;});
+  if (!s) { toast('Student record not found','⚠️'); return; }
+  var receiptText = "RV Learning Hub - Fee Payment Receipt\n"
+    + "======================================\n"
+    + "Student Name:   " + s.n + "\n"
+    + "Roll Number:    " + s.roll + "\n"
+    + "Course:         " + s.course + "\n"
+    + "Total Fee:      INR " + s.amount + "\n"
+    + "Paid:           INR " + s.paid + "\n"
+    + "Pending:        INR " + s.pending + "\n"
+    + "Payment Method: " + (s.method || 'Cash') + "\n"
+    + "Payment Date:   " + (s.date || new Date().toLocaleDateString()) + "\n"
+    + "Campus:         " + (s.campus || 'Main Campus') + "\n"
+    + "Receipt No:     RV-RCP-" + Math.floor(Math.random()*90000+10000) + "\n"
+    + "======================================\n"
+    + "Thank you for your payment!";
+  var blob = new Blob([receiptText], {type: 'text/plain'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'fee_receipt_' + s.roll + '.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Receipt downloaded!', '⬇');
+}
+
+function downloadGenericFeeReceipt(date, amount, method, ref) {
+  var receiptText = "RV Learning Hub - Payment Receipt\n"
+    + "===================================\n"
+    + "Payment Date:   " + date + "\n"
+    + "Amount Paid:    " + amount + "\n"
+    + "Payment Method: " + method + "\n"
+    + "Reference:      " + ref + "\n"
+    + "Receipt No:     RV-RCP-" + Math.floor(Math.random()*90000+10000) + "\n"
+    + "===================================\n"
+    + "Thank you!";
+  var blob = new Blob([receiptText], {type: 'text/plain'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'payment_receipt_' + ref.replace(/[^a-z0-9]/gi, '_') + '.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Receipt downloaded!', '⬇');
 }
 
 function exportFeeData() {
