@@ -191,6 +191,11 @@ async function syncLMSData() {
       FEE_STUDENTS = window.FEE_STUDENTS;
       FEE_COURSE_DATA = window.FEE_COURSE_DATA;
     }
+    if (window.COURSE_DB) COURSE_DB = window.COURSE_DB;
+    if (window.ADMIN_STUDENTS) ADMIN_STUDENTS = window.ADMIN_STUDENTS;
+    if (window.ADMIN_FACULTY) ADMIN_FACULTY = window.ADMIN_FACULTY;
+    if (window.MEDIA_DB) MEDIA_DB = window.MEDIA_DB;
+    if (window.QUESTION_PAPERS) QUESTION_PAPERS = window.QUESTION_PAPERS;
     if (window.QUIZ_RESULTS) QUIZ_RESULTS = window.QUIZ_RESULTS;
     if (window.PAYMENT_HISTORY) PAYMENT_HISTORY = window.PAYMENT_HISTORY;
   } catch (err) {
@@ -3362,19 +3367,33 @@ var COURSE_DB = [
 ];
 
 PAGES['admin_courses'] = function() {
-  var notice = '<div style="margin-bottom:13px;padding:11px 14px;background:rgba(108,71,255,.07);border:1px solid rgba(108,71,255,.2);border-radius:9px;font-size:12px;color:var(--muted)">'
-    + '<strong style="color:var(--purple)">Builder Flow:</strong> Create Course → Add Subjects → Add Chapters → Link Content → Assign Faculty → Activate / Publish</div>';
+  var notice = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding:12px;background:rgba(108,71,255,.05);border:1px solid rgba(108,71,255,.15);border-radius:10px;align-items:center">'
+    + '<div style="font-weight:700;color:var(--purple);font-size:12px;margin-right:8px">Builder Flow:</div>'
+    + '<div class="flow-step" onclick="openCreateCourseModal()" style="cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.2);font-size:11px;font-weight:600;transition:all 0.2s" onmouseover="this.style.background=\'var(--purple)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'rgba(108,71,255,.1)\';this.style.color=\'inherit\'">1. Create Course</div>'
+    + '<span style="color:var(--muted);font-size:11px">→</span>'
+    + '<div class="flow-step" onclick="triggerFlowStep(\'subjects\')" style="cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.2);font-size:11px;font-weight:600;transition:all 0.2s" onmouseover="this.style.background=\'var(--purple)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'rgba(108,71,255,.1)\';this.style.color=\'inherit\'">2. Add Subjects</div>'
+    + '<span style="color:var(--muted);font-size:11px">→</span>'
+    + '<div class="flow-step" onclick="triggerFlowStep(\'chapters\')" style="cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.2);font-size:11px;font-weight:600;transition:all 0.2s" onmouseover="this.style.background=\'var(--purple)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'rgba(108,71,255,.1)\';this.style.color=\'inherit\'">3. Add Chapters</div>'
+    + '<span style="color:var(--muted);font-size:11px">→</span>'
+    + '<div class="flow-step" onclick="loadPage(\'media\')" style="cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.2);font-size:11px;font-weight:600;transition:all 0.2s" onmouseover="this.style.background=\'var(--purple)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'rgba(108,71,255,.1)\';this.style.color=\'inherit\'">4. Link Content</div>'
+    + '<span style="color:var(--muted);font-size:11px">→</span>'
+    + '<div class="flow-step" onclick="triggerFlowStep(\'faculty\')" style="cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.2);font-size:11px;font-weight:600;transition:all 0.2s" onmouseover="this.style.background=\'var(--purple)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'rgba(108,71,255,.1)\';this.style.color=\'inherit\'">5. Assign Faculty</div>'
+    + '<span style="color:var(--muted);font-size:11px">→</span>'
+    + '<div class="flow-step" onclick="triggerFlowStep(\'publish\')" style="cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.2);font-size:11px;font-weight:600;transition:all 0.2s" onmouseover="this.style.background=\'var(--purple)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'rgba(108,71,255,.1)\';this.style.color=\'inherit\'">6. Activate / Publish</div>'
+    + '</div>';
 
   var grid = '<div class="grid-2">' + COURSE_DB.map(function(cr,idx) {
     return '<div class="card" style="border-color:color-mix(in srgb,' + cr.col + ' 22%,var(--border))">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px">'
       + '<div style="display:flex;gap:10px;align-items:center">'
-      + '<div style="width:42px;height:42px;border-radius:10px;background:color-mix(in srgb,' + cr.col + ' 10%,var(--surface2));display:flex;align-items:center;justify-content:center;font-size:22px">' + cr.e + '</div>'
-      + '<div><div style="font-weight:700;font-size:13px">' + cr.n + '</div>'
+      + '<div style="width:42px;height:42px;border-radius:10px;background:color-mix(in srgb,' + cr.col + ' 10%,var(--surface2));display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer" onclick="openCourseEditModal(' + idx + ')">' + cr.e + '</div>'
+      + '<div><div style="font-weight:700;font-size:13px;cursor:pointer" onclick="openCourseEditModal(' + idx + ')">' + cr.n + '</div>'
       + '<div style="font-size:11px;color:var(--muted)">' + cr.cat + ' • ' + cr.dur + ' • ₹' + cr.fee.toLocaleString() + '</div></div></div>'
       + '<span class="badge ' + (cr.pub?'badge-green':'badge-yellow') + '">' + (cr.pub?'Active':'Draft') + '</span></div>'
-      + '<div style="font-size:12px;color:var(--muted);margin-bottom:3px">👨‍🎓 ' + cr.enrolled + ' / ' + cr.maxSt + ' enrolled &nbsp;•&nbsp; 👨‍🏫 ' + cr.faculty + '</div>'
-      + '<div style="font-size:12px;color:var(--muted);margin-bottom:11px">📚 ' + cr.subjects.join(', ') + '</div>'
+      + '<div style="font-size:12px;color:var(--muted);margin-bottom:3px">'
+      + '<span style="cursor:pointer;text-decoration:underline;color:color-mix(in srgb,' + cr.col + ' 85%,#fff)" onclick="openCourseEnrollDetail(\'' + cr.n.replace(/'/g,"\\'") + '\',' + cr.enrolled + ',' + cr.maxSt + ',\'' + cr.col + '\')">👨‍🎓 ' + cr.enrolled + ' / ' + cr.maxSt + ' enrolled</span> &nbsp;•&nbsp; '
+      + '<span style="cursor:pointer;text-decoration:underline" onclick="openCourseEditModalForStep(' + idx + ',\'faculty\')">👨‍🏫 ' + cr.faculty + '</span></div>'
+      + '<div style="font-size:12px;color:var(--muted);margin-bottom:11px;cursor:pointer" onclick="openCourseEditModalForStep(' + idx + ',\'subjects\')">📚 ' + cr.subjects.join(', ') + '</div>'
       + '<div style="display:flex;gap:7px">'
       + '<button class="btn btn-sm btn-purple" style="flex:1" onclick="openCourseEditModal(' + idx + ')">✏️ Edit</button>'
       + '<button class="btn btn-sm ' + (cr.pub?'btn-red':'btn-green') + '" onclick="toggleCourseStatus(' + idx + ')">' + (cr.pub?'Deactivate':'Activate') + '</button>'
@@ -3384,6 +3403,57 @@ PAGES['admin_courses'] = function() {
   return '<div style="display:flex;justify-content:flex-end;margin-bottom:14px">'
     + '<button class="btn btn-red" onclick="openCreateCourseModal()">🏗️ Create Course</button></div>'
     + notice + grid;
+};
+
+window.triggerFlowStep = function(step) {
+  var body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Select a course to configure:</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">';
+  
+  window.COURSE_DB.forEach(function(cr, idx) {
+    body += '<button class="btn btn-outline" style="text-align:left;display:flex;align-items:center;gap:10px;justify-content:flex-start;width:100%;padding:10px 14px" onclick="closeModal(\'modal-detail\'); openCourseEditModalForStep(' + idx + ', \'' + step + '\')">'
+      + '<span style="font-size:18px">' + cr.e + '</span>'
+      + '<div><div style="font-weight:700;font-size:13px">' + cr.n + '</div><div style="font-size:10px;color:var(--muted)">' + cr.cat + ' • Lead: ' + cr.faculty + '</div></div>'
+      + '</button>';
+  });
+  
+  body += '</div>';
+  
+  openDetail('📋 Select Course', body, '<button class="btn btn-purple" onclick="closeModal(\'modal-detail\')">Cancel</button>');
+};
+
+window.openCourseEditModalForStep = function(idx, step) {
+  window.openCourseEditModal(idx);
+  
+  setTimeout(function() {
+    var fieldId = '';
+    if (step === 'subjects') fieldId = 'cef-subs';
+    else if (step === 'chapters') fieldId = 'cef-curr';
+    else if (step === 'faculty') fieldId = 'cef-fac';
+    else if (step === 'publish') {
+      var statusBtn = document.querySelector('#modal-detail button.btn-red, #modal-detail button.btn-green');
+      if (statusBtn) {
+        statusBtn.focus();
+        statusBtn.style.outline = '3px solid var(--purple)';
+        statusBtn.style.outlineOffset = '2px';
+        setTimeout(function() { statusBtn.style.outline = 'none'; }, 2500);
+      }
+      return;
+    }
+    
+    if (fieldId) {
+      var field = document.getElementById(fieldId);
+      if (field) {
+        field.focus();
+        field.style.outline = '3px solid var(--purple)';
+        field.style.outlineOffset = '1px';
+        field.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(function() {
+          field.style.outline = '';
+          field.style.outlineOffset = '';
+        }, 2500);
+      }
+    }
+  }, 150);
 };
 
 window.toggleCourseStatus = async function(idx) {
@@ -3552,102 +3622,151 @@ PAGES['admin_fees'] = function() {
 
   function fmt(n){return '₹'+n.toLocaleString('en-IN');}
 
-  var stats = '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px">'
+  // 1. Stats Grid (5 KPI Cards)
+  var stats = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px">'
     + [
-      { icon:'📈', val:fmt(totalRevenue),   label:'Total Revenue',   col:'var(--yellow)'  },
-      { icon:'🗓️', val:fmt(annualRevenue),  label:'Annual Revenue',  col:'var(--purple)'  },
+      { icon:'🪙', val:fmt(totalCollected), label:'Fees Collected', col:'#4ade80' },
+      { icon:'📈', val:fmt(totalRevenue),   label:'Total Revenue',   col:'#fbbf24' },
+      { icon:'📅', val:fmt(annualRevenue),  label:'Annual Revenue',  col:'#6c47ff' },
+      { icon:'⏳', val:fmt(totalPending),   label:'Fees Pending',   col:'#fb923c' },
+      { icon:'⚠️', val:fmt(totalOverdue),   label:'Overdue',        col:'#ff2d6b' }
     ].map(function(s) {
       return '<div class="stat-card" style="border-color:color-mix(in srgb,' + s.col + ' 28%,var(--border))">'
-        + '<div class="stat-icon">' + s.icon + '</div>'
-        + '<div class="stat-val" style="font-size:16px;color:' + s.col + '">' + s.val + '</div>'
-        + '<div class="stat-label">' + s.label + '</div></div>';
+        + '<div class="stat-icon" style="background:color-mix(in srgb,' + s.col + ' 10%,var(--surface2));color:' + s.col + '">' + s.icon + '</div>'
+        + '<div class="stat-val" style="font-size:18px;color:' + s.col + ';font-weight:800;font-family:Syne,sans-serif;background:none;-webkit-text-fill-color:' + s.col + ';text-fill-color:' + s.col + '">' + s.val + '</div>'
+        + '<div class="stat-label" style="font-size:11px;color:var(--muted)">' + s.label + '</div></div>';
     }).join('') + '</div>';
 
-  // Tabs
+  // 2. Tabs (4 Filter Tabs + Record Payment Button)
+  var activeTab = window._activeFeeTab || 'all';
+  window._activeFeeTab = activeTab;
+  
   var tabs = '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">'
-    + [['all','All'],['collected','💳 Collected']].map(function(t) {
-        return '<button class="btn btn-sm" id="ftab-'+t[0]+'" onclick="switchFeeTab(\''+t[0]+'\')" style="'+(t[0]==='all'?'background:var(--admin);color:#fff;':'')+'">'+t[1]+'</button>';
+    + [
+      ['all','All'],
+      ['collected','💳 Collected'],
+      ['pending','⏳ Pending'],
+      ['overdue','⚠️ Overdue']
+    ].map(function(t) {
+        var active = t[0]===activeTab;
+        return '<button class="btn btn-sm" id="ftab-'+t[0]+'" onclick="switchFeeTab(\''+t[0]+'\')" style="'+(active?'background:var(--admin);color:#fff;':'')+'">'+t[1]+'</button>';
       }).join('')
-    + '<button class="btn btn-sm btn-teal" onclick="openRecordPaymentModal()" style="margin-left:auto">+ Record Payment</button>'
+    + '<button class="btn btn-sm btn-teal" onclick="openRecordPaymentModal()" style="margin-left:auto; display:flex; align-items:center; gap:5px">+ Record Payment</button>'
     + '</div>';
 
-  // Students table
-  function feeRow(s, idx) {
-    var payType = s.payType || (s.st==='paid' ? (Math.random()>0.5?'course':'materials') : '—');
-    var modeIcon = s.method==='UPI'?'📲':s.method==='Card'?'💳':s.method==='Cash'?'💵':s.method==='Net Banking'?'🏦':'—';
-    return '<tr>'
-      + '<td><div style="font-weight:600">' + s.n + '</div><div style="font-size:11px;color:var(--muted)">' + s.roll + '</div></td>'
-      + '<td style="font-size:12px">' + s.course.replace(' (Main + KCET Decoded)','').replace(' Decoded','').replace(' Programme','') + '</td>'
-      + '<td style="color:var(--student)">' + fmt(s.paid) + '</td>'
-      + '<td style="font-size:12px">' + (s.method !== '—' ? modeIcon + ' ' + s.method : '<span style="color:var(--muted)">—</span>') + '</td>'
-      + '<td>' + (payType !== '—' ? '<span class="badge ' + (payType==='course'?'badge-purple':'badge-teal') + '">' + (payType==='course'?'📚 Course':'📄 Materials') + '</span>' : '<span style="color:var(--muted);font-size:12px">—</span>') + '</td>'
-      + '<td><div style="display:flex;gap:5px">'
-      + (s.st==='paid'
-          ? '<button class="btn btn-sm btn-teal" onclick="openFeeReceiptModal('+idx+')">🧾 Receipt</button>'
-          : '<button class="btn btn-sm btn-red" onclick="openFeeReminderModal(\''+s.n+'\',\''+fmt(s.pending)+'\')">📨 Remind</button>')
-      + '</div></td></tr>';
-  }
-
+  // Course Filter Dropdown
   var feeCourseFilter = window._feeCourseFilter || '';
   window._feeCourseFilter = feeCourseFilter;
   var feeCoursesList = [''].concat(FEE_STUDENTS.map(function(s){return s.course;}).filter(function(v,i,a){return a.indexOf(v)===i;}));
-  var courseFilterHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+  var courseFilterHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
     + '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Filter by Course:</label>'
-    + '<select class="inp-field" style="max-width:280px" id="fee-course-filter" onchange="window._feeCourseFilter=this.value;loadPage(\'fees\')">'
+    + '<select class="inp-field" style="max-width:280px;height:34px;padding:4px 10px;" id="fee-course-filter" onchange="window._feeCourseFilter=this.value;window.renderFeeTableBody()">'
     + feeCoursesList.map(function(fc){return '<option value="'+fc+'"'+(feeCourseFilter===fc?' selected':'')+'>'
         +(fc?fc.replace(' (Main + KCET Decoded)','').replace(' Decoded','').replace(' Programme',''):'All Courses')+'</option>';}).join('')
     + '</select>'
-    +(feeCourseFilter?'<button class="btn btn-sm btn-red" onclick="window._feeCourseFilter=\'\';loadPage(\'fees\')">✕ Clear</button>':'')
     + '</div>';
-  var filteredFeeStudents = feeCourseFilter ? FEE_STUDENTS.filter(function(s){return s.course===feeCourseFilter;}) : FEE_STUDENTS;
+
+  // 3. Students Table
   var tableHtml = '<div class="card"><div class="card-header"><div class="card-title" id="fee-table-title">💳 Fee Details — All Students</div>'
     + '<button class="btn btn-sm btn-purple" onclick="exportFeeData()">⬇ Export</button></div>'
     + courseFilterHtml
-    + '<div class="tbl-wrap"><table id="fee-student-table"><thead><tr><th>Name</th><th>Course</th><th>Paid</th><th>Payment Mode</th><th>Type</th><th>Actions</th></tr></thead>'
-    + '<tbody id="fee-tbody">'
-    + filteredFeeStudents.map(feeRow).join('') + '</tbody></table></div></div>';
+    + '<div class="tbl-wrap"><table id="fee-student-table"><thead><tr><th>STUDENT</th><th>COURSE</th><th>TOTAL FEE</th><th>PAID</th><th>PENDING</th><th>DUE DATE</th><th>PAYMENT MODE</th><th>TYPE</th><th>STATUS</th><th>ACTIONS</th></tr></thead>'
+    + '<tbody id="fee-tbody"></tbody></table></div></div>';
 
-  // Fee by course
+  // 4. Fee by Course Table
   var courseTable = '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title">📊 Fee Collection by Course</div></div>'
-    + '<div class="tbl-wrap"><table><thead><tr><th>Course</th><th>Students</th><th>Collected</th><th>% Collected</th><th>Download</th></tr></thead><tbody>'
+    + '<div class="tbl-wrap"><table><thead><tr><th>COURSE</th><th>STUDENTS</th><th>FEE/STUDENT</th><th>COLLECTED</th><th>PENDING</th><th>% COLLECTED</th><th>DOWNLOAD</th></tr></thead><tbody>'
     + FEE_COURSE_DATA.map(function(cd) {
-        var pct = Math.round(cd.collected/(cd.collected+cd.pending)*100);
+        var totalPossible = cd.collected + cd.pending;
+        var pct = totalPossible > 0 ? Math.round(cd.collected / totalPossible * 100) : 0;
         return '<tr>'
           + '<td><div style="display:flex;align-items:center;gap:7px"><div style="width:10px;height:10px;border-radius:50%;background:'+cd.col+'"></div><span style="font-weight:600;font-size:12px">'+cd.n.replace(' (Main + KCET Decoded)','').replace(' Decoded','').replace(' Programme','')+'</span></div></td>'
           + '<td><span style="font-weight:700;color:var(--purple)">'+cd.students+'</span></td>'
-          + '<td style="color:var(--student);font-weight:600">'+fmt(cd.collected)+'</td>'
-          + '<td><div style="display:flex;align-items:center;gap:7px"><div style="flex:1;height:5px;background:var(--surface2);border-radius:3px"><div style="height:5px;border-radius:3px;background:'+cd.col+';width:'+pct+'%"></div></div><span style="font-size:12px">'+pct+'%</span></div></td>'
+          + '<td style="font-weight:600">'+fmt(cd.fee)+'</td>'
+          + '<td style="color:#4ade80;font-weight:600">'+fmt(cd.collected)+'</td>'
+          + '<td style="color:#ff2d6b;font-weight:600">'+fmt(cd.pending)+'</td>'
+          + '<td><div style="display:flex;align-items:center;gap:7px;min-width:140px"><div style="flex:1;height:6px;background:var(--surface2);border-radius:3px"><div style="height:6px;border-radius:3px;background:'+cd.col+';width:'+pct+'%"></div></div><span style="font-size:12px;font-weight:700">'+pct+'%</span></div></td>'
           + '<td><button class="btn btn-sm btn-purple" onclick="downloadCourseData(\''+cd.n.replace(/'/g,"\\'")+'\')" title="Download '+cd.n+' fee data">⬇ CSV</button></td>'
           + '</tr>';
       }).join('') + '</tbody></table></div></div>';
 
+  // Trigger content render on tick
+  setTimeout(function() {
+    window.renderFeeTableBody();
+  }, 50);
+
   return stats + tabs + tableHtml + courseTable;
 };
 
-window.switchFeeTab = function(tab) {
-  var tbody = document.getElementById('fee-tbody');
-  var title = document.getElementById('fee-table-title');
-  var tabs  = ['all','collected'];
-  tabs.forEach(function(t) {
-    var btn = document.getElementById('ftab-'+t);
-    if (btn) btn.style.cssText = t===tab ? 'background:var(--admin);color:#fff;' : '';
-  });
+// Global Row Builder
+function getFeeRowHtml(s, idx) {
+  function fmt(n){return '₹'+n.toLocaleString('en-IN');}
+  var payType = s.payType || (s.st==='paid' ? (idx===0 ? 'materials' : 'course') : '—');
+  var modeIcon = s.method==='UPI'?'📲':s.method==='Card'?'💳':s.method==='Cash'?'💵':s.method==='Net Banking'?'🏦':'—';
+  var isPaid = s.st==='paid';
+  
+  var statusClass = s.st==='paid' ? 'badge-green' : s.st==='pending' ? 'badge-yellow' : 'badge-red';
+  var statusLabel = s.st.charAt(0).toUpperCase() + s.st.slice(1);
+
+  return '<tr>'
+    + '<td><div style="font-weight:600">' + s.n + '</div><div style="font-size:11px;color:var(--muted)">' + s.roll + '</div></td>'
+    + '<td style="font-size:12px">' + s.course.replace(' (Main + KCET Decoded)','').replace(' Decoded','').replace(' Programme','') + '</td>'
+    + '<td style="font-weight:600">' + fmt(s.amount) + '</td>'
+    + '<td style="color:#4ade80;font-weight:600">' + fmt(s.paid) + '</td>'
+    + '<td style="font-weight:600">' + (s.pending > 0 ? fmt(s.pending) : '<span style="color:var(--muted)">—</span>') + '</td>'
+    + '<td style="font-size:12px">' + s.due + '</td>'
+    + '<td style="font-size:12px">' + (s.method && s.method !== '—' ? modeIcon + ' ' + s.method : '<span style="color:var(--muted)">—</span>') + '</td>'
+    + '<td>' + (payType !== '—' ? '<span class="badge ' + (payType==='course'?'badge-purple':'badge-teal') + '">' + (payType==='course'?'Course':'Materials') + '</span>' : '<span style="color:var(--muted);font-size:12px">—</span>') + '</td>'
+    + '<td><span class="badge ' + statusClass + '">' + statusLabel + '</span></td>'
+    + '<td><div style="display:flex;gap:5px">'
+    + (isPaid
+        ? '<button class="btn btn-sm btn-teal" onclick="openFeeReceiptModal('+idx+')">🧾 Receipt</button>'
+        : '<button class="btn btn-sm btn-red" onclick="openFeeReminderModal(\''+s.n+'\',\''+fmt(s.pending)+'\')">📨 Remind</button>')
+    + '</div></td></tr>';
+}
+
+window.renderFeeTableBody = function() {
+  var tab = window._activeFeeTab || 'all';
+  var courseFilter = window._feeCourseFilter || '';
   var students = window.FEE_STUDENTS || FEE_STUDENTS;
-  var filtered = tab==='collected' ? students.filter(function(s){return s.st==='paid';}) : students;
-  var labels = {all:'All Students', collected:'Collected Students'};
-  if (title) title.textContent = '💳 Fee Details — ' + labels[tab];
-  if (tbody) tbody.innerHTML = filtered.map(function(s,i){
-    var idx = students.indexOf(s);
-    return '<tr>'
-      + '<td><div style="font-weight:600">'+s.n+'</div><div style="font-size:11px;color:var(--muted)">'+s.roll+'</div></td>'
-      + '<td style="font-size:12px">'+s.course.replace(' (Main + KCET Decoded)','').replace(' Decoded','').replace(' Programme','')+'</td>'
-      + '<td style="color:var(--student)">₹'+s.paid.toLocaleString('en-IN')+'</td>'
-      + '<td><div style="display:flex;gap:5px">'
-      + (s.st==='paid'
-          ? '<button class="btn btn-sm btn-teal" onclick="openFeeReceiptModal('+idx+')">🧾 Receipt</button>'
-          : '<button class="btn btn-sm btn-red" onclick="openFeeReminderModal(\''+s.n+'\',\'₹'+s.pending.toLocaleString('en-IN')+'\')">📨 Remind</button>')
-      + '</div></td></tr>';
-  }).join('');
+  
+  // 1. Filter by Course
+  var filtered = courseFilter ? students.filter(function(s) { return s.course === courseFilter; }) : students;
+  
+  // 2. Filter by Tab
+  if (tab === 'collected') {
+    filtered = filtered.filter(function(s) { return s.st === 'paid'; });
+  } else if (tab === 'pending') {
+    filtered = filtered.filter(function(s) { return s.st === 'pending'; });
+  } else if (tab === 'overdue') {
+    filtered = filtered.filter(function(s) { return s.st === 'overdue'; });
+  }
+  
+  var tbody = document.getElementById('fee-tbody');
+  if (tbody) {
+    tbody.innerHTML = filtered.map(function(s) {
+      var idx = students.indexOf(s);
+      return getFeeRowHtml(s, idx);
+    }).join('');
+  }
+  
+  var title = document.getElementById('fee-table-title');
+  if (title) {
+    var labels = { all: 'All Students', collected: 'Collected Invoices', pending: 'Pending Invoices', overdue: 'Overdue Invoices' };
+    title.innerHTML = '💳 Fee Details — ' + labels[tab];
+  }
+};
+
+window.switchFeeTab = function(tab) {
+  window._activeFeeTab = tab;
+  var tabs = ['all', 'collected', 'pending', 'overdue'];
+  tabs.forEach(function(t) {
+    var btn = document.getElementById('ftab-' + t);
+    if (btn) {
+      btn.style.cssText = t === tab ? 'background:var(--admin);color:#fff;' : '';
+    }
+  });
+  window.renderFeeTableBody();
 };
 
 window.openFeeReceiptModal = function(idx) {
@@ -4216,13 +4335,65 @@ PAGES['admin_attendance'] = function() {
     + '<button class="btn btn-sm btn-teal" onclick="downloadFullAttendance()">⬇ Download Full Report</button></div>'
     + '<div class="tbl-wrap"><table><thead><tr><th>Batch</th><th>Students</th><th>Avg Attendance</th><th>Below 75%</th><th>Trend</th><th>Action</th></tr></thead><tbody>'
     + data.map(function(b) {
-        return '<tr onclick="toast(\'' + b.b + ' details\',\'✅\')">'
+        return '<tr onclick="openBatchAttendanceDetail(\'' + b.b.replace(/'/g,"\\'") + '\',' + b.s + ',' + b.avg + ')" style="cursor:pointer" title="View details for ' + b.b + '">'
           + '<td>' + b.b + '</td><td>' + b.s + '</td>'
           + '<td><span style="color:' + (b.avg>=80?'var(--student)':'var(--admin)') + ';font-weight:700">' + b.avg + '%</span></td>'
           + '<td style="color:' + (b.below>15?'var(--admin)':'var(--muted)') + '">' + b.below + ' students</td>'
           + '<td style="font-size:17px;color:' + (b.tr==='↑'?'var(--student)':b.tr==='↓'?'var(--admin)':'var(--muted)') + '">' + b.tr + '</td>'
           + '<td><button class="btn btn-sm btn-purple" onclick="event.stopPropagation();downloadBatchAttendance(\'' + b.b + '\',' + b.s + ',' + b.avg + ')">⬇ Report</button></td></tr>';
       }).join('') + '</tbody></table></div></div>';
+};
+
+window.openBatchAttendanceDetail = function(batchName, totalStudents, avgPct) {
+  var students = window.ADMIN_STUDENTS || [];
+  
+  var courseKeyword = batchName.replace(' A','').replace(' B','').replace(' Batch 2025','').replace(' Mains Crash','').replace(' XI','');
+  if (courseKeyword === 'JEE') courseKeyword = 'JEE (Main'; // avoid confusion with JEE Advanced
+  
+  var filteredStudents = students.filter(function(s) {
+    return s.course.indexOf(courseKeyword) > -1;
+  });
+  
+  // If no students found, use seed student list fallback
+  if (filteredStudents.length === 0) {
+    filteredStudents = students.slice(0, 10);
+  }
+
+  var listHtml = filteredStudents.map(function(s, idx) {
+    var charSum = 0;
+    for (var c=0; c<s.n.length; c++) charSum += s.n.charCodeAt(c);
+    var att = Math.floor((charSum % 15) + (avgPct - 7));
+    att = Math.max(50, Math.min(100, att));
+    
+    var isLow = att < 75;
+    var statusClass = isLow ? 'badge-red' : 'badge-green';
+    var statusText = isLow ? 'Low Attendance' : 'Regular';
+    
+    return '<div class="list-item" style="padding:10px 12px;margin-bottom:8px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:10px;display:flex;justify-content:space-between;align-items:center">'
+      + '<div style="display:flex;align-items:center;gap:10px">'
+      + makeAv(s.n.charAt(0), isLow ? 'rgba(255,45,107,0.1)' : 'rgba(74,222,128,0.1)')
+      + '<div><div style="font-weight:600;font-size:13px">' + s.n + '</div><div style="font-size:11px;color:var(--muted)">' + s.roll + '</div></div>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:12px">'
+      + '<div style="text-align:right"><div style="font-weight:700;font-size:13px;color:' + (isLow ? 'var(--admin)' : 'var(--student)') + '">' + att + '%</div>'
+      + '<span class="badge ' + statusClass + '" style="font-size:9px;padding:2px 5px">' + statusText + '</span></div>'
+      + (isLow ? '<button class="btn btn-sm btn-red" style="padding:4px 8px;font-size:11px" onclick="event.stopPropagation();toast(\'Low attendance alert sent to ' + s.n.replace(/'/g,"\\'") + ' and parents!\',\'📨\')">📨 Alert</button>' : '')
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  var body = '<div style="margin-bottom:14px">'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">'
+    + makeFeeCard('Total Students', filteredStudents.length + ' students')
+    + makeFeeCard('Average Attendance', avgPct + '%')
+    + '</div>'
+    + '<div class="card-title" style="margin-bottom:10px;font-size:13px;color:var(--muted)">Student Roster & Stats</div>'
+    + '<div style="max-height:350px;overflow-y:auto;padding-right:4px">' + listHtml + '</div>'
+    + '</div>';
+
+  openDetail('📊 ' + batchName + ' — Attendance Details', body,
+    '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\');downloadBatchAttendance(\'' + batchName.replace(/'/g,"\\'") + '\',' + totalStudents + ',' + avgPct + ')">⬇ Download CSV Report</button>'
+    + '<button class="btn btn-purple" onclick="closeModal(\'modal-detail\')">Close</button>');
 };
 
 function downloadBatchAttendance(batchName, totalStudents, avgPct) {
@@ -4409,39 +4580,50 @@ function exportNotifications() {
 }
 
 PAGES['admin_announcements'] = function() {
-  var announcements = window.LMS_ANNOUNCEMENTS || [
-    { t:'JEE Mock Test 14 — Sunday',       cat:'Exam',    pri:'Important',d:'Mar 12',v:342 },
-    { t:'Fee Due Date Extended to Mar 20',  cat:'Fee',     pri:'Important',d:'Mar 10',v:428 },
-    { t:'Holi Holiday — March 25',          cat:'General', pri:'Normal',   d:'Mar 8', v:895 },
-    { t:'New Physics Notes Uploaded',       cat:'Academic',pri:'Normal',   d:'Mar 7', v:267 },
-  ];
+  var rawAnn = window.LMS_ANNOUNCEMENTS || [];
+  var listData = rawAnn.map(function(a) {
+    return {
+      t: a.title || a.t || 'Announcement',
+      cat: a.cat || 'Notice',
+      pri: a.pri || (a.urgent ? 'Important' : 'Normal'),
+      d: a.date || a.d || 'Just now',
+      v: a.views || a.v || 350
+    };
+  });
+  if (listData.length === 0) {
+    listData = [
+      { t:'JEE Mock Test 14 — Sunday',       cat:'Exam',    pri:'Important',d:'Mar 12',v:342 },
+      { t:'Fee Due Date Extended to Mar 20',  cat:'Fee',     pri:'Important',d:'Mar 10',v:428 },
+      { t:'Holi Holiday — March 25',          cat:'General', pri:'Normal',   d:'Mar 8', v:895 },
+      { t:'New Physics Notes Uploaded',       cat:'Academic',pri:'Normal',   d:'Mar 7', v:267 },
+    ];
+  }
+
   var form = '<div class="card" style="margin-bottom:14px">'
     + '<div class="card-title" style="margin-bottom:14px">📢 Create Announcement</div>'
-    + makeInputGroup('Title','text','e.g. Holiday Notice')
-    + '<div class="inp-row">'
-    + makeInputGroup('Category','select','General, Academic, Fee, Exam, Event')
-    + makeInputGroup('Priority','select','Normal, Important, Urgent')
+    + '<div class="inp-group"><label style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Title</label>'
+    + '<input class="inp-field" id="ann-title" placeholder="e.g. Holiday Notice"></div>'
+    + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">'
+    + '<div class="inp-group"><label style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Category</label>'
+    + '<select class="inp-field" id="ann-cat"><option>General</option><option>Academic</option><option>Fee</option><option>Exam</option><option>Event</option></select></div>'
+    + '<div class="inp-group"><label style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Priority</label>'
+    + '<select class="inp-field" id="ann-pri"><option>Normal</option><option>Important</option><option>Urgent</option></select></div>'
     + '</div>'
-    + '<div class="inp-group"><label>Send To</label>'
-    + '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">'
-    + [['ann-to-faculty','👨‍🏫 Faculty'],['ann-to-rvlh','🎓 RVLH Students'],['ann-to-offcampus','🏠 Off Campus Students']].map(function(ch){
-        return '<label style="display:flex;align-items:center;gap:7px;font-size:13px;cursor:pointer;background:var(--surface2);border:1px solid rgba(255,255,255,0.07);padding:7px 13px;border-radius:8px">'
-          + '<input type="checkbox" id="'+ch[0]+'" checked style="width:15px;height:15px;accent-color:var(--purple);">'
-          + ch[1] + '</label>';
-      }).join('')
-    + '</div>'
-    + '<div style="font-size:10px;color:var(--muted);margin-top:5px">Select the audience for this announcement</div></div>'
-    + makeInputGroup('Message','textarea','Write announcement...')
-    + '<div style="display:flex;gap:8px">'
-    + '<button class="btn btn-solid" onclick="publishAnnouncement()">📢 Publish</button>'
-    + '<button class="btn btn-purple" onclick="toast(\'Saved as draft\',\'💾\')">💾 Draft</button></div></div>';
+    + '<div class="inp-group"><label style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Message</label>'
+    + '<textarea class="inp-field" id="ann-msg" rows="3" placeholder="Write announcement.."></textarea></div>'
+    + '<div style="display:flex;gap:10px;margin-top:14px">'
+    + '<button class="btn btn-solid" style="background:#ff2d6b;color:#fff;display:flex;align-items:center;gap:6px" onclick="publishAnnouncement()">📢 Publish</button>'
+    + '<button class="btn btn-purple" style="display:flex;align-items:center;gap:6px" onclick="toast(\'Saved as draft\',\'💾\')">💾 Draft</button></div>'
+    + '</div>';
 
   var list = '<div class="card"><div class="card-title" style="margin-bottom:14px">📋 Recent Announcements</div>'
-    + announcements.map(function(a) {
-        return '<div class="list-item" onclick="toast(\'' + a.t.replace(/'/g,"\\'") + '\',\'📢\')">'
+    + listData.map(function(a) {
+        var badgeClass = a.pri === 'Important' || a.pri === 'Urgent' ? 'badge-yellow' : 'badge-purple';
+        return '<div class="list-item" style="cursor:pointer" onclick="toast(\'' + a.t.replace(/'/g,"\\'") + '\',\'📢\')">'
           + '<div class="li-icon" style="background:var(--surface2)">📢</div>'
-          + '<div class="li-content"><div class="li-title">' + a.t + '</div><div class="li-sub">' + a.cat + ' • ' + a.d + ' • ' + a.v + ' views</div></div>'
-          + '<span class="badge ' + (a.pri==='Important'?'badge-yellow':'badge-purple') + '">' + a.pri + '</span></div>';
+          + '<div class="li-content"><div class="li-title" style="font-weight:600">' + a.t + '</div>'
+          + '<div class="li-sub">' + a.cat + ' • ' + a.d + ' • ' + a.v + ' views</div></div>'
+          + '<span class="badge ' + badgeClass + '">' + a.pri + '</span></div>';
       }).join('') + '</div>';
   return form + list;
 };
@@ -4880,13 +5062,49 @@ function apPwMatch(v) {
 }
 
 
-function publishAnnouncement() {
-  var targets = [];
-  if (document.getElementById('ann-to-faculty') && document.getElementById('ann-to-faculty').checked)     targets.push('Faculty');
-  if (document.getElementById('ann-to-rvlh') && document.getElementById('ann-to-rvlh').checked)           targets.push('RVLH Students');
-  if (document.getElementById('ann-to-offcampus') && document.getElementById('ann-to-offcampus').checked) targets.push('Off Campus Students');
-  if (!targets.length) { toast('Select at least one audience','⚠️'); return; }
-  toast('Published to: ' + targets.join(', '),'📢');
+async function publishAnnouncement() {
+  var titleInput = document.getElementById('ann-title');
+  var catSelect = document.getElementById('ann-cat');
+  var priSelect = document.getElementById('ann-pri');
+  var msgText = document.getElementById('ann-msg');
+  
+  if (!titleInput || !titleInput.value.trim()) {
+    toast('Title is required!', '⚠️');
+    return;
+  }
+  if (!msgText || !msgText.value.trim()) {
+    toast('Message is required!', '⚠️');
+    return;
+  }
+  
+  var titleVal = titleInput.value.trim();
+  var catVal = catSelect ? catSelect.value : 'General';
+  var priVal = priSelect ? priSelect.value : 'Normal';
+  var msgVal = msgText.value.trim();
+  
+  try {
+    await api('/api/announcements', {
+      method: 'POST',
+      body: JSON.stringify({
+        title: titleVal,
+        body: msgVal,
+        cat: catVal,
+        urgent: priVal === 'Important' || priVal === 'Urgent'
+      })
+    });
+    
+    toast('Announcement published successfully!', '📢');
+    
+    titleInput.value = '';
+    msgText.value = '';
+    if (catSelect) catSelect.selectedIndex = 0;
+    if (priSelect) priSelect.selectedIndex = 0;
+    
+    await syncLMSData();
+    loadPage('announcements');
+  } catch (err) {
+    toast('Failed to publish: ' + err.message, '❌');
+  }
 }
 
 
@@ -6558,6 +6776,7 @@ window.approveContent = approveContent;
 window.askAIDoubt = askAIDoubt;
 window.confirmReject = confirmReject;
 window.downloadFullAttendance = downloadFullAttendance;
+window.downloadBatchAttendance = downloadBatchAttendance;
 window.exportNotifications = exportNotifications;
 window.exportReport = exportReport;
 window.exportRevenueCSV = exportRevenueCSV;
