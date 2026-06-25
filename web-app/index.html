@@ -1,0 +1,159 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RV Learning Hub - LMS Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <!-- ═══════ LOGIN SCREEN ═══════ -->
+<div id="login-screen" style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:radial-gradient(ellipse 70% 60% at 15% 50%,rgba(108,71,255,0.15),transparent 60%),radial-gradient(ellipse 60% 50% at 85% 20%,rgba(255,45,107,0.12),transparent 55%),var(--bg)">
+  <div class="login-wrap">
+    <div class="login-logo">
+      <div class="logo-badge">RV LEARNING HUB</div>
+      <h1>Learning Management System</h1>
+      <p>JEE &nbsp;&bull;&nbsp; NEET &nbsp;&bull;&nbsp; Commerce</p>
+    </div>
+    <div class="login-card">
+      <h2>Welcome back</h2>
+      <p class="sub">Select your role and sign in</p>
+
+      <div class="role-grid">
+        <div class="role-card" style="--rc:var(--student)" id="rc-student">
+          <div class="ri">&#127891;</div>
+          <div class="rn">Student</div>
+          <div class="rd">Access courses</div>
+        </div>
+        <div class="role-card" style="--rc:var(--faculty)" id="rc-faculty">
+          <div class="ri">&#128104;&#8205;&#127979;</div>
+          <div class="rn">Faculty</div>
+          <div class="rd">Manage classes</div>
+        </div>
+        <div class="role-card" style="--rc:var(--admin)" id="rc-admin">
+          <div class="ri">&#128737;</div>
+          <div class="rn">Admin</div>
+          <div class="rd">Control panel</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Email / Phone</label>
+        <input type="text" class="form-input" id="li-email" placeholder="Enter email or phone" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <div style="position:relative">
+          <input type="password" class="form-input" id="li-pass" placeholder="Enter password" autocomplete="current-password" style="padding-right:60px">
+          <button type="button" id="btn-toggle-pw" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);font-weight:600;padding:4px 6px">Show</button>
+        </div>
+      </div>
+
+      <div id="login-error" style="display:none;background:rgba(255,45,107,.12);border:1px solid rgba(255,45,107,.4);color:#ff2d6b;border-radius:8px;padding:11px 14px;font-size:13px;margin-bottom:12px;text-align:center;font-weight:500"></div>
+
+      <button class="btn-login" id="btn-signin" style="cursor:pointer">Sign In</button>
+
+      <div class="demo-btns" style="margin-top:12px">
+        <button class="demo-btn" id="demo-student">Student Demo</button>
+        <button class="demo-btn" id="demo-faculty">Faculty Demo</button>
+        <button class="demo-btn" id="demo-admin">Admin Demo</button>
+      </div>
+
+      <div style="margin-top:16px;border:1px solid rgba(255,255,255,0.07);border-radius:12px;overflow:hidden">
+        <div id="cred-toggle" style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;cursor:pointer;font-size:13px;font-weight:600;background:rgba(255,255,255,0.04)">
+          <span>Demo Credentials</span>
+          <span id="cred-arrow" style="font-size:11px;color:var(--muted)">show</span>
+        </div>
+        <div id="cred-body" style="display:none;padding:12px;background:rgba(255,255,255,0.02)">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+            <div style="padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:12px;border:1px solid rgba(255,255,255,0.07)">
+              <div style="color:var(--student);font-weight:700;margin-bottom:6px">Student</div>
+              <div style="color:var(--muted);margin-bottom:3px">ID: <span id="st-em" style="color:var(--text)"></span></div>
+              <div style="color:var(--muted)">Pass: <span style="color:var(--text)">student123</span></div>
+            </div>
+            <div style="padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:12px;border:1px solid rgba(255,255,255,0.07)">
+              <div style="color:var(--faculty);font-weight:700;margin-bottom:6px">Faculty</div>
+              <div style="color:var(--muted);margin-bottom:3px">ID: <span id="fa-em" style="color:var(--text)"></span></div>
+              <div style="color:var(--muted)">Pass: <span style="color:var(--text)">faculty123</span></div>
+            </div>
+            <div style="padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:12px;border:1px solid rgba(255,255,255,0.07)">
+              <div style="color:var(--admin);font-weight:700;margin-bottom:6px">Admin</div>
+              <div style="color:var(--muted);margin-bottom:3px">ID: <span id="ad-em" style="color:var(--text)"></span></div>
+              <div style="color:var(--muted)">Pass: <span style="color:var(--text)">admin123</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ APP SHELL ═══════ -->
+<div id="app-shell" style="display:none">
+  <div class="app-layout" id="app-layout">
+    <aside class="sidebar">
+      <div class="sb-brand">
+        <div class="bname">RV Learning Hub</div>
+        <div class="brole" id="sb-role"></div>
+      </div>
+      <div class="sb-user">
+        <div class="sb-avatar" id="sb-avatar"></div>
+        <div>
+          <div class="sb-uname" id="sb-name"></div>
+          <div class="sb-uemail" id="sb-email"></div>
+        </div>
+      </div>
+      <nav class="sb-nav" id="sb-nav"></nav>
+      <div class="sb-footer">
+        <button class="logout-btn" id="btn-logout">Sign Out</button>
+      </div>
+    </aside>
+    <div class="main-area">
+      <div class="topbar">
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="tb-btn" id="tb-back" onclick="goBack()" title="Go Back" style="display:none">&#8592;</button>
+          <div class="topbar-title" id="tb-title">Dashboard</div>
+        </div>
+        <div class="topbar-right">
+          <div class="tb-btn has-dot" id="tb-notif" title="Notifications" style="cursor:pointer">&#128276;</div>
+          <div class="tb-btn" id="tb-search" title="Search" style="cursor:pointer">&#128269;</div>
+          <div class="tb-btn" id="tb-profile" title="Profile" style="cursor:pointer">&#128100;</div>
+        </div>
+      </div>
+      <div class="page-body" id="page-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay hidden" id="modal-notif">
+  <div class="modal"><div class="modal-hdr"><div class="modal-title">Notifications</div>
+  <button class="modal-close" id="close-notif">X</button></div>
+  <div class="modal-body" id="notif-body"></div></div>
+</div>
+<div class="modal-overlay hidden" id="modal-search">
+  <div class="modal"><div class="modal-hdr"><div class="modal-title">Search</div>
+  <button class="modal-close" id="close-search">X</button></div>
+  <div class="modal-body">
+    <input class="inp-field" id="search-inp" placeholder="Search courses, topics, students..." style="margin-bottom:14px">
+    <div id="search-results"></div>
+  </div></div>
+</div>
+<div class="modal-overlay hidden" id="modal-profile">
+  <div class="modal"><div class="modal-hdr"><div class="modal-title">My Profile</div>
+  <button class="modal-close" id="close-profile">X</button></div>
+  <div class="modal-body" id="profile-body"></div></div>
+</div>
+<div class="modal-overlay hidden" id="modal-detail">
+  <div class="modal modal-lg"><div class="modal-hdr">
+  <div class="modal-title" id="detail-title"></div>
+  <button class="modal-close" id="close-detail">X</button></div>
+  <div class="modal-body" id="detail-body"></div>
+  <div class="modal-footer" id="detail-footer"></div></div>
+</div>
+<div id="toast-container" style="position:fixed;bottom:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px"></div>
+    <script type="module" src="/main.js"></script>
+</body>
+</html>
