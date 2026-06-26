@@ -1017,7 +1017,7 @@ window.setResumeVideoIdx = function(idx) {
 // ──────────────── STUDENT COURSES (ENHANCED) ────────────────
 PAGES['student_courses'] = function() {
   var allCourses = window.LMS_COURSES || [
-    { _id:'1', e:'⚛️', title:'JEE (Advanced + Main)',  desc:'Comprehensive coaching for JEE Advanced and Main.', videos:24, materials:18, quizzes:12, enrolled:true, col:'linear-gradient(90deg,#6c47ff,#a855f7)', p:65, done:16, total:24, fac:'Dr. Priya Mehta', rating:4.8, reviews:142, fee:45000, dur:'2 Years' },
+    { _id:'1', e:'⚛️', title:'JEE (Advanced + Main)',  desc:'Comprehensive coaching for JEE Advanced and Main.', videos:24, materials:18, quizzes:12, enrolled:false, col:'linear-gradient(90deg,#6c47ff,#a855f7)', p:65, done:16, total:24, fac:'Dr. Priya Mehta', rating:4.8, reviews:142, fee:45000, dur:'2 Years' },
     { _id:'2', e:'🚀', title:'JEE (Main + CET)',        desc:'Comprehensive coaching for JEE Main and CET.',       videos:20, materials:14, quizzes:8, enrolled:false, col:'linear-gradient(90deg,#4ade80,#00d4c8)', p:0, done:0, total:20, fac:'Mr. Raj Sharma', rating:4.6, reviews:98, fee:30000, dur:'1 Year' },
     { _id:'3', e:'🎯', title:'KCET Batch',              desc:'Comprehensive coaching for KCET.',                   videos:18, materials:12, quizzes:6, enrolled:false, col:'linear-gradient(90deg,#a855f7,#6c47ff)', p:0, done:0, total:18, fac:'Prof. Amit Singh', rating:4.5, reviews:76, fee:25000, dur:'1 Year' },
     { _id:'4', e:'🔬', title:'NEET UG',                 desc:'Comprehensive coaching for NEET UG.',                videos:30, materials:22, quizzes:15, enrolled:false, col:'linear-gradient(90deg,#ff6b35,#fbbf24)', p:0, done:0, total:30, fac:'Dr. Kavya R.', rating:4.9, reviews:210, fee:38000, dur:'1 Year' },
