@@ -1018,10 +1018,10 @@ window.setResumeVideoIdx = function(idx) {
 PAGES['student_courses'] = function() {
   var allCourses = window.LMS_COURSES || [
     { _id:'1', e:'⚛️', title:'JEE (Advanced + Main)',  desc:'Comprehensive coaching for JEE Advanced and Main.', videos:24, materials:18, quizzes:12, enrolled:true, col:'linear-gradient(90deg,#6c47ff,#a855f7)', p:65, done:16, total:24, fac:'Dr. Priya Mehta', rating:4.8, reviews:142, fee:45000, dur:'2 Years' },
-    { _id:'2', e:'🚀', title:'JEE (Main + CET)',        desc:'Comprehensive coaching for JEE Main and CET.',       videos:20, materials:14, quizzes:8, enrolled:true, col:'linear-gradient(90deg,#4ade80,#00d4c8)', p:40, done:8, total:20, fac:'Mr. Raj Sharma', rating:4.6, reviews:98, fee:30000, dur:'1 Year' },
-    { _id:'3', e:'🎯', title:'KCET Batch',              desc:'Comprehensive coaching for KCET.',                   videos:18, materials:12, quizzes:6, enrolled:true, col:'linear-gradient(90deg,#a855f7,#6c47ff)', p:50, done:9, total:18, fac:'Prof. Amit Singh', rating:4.5, reviews:76, fee:25000, dur:'1 Year' },
-    { _id:'4', e:'🔬', title:'NEET UG',                 desc:'Comprehensive coaching for NEET UG.',                videos:30, materials:22, quizzes:15, enrolled:true,  col:'linear-gradient(90deg,#ff6b35,#fbbf24)', p:43, done:13, total:30, fac:'Dr. Kavya R.', rating:4.9, reviews:210, fee:38000, dur:'1 Year' },
-    { _id:'5', e:'💼', title:'Commerce Decoded',        desc:'Comprehensive coaching for Commerce.',               videos:22, materials:16, quizzes:10, enrolled:true, col:'linear-gradient(90deg,#ff2d6b,#ff6b35)', p:30, done:6, total:22, fac:'Prof. Neha K.', rating:4.4, reviews:64, fee:28000, dur:'1 Year' },
+    { _id:'2', e:'🚀', title:'JEE (Main + CET)',        desc:'Comprehensive coaching for JEE Main and CET.',       videos:20, materials:14, quizzes:8, enrolled:false, col:'linear-gradient(90deg,#4ade80,#00d4c8)', p:0, done:0, total:20, fac:'Mr. Raj Sharma', rating:4.6, reviews:98, fee:30000, dur:'1 Year' },
+    { _id:'3', e:'🎯', title:'KCET Batch',              desc:'Comprehensive coaching for KCET.',                   videos:18, materials:12, quizzes:6, enrolled:false, col:'linear-gradient(90deg,#a855f7,#6c47ff)', p:0, done:0, total:18, fac:'Prof. Amit Singh', rating:4.5, reviews:76, fee:25000, dur:'1 Year' },
+    { _id:'4', e:'🔬', title:'NEET UG',                 desc:'Comprehensive coaching for NEET UG.',                videos:30, materials:22, quizzes:15, enrolled:false, col:'linear-gradient(90deg,#ff6b35,#fbbf24)', p:0, done:0, total:30, fac:'Dr. Kavya R.', rating:4.9, reviews:210, fee:38000, dur:'1 Year' },
+    { _id:'5', e:'💼', title:'Commerce Decoded',        desc:'Comprehensive coaching for Commerce.',               videos:22, materials:16, quizzes:10, enrolled:false, col:'linear-gradient(90deg,#ff2d6b,#ff6b35)', p:0, done:0, total:22, fac:'Prof. Neha K.', rating:4.4, reviews:64, fee:28000, dur:'1 Year' },
     { _id:'6', e:'📚', title:'ReVise CET 2025',         desc:'Comprehensive revision for CET 2025.',               videos:15, materials:10, quizzes:8, enrolled:false, col:'linear-gradient(90deg,#ff2d6b,#a855f7)', p:0, done:0, total:15, fac:'Mr. Ravi V.', rating:4.7, reviews:88, fee:15000, dur:'6 Months' },
   ];
 
@@ -1038,7 +1038,7 @@ PAGES['student_courses'] = function() {
         : '<button style="width:100%;padding:10px;border-radius:9px;border:none;background:linear-gradient(135deg,#00c6ff,#00d4c8);color:#fff;font-family:Syne,sans-serif;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;pointer-events:none">👑 Unlock Course</button>';
 
       var clickHandler = c.enrolled
-        ? 'window.openCourseDetail(\''+c.title.replace(/'/g,"\\'")+'\',\''+c.e+'\',\'#4ade80\',\''+c.fac.replace(/'/g,"\\'")+'\','+c.total+','+c.done+','+c.p+')'
+        ? 'window.openCourseDetail(\''+c.title.replace(/'/g,"\\'")+'\',\''+c.e+'\',\'#4ade80\',\''+c.fac.replace(/'/g,"\\'")+'\','+(c.total || 20)+','+(c.done || 0)+','+(c.p || 0)+')'
         : 'window.openCourseUnlockModal(\''+c._id+'\',\''+c.title.replace(/'/g,"\\'")+'\','+(c.fee || 28000)+',\''+(c.dur || '1 Year')+'\',\''+c.fac.replace(/'/g,"\\'")+'\',\''+c.e+'\')';
 
       return '<div class="enhanced-card" style="padding:0;overflow:hidden;cursor:pointer" onclick="' + clickHandler + '">'
@@ -1049,13 +1049,13 @@ PAGES['student_courses'] = function() {
         + '<div style="font-family:Syne,sans-serif;font-size:15px;font-weight:700">'+c.title+'</div></div>'
         + statusBadge + '</div>'
         + '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;margin-left:42px">'+c.desc+'</div>'
-        + (c.enrolled && c.p > 0 ? '<div style="margin-bottom:12px">'+makeProgress(c.p,'#4ade80')+'<div style="font-size:11px;color:var(--muted);margin-top:3px">'+c.p+'% completed · '+c.done+'/'+c.total+' chapters</div></div>' : '')
+        + (c.enrolled && (c.p !== undefined ? c.p : 0) > 0 ? '<div style="margin-bottom:12px">'+makeProgress(c.p,'#4ade80')+'<div style="font-size:11px;color:var(--muted);margin-top:3px">'+c.p+'% completed · '+c.done+'/'+c.total+' chapters</div></div>' : '')
         + '<div style="display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap">'
-        + '<span style="display:flex;align-items:center;gap:4px">📹 '+c.videos+' Videos</span>'
-        + '<span style="display:flex;align-items:center;gap:4px">📄 '+c.materials+' Materials</span>'
-        + '<span style="display:flex;align-items:center;gap:4px">📝 '+c.quizzes+' Quizzes</span></div>'
+        + '<span style="display:flex;align-items:center;gap:4px">📹 '+(c.videos !== undefined ? c.videos : 15)+' Videos</span>'
+        + '<span style="display:flex;align-items:center;gap:4px">📄 '+(c.materials !== undefined ? c.materials : 10)+' Materials</span>'
+        + '<span style="display:flex;align-items:center;gap:4px">📝 '+(c.quizzes !== undefined ? c.quizzes : 8)+' Quizzes</span></div>'
         + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
-        + '<div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;letter-spacing:1px">'+stars(c.rating)+'</span><span style="font-size:12px;font-weight:700;color:var(--text)">'+c.rating+'</span><span style="font-size:11px;color:var(--muted)">('+c.reviews+')</span></div>'
+        + '<div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;letter-spacing:1px">'+stars(c.rating || 4.7)+'</span><span style="font-size:12px;font-weight:700;color:var(--text)">'+(c.rating || 4.7)+'</span><span style="font-size:11px;color:var(--muted)">('+(c.reviews || 85)+')</span></div>'
         + '<span style="font-size:11px;color:var(--muted)">by '+c.fac+'</span></div>'
         + actionBtn
         + '</div></div>';
