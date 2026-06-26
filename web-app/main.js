@@ -1017,12 +1017,12 @@ window.setResumeVideoIdx = function(idx) {
 // ──────────────── STUDENT COURSES (ENHANCED) ────────────────
 PAGES['student_courses'] = function() {
   var allCourses = window.LMS_COURSES || [
-    { _id:'1', e:'⚛️', title:'JEE (Advanced + Main)',  desc:'Comprehensive coaching for JEE Advanced and Main.', videos:24, materials:18, quizzes:12, enrolled:true, col:'linear-gradient(90deg,#6c47ff,#a855f7)', p:65, done:16, total:24, fac:'Dr. Priya Mehta', rating:4.8, reviews:142 },
-    { _id:'2', e:'🚀', title:'JEE (Main + CET)',        desc:'Comprehensive coaching for JEE Main and CET.',       videos:20, materials:14, quizzes:8, enrolled:false, col:'linear-gradient(90deg,#4ade80,#00d4c8)', p:0, done:0, total:20, fac:'Mr. Raj Sharma', rating:4.6, reviews:98 },
-    { _id:'3', e:'🎯', title:'KCET Batch',              desc:'Comprehensive coaching for KCET.',                   videos:18, materials:12, quizzes:6, enrolled:false, col:'linear-gradient(90deg,#a855f7,#6c47ff)', p:0, done:0, total:18, fac:'Prof. Amit Singh', rating:4.5, reviews:76 },
-    { _id:'4', e:'🔬', title:'NEET UG',                 desc:'Comprehensive coaching for NEET UG.',                videos:30, materials:22, quizzes:15, enrolled:true,  col:'linear-gradient(90deg,#ff6b35,#fbbf24)', p:43, done:13, total:30, fac:'Dr. Kavya R.', rating:4.9, reviews:210 },
-    { _id:'5', e:'💼', title:'Commerce Decoded',        desc:'Comprehensive coaching for Commerce.',               videos:22, materials:16, quizzes:10, enrolled:false, col:'linear-gradient(90deg,#ff2d6b,#ff6b35)', p:0, done:0, total:22, fac:'Prof. Neha K.', rating:4.4, reviews:64 },
-    { _id:'6', e:'📚', title:'ReVise CET 2025',         desc:'Comprehensive revision for CET 2025.',               videos:15, materials:10, quizzes:8, enrolled:false, col:'linear-gradient(90deg,#ff2d6b,#a855f7)', p:0, done:0, total:15, fac:'Mr. Ravi V.', rating:4.7, reviews:88 },
+    { _id:'1', e:'⚛️', title:'JEE (Advanced + Main)',  desc:'Comprehensive coaching for JEE Advanced and Main.', videos:24, materials:18, quizzes:12, enrolled:true, col:'linear-gradient(90deg,#6c47ff,#a855f7)', p:65, done:16, total:24, fac:'Dr. Priya Mehta', rating:4.8, reviews:142, fee:45000, dur:'2 Years' },
+    { _id:'2', e:'🚀', title:'JEE (Main + CET)',        desc:'Comprehensive coaching for JEE Main and CET.',       videos:20, materials:14, quizzes:8, enrolled:true, col:'linear-gradient(90deg,#4ade80,#00d4c8)', p:40, done:8, total:20, fac:'Mr. Raj Sharma', rating:4.6, reviews:98, fee:30000, dur:'1 Year' },
+    { _id:'3', e:'🎯', title:'KCET Batch',              desc:'Comprehensive coaching for KCET.',                   videos:18, materials:12, quizzes:6, enrolled:true, col:'linear-gradient(90deg,#a855f7,#6c47ff)', p:50, done:9, total:18, fac:'Prof. Amit Singh', rating:4.5, reviews:76, fee:25000, dur:'1 Year' },
+    { _id:'4', e:'🔬', title:'NEET UG',                 desc:'Comprehensive coaching for NEET UG.',                videos:30, materials:22, quizzes:15, enrolled:true,  col:'linear-gradient(90deg,#ff6b35,#fbbf24)', p:43, done:13, total:30, fac:'Dr. Kavya R.', rating:4.9, reviews:210, fee:38000, dur:'1 Year' },
+    { _id:'5', e:'💼', title:'Commerce Decoded',        desc:'Comprehensive coaching for Commerce.',               videos:22, materials:16, quizzes:10, enrolled:true, col:'linear-gradient(90deg,#ff2d6b,#ff6b35)', p:30, done:6, total:22, fac:'Prof. Neha K.', rating:4.4, reviews:64, fee:28000, dur:'1 Year' },
+    { _id:'6', e:'📚', title:'ReVise CET 2025',         desc:'Comprehensive revision for CET 2025.',               videos:15, materials:10, quizzes:8, enrolled:false, col:'linear-gradient(90deg,#ff2d6b,#a855f7)', p:0, done:0, total:15, fac:'Mr. Ravi V.', rating:4.7, reviews:88, fee:15000, dur:'6 Months' },
   ];
 
   var stars = function(r) { var full = Math.floor(r); var html = ''; for(var i=0;i<5;i++) html += '<span style="color:'+(i<full?'#fbbf24':'rgba(255,255,255,.15)')+'">★</span>'; return html; };
@@ -1035,11 +1035,11 @@ PAGES['student_courses'] = function() {
       
       var actionBtn = c.enrolled
         ? '<button class="btn btn-solid" style="width:100%;justify-content:center;pointer-events:none">▶ Continue Learning</button>'
-        : '<button style="width:100%;padding:10px;border-radius:9px;border:none;background:linear-gradient(135deg,#00c6ff,#00d4c8);color:#fff;font-family:Syne,sans-serif;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;pointer-events:none">👑 Unlock & Enroll</button>';
+        : '<button style="width:100%;padding:10px;border-radius:9px;border:none;background:linear-gradient(135deg,#00c6ff,#00d4c8);color:#fff;font-family:Syne,sans-serif;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;pointer-events:none">👑 Unlock Course</button>';
 
       var clickHandler = c.enrolled
         ? 'window.openCourseDetail(\''+c.title.replace(/'/g,"\\'")+'\',\''+c.e+'\',\'#4ade80\',\''+c.fac.replace(/'/g,"\\'")+'\','+c.total+','+c.done+','+c.p+')'
-        : 'window.enrollInCourse(\''+c._id+'\',\''+c.title.replace(/'/g,"\\'")+'\')';
+        : 'window.openCourseUnlockModal(\''+c._id+'\',\''+c.title.replace(/'/g,"\\'")+'\','+(c.fee || 28000)+',\''+(c.dur || '1 Year')+'\',\''+c.fac.replace(/'/g,"\\'")+'\',\''+c.e+'\')';
 
       return '<div class="enhanced-card" style="padding:0;overflow:hidden;cursor:pointer" onclick="' + clickHandler + '">'
         + '<div style="height:6px;background:'+c.col+'"></div>'
@@ -7869,6 +7869,60 @@ window.sendAIVideoDoubt = function(title) {
     thinkingEl.style.background = 'rgba(0,212,200,.06)';
     thinkingEl.style.borderColor = 'rgba(0,212,200,.15)';
     container.scrollTop = container.scrollHeight;
+  }, 1000);
+};
+
+window.openCourseUnlockModal = function(courseId, courseTitle, fee, duration, fac, emoji) {
+  var formattedFee = fee ? fee.toLocaleString('en-IN') : '28,000';
+  var body = '<div style="background:linear-gradient(135deg,rgba(108,71,255,0.06),rgba(0,198,255,0.06));border:1px solid rgba(108,71,255,0.2);border-radius:12px;padding:16px;margin-bottom:14px">'
+    + '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">'
+    + '<div style="font-size:36px">'+(emoji || '📚')+'</div>'
+    + '<div><div style="font-family:Syne,sans-serif;font-size:16px;font-weight:800">'+courseTitle+'</div>'
+    + '<div style="font-size:12px;color:var(--muted)">'+(duration || '1 Year')+' Program · Mentor: '+(fac || 'Dr. Priya Mehta')+'</div></div></div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'
+    + '<div style="background:var(--surface2);border-radius:8px;padding:10px"><div style="font-size:11px;color:var(--muted)">Tuition Fee</div><div style="font-size:15px;font-weight:700;color:var(--text);margin-top:2px">₹' + formattedFee + '</div></div>'
+    + '<div style="background:var(--surface2);border-radius:8px;padding:10px"><div style="font-size:11px;color:var(--muted)">Access Plan</div><div style="font-size:15px;font-weight:700;color:var(--student);margin-top:2px">Lifetime Unlock</div></div></div>'
+    + '<div style="font-family:Syne,sans-serif;font-size:13px;font-weight:700;margin-bottom:8px">💳 Select Payment Method</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px">'
+    + ['UPI / GPay', 'Credit Card', 'Net Banking'].map(function(m, i) {
+        var activeStyle = i === 0 ? 'border-color:var(--student);background:rgba(74,222,128,.06)' : '';
+        return '<button class="btn btn-purple btn-sm" style="justify-content:center;font-size:11px;padding:8px;'+activeStyle+'" onclick="window.selectUnlockMethod(this)">' + m + '</button>';
+      }).join('')
+    + '</div></div>';
+
+  var footer = '<button class="btn btn-solid" style="background:var(--student);color:#0a0c1c" onclick="window.confirmUnlockCourse(\''+courseId+'\',\''+courseTitle.replace(/'/g,"\\'")+'\')">Confirm & Pay ₹' + formattedFee + '</button>'
+    + '<button class="btn btn-purple" onclick="closeModal(\'modal-detail\')">Cancel</button>';
+
+  openDetail('👑 Unlock Course', body, footer, 'sm');
+};
+
+window.selectUnlockMethod = function(btn) {
+  btn.parentNode.querySelectorAll('button').forEach(function(b) {
+    b.style.borderColor = 'rgba(255,255,255,.08)';
+    b.style.background = 'rgba(255,255,255,.03)';
+  });
+  btn.style.borderColor = 'var(--student)';
+  btn.style.background = 'rgba(74,222,128,.06)';
+};
+
+window.confirmUnlockCourse = async function(courseId, courseTitle) {
+  closeModal('modal-detail');
+  toast('Processing payment...', '💳');
+  setTimeout(async function() {
+    try {
+      await api('/api/courses/' + courseId + '/enroll', {
+        method: 'POST'
+      });
+      toast('Unlocked and enrolled in ' + courseTitle + '!', '✅');
+      if (window.LMS_COURSES) {
+        var local = window.LMS_COURSES.find(function(c) { return c._id === courseId; });
+        if (local) local.enrolled = true;
+      }
+      await syncLMSData();
+      loadPage('courses');
+    } catch (err) {
+      toast('Enrollment failed: ' + err.message, '❌');
+    }
   }, 1000);
 };
 
