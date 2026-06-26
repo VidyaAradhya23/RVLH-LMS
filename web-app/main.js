@@ -4,6 +4,13 @@
 const API = ''; // Proxied via Vite
 let token = localStorage.getItem('lms_token') || null;
 
+window.mockTests = window.mockTests || [
+  { id: 'test-1', n:'Chapter 5 — Wave Optics DPP',      type:'DPP',   batch:'JEE Adv A',   qs:20, deadline:'Mar 15', att:98,  pub:true, subject:'Physics', duration:'60 min', marksCorrect:'+4', marksWrong:'-1', startDate:'2026-03-01', endDate:'2026-03-15' },
+  { id: 'test-2', n:'Weekly Test — Thermodynamics',      type:'Weekly',batch:'JEE Adv A,B', qs:30, deadline:'Mar 18', att:145, pub:true, subject:'Physics', duration:'90 min', marksCorrect:'+4', marksWrong:'-1', startDate:'2026-03-05', endDate:'2026-03-18' },
+  { id: 'test-3', n:'Mock Test 14 — Full Syllabus',      type:'Mock',  batch:'All',         qs:90, deadline:'Mar 20', att:67,  pub:true, subject:'All',     duration:'3 hours', marksCorrect:'+4', marksWrong:'-1', startDate:'2026-03-10', endDate:'2026-03-20' },
+  { id: 'test-4', n:'Biology — Cell Division DPP',       type:'DPP',   batch:'NEET',        qs:15, deadline:'Mar 16', att:0,   pub:false, subject:'Biology', duration:'45 min', marksCorrect:'+4', marksWrong:'-1', startDate:'2026-03-08', endDate:'2026-03-16' }
+];
+
 async function api(endpoint, opts = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = 'Bearer ' + token;
@@ -627,10 +634,22 @@ function loadPage(id, addHistory) {
 function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
-function openDetail(title, body, footer) {
+function openDetail(title, body, footer, size) {
   document.getElementById('detail-title').textContent = title;
   document.getElementById('detail-body').innerHTML = body;
   document.getElementById('detail-footer').innerHTML = footer || '';
+  
+  var modalEl = document.querySelector('#modal-detail .modal');
+  if (modalEl) {
+    if (size === 'sm') {
+      modalEl.className = 'modal modal-sm';
+    } else if (size === 'md') {
+      modalEl.className = 'modal modal-md';
+    } else {
+      modalEl.className = 'modal modal-lg';
+    }
+  }
+  
   openModal('modal-detail');
 }
 
@@ -657,7 +676,8 @@ function itab(btn, id) {
 // ═══════════════════════════════════════════════════════
 function makeStats(arr) {
   return '<div class="stats-grid">' + arr.map(function(s) {
-    return '<div class="stat-card" style="border-color:color-mix(in srgb,' + s.col + ' 28%,var(--border))" onclick="toast(\'' + s.label + ' details\',\'📊\')">'
+    var clickHandler = s.onclick || 'toast(\'' + s.label + ' details\',\'📊\')';
+    return '<div class="stat-card" style="border-color:color-mix(in srgb,' + s.col + ' 28%,var(--border));cursor:pointer" onclick="' + clickHandler + '">'
       + '<div class="stat-icon">' + s.icon + '</div>'
       + '<div class="stat-val" style="color:' + s.col + '">' + s.val + '</div>'
       + '<div class="stat-label">' + s.label + '</div>'
@@ -1103,7 +1123,7 @@ PAGES['student_videos'] = function() {
   var featuredHtml = '<div class="card" style="margin-bottom:20px"><div class="card-header"><div class="card-title">🔥 Trending Videos</div></div>'
     + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">'
     + featured.map(function(v){
-      return '<div class="enhanced-card slide-in" style="padding:0;overflow:hidden;cursor:pointer" onclick="openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">'
+      return '<div class="enhanced-card slide-in" style="padding:0;overflow:hidden;cursor:pointer" onclick="window.openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">'
         + '<div style="position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,rgba(10,12,28,.9),rgba(20,22,50,.9));display:flex;align-items:center;justify-content:center;font-size:44px">'+v.thumb
         + '<div style="position:absolute;top:8px;left:8px"><span class="badge badge-red" style="font-size:10px">🔥 Trending</span></div>'
         + '<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.85);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px">'+v.dur+'</div>'
@@ -1123,7 +1143,7 @@ PAGES['student_videos'] = function() {
   var videoGrid = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px">'
     + videos.map(function(v) {
       return '<div class="enhanced-card video-card-item" data-title="'+v.title.replace(/"/g,'&quot;')+'" data-fac="'+v.fac.replace(/"/g,'&quot;')+'" data-sub="'+v.sub+'" style="padding:0;overflow:hidden">'
-        + '<div style="position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,rgba(10,12,28,.9),rgba(20,22,50,.9));display:flex;align-items:center;justify-content:center;font-size:48px;cursor:pointer" onclick="openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">'
+        + '<div style="position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,rgba(10,12,28,.9),rgba(20,22,50,.9));display:flex;align-items:center;justify-content:center;font-size:48px;cursor:pointer" onclick="window.openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">'
         + v.thumb
         + '<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.85);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px">'+v.dur+'</div>'
         + '<div style="position:absolute;top:8px;right:8px"><button class="bookmark-btn" onclick="event.stopPropagation();this.textContent=this.textContent===\'🏷\'?\'🔖\':\'🏷\';toast(\'Bookmark toggled!\',\'🔖\')">'+(v.bookmarked?'🔖':'🏷')+'</button></div>'
@@ -1133,20 +1153,20 @@ PAGES['student_videos'] = function() {
         + '<div style="padding:14px">'
         + '<div style="display:flex;gap:6px;margin-bottom:8px">'
         + '<span style="background:rgba(0,198,255,.12);color:#00c6ff;border:1px solid rgba(0,198,255,.25);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">'+v.sub+'</span>'
-        + '<span style="background:rgba(108,71,255,.12);color:#a78bff;border:1px solid rgba(108,71,255,.25);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">'+v.batch+'</span></div>'
+        + '<span style="background:rgba(108,71,255,.12);color:#a78bff;border:1px solid rgba(108,71,255,.25);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">'+(v.batch || 'JEE/NEET')+'</span></div>'
         + '<div style="font-family:Syne,sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;line-height:1.35">'+v.title+'</div>'
         + '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">by '+v.fac+'</div>'
         + '<div style="display:flex;gap:6px">'
-        + '<button class="btn btn-solid btn-sm" style="flex:1;justify-content:center" onclick="openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">▶ Watch</button>'
-        + '<button class="btn btn-purple btn-sm" onclick="openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">📝</button>'
-        + '<button class="btn btn-yellow btn-sm" onclick="toast(\'Generating AI Quiz...\',\'🤖\'); setTimeout(function(){startMockQuiz()}, 600)">🤖</button>'
+        + '<button class="btn btn-solid btn-sm" style="flex:1;justify-content:center" onclick="window.openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">▶ Watch</button>'
+        + '<button class="btn btn-purple btn-sm" onclick="window.openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">📝</button>'
+        + '<button class="btn btn-yellow btn-sm" onclick="toast(\'Generating AI Quiz...\',\'🤖\'); setTimeout(function(){window.startMockQuiz()}, 600)">🤖</button>'
         + '</div></div></div>';
     }).join('') + '</div>';
 
   var historyHtml = '<div class="card" style="margin-top:20px"><div class="card-header"><div class="card-title">📜 Watch History</div></div>'
     + '<div style="display:flex;flex-direction:column;gap:6px">'
     + [{t:'Thermodynamics — Entropy',when:'Yesterday',pct:100},{t:'Organic Chemistry — Alcohols',when:'2 days ago',pct:85},{t:'Coordinate Geometry',when:'3 days ago',pct:60}].map(function(h){
-      return '<div class="list-item" style="cursor:pointer" onclick="openVideoWithNotes(\''+h.t.replace(/'/g,"\\'")+'\',\'📹\')"><div class="li-icon" style="background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.15)">📹</div><div class="li-content"><div class="li-title">'+h.t+'</div><div class="li-sub">Watched '+h.when+' · '+h.pct+'% completed</div></div><span class="badge '+(h.pct===100?'badge-green':'badge-yellow')+'">'+h.pct+'%</span></div>';
+      return '<div class="list-item" style="cursor:pointer" onclick="window.openVideoWithNotes(\''+h.t.replace(/'/g,"\\'")+'\',\'📹\')"><div class="li-icon" style="background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.15)">📹</div><div class="li-content"><div class="li-title">'+h.t+'</div><div class="li-sub">Watched '+h.when+' · '+h.pct+'% completed</div></div><span class="badge '+(h.pct===100?'badge-green':'badge-yellow')+'">'+h.pct+'%</span></div>';
     }).join('') + '</div></div>';
 
   window.currentVideoFilter = window.currentVideoFilter || 'All Subjects';
@@ -1216,7 +1236,7 @@ PAGES['student_live'] = function() {
     + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'
     + '<button class="btn btn-red glow-join" onclick="openLiveClassModal()" style="font-weight:800;padding:12px 32px;font-size:15px;border-radius:12px">🎥 Join Live Class</button>'
     + '<button class="btn btn-purple" onclick="toast(\'Hand raised! ✋\',\'🖐️\')" style="font-size:20px;padding:10px 16px" title="Raise Hand">✋</button>'
-    + '<button class="btn btn-teal" onclick="toast(\'Chat opened\',\'💬\')" style="padding:10px 16px" title="Open Chat">💬 Chat</button>'
+    + '<button class="btn btn-teal" onclick="window.openLiveClassChatModal()" style="padding:10px 16px" title="Open Chat">💬 Chat</button>'
     + '</div></div>'
     + '<div style="position:absolute;bottom:14px;left:14px;display:flex;gap:6px">'
     + [{n:'Dr. Priya',c:'#6c47ff'},{n:'Student',c:'#4ade80'},{n:'Arjun',c:'#ff6b35'}].map(function(p){return '<div style="width:32px;height:32px;border-radius:50%;background:'+p.c+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;border:2px solid rgba(10,12,28,.8)" title="'+p.n+'">'+p.n[0]+'</div>';}).join('')
@@ -1260,8 +1280,13 @@ PAGES['student_tests'] = function() {
 
   // Analytics cards
   var analytics = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">'
-    + [{icon:'📝',val:'32',label:'Tests Taken',col:'var(--purple)'},{icon:'📊',val:'78%',label:'Average Score',col:'var(--faculty)'},{icon:'🏆',val:'#4',label:'Best Rank',col:'var(--yellow)'},{icon:'🎯',val:'89%',label:'Accuracy',col:'var(--student)'}].map(function(s){
-      return '<div class="enhanced-card" style="text-align:center"><div style="font-size:24px;margin-bottom:8px">'+s.icon+'</div><div style="font-family:Syne,sans-serif;font-size:26px;font-weight:900;color:'+s.col+'">'+s.val+'</div><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px">'+s.label+'</div></div>';
+    + [
+      {icon:'📝',val:'32',label:'Tests Taken',col:'var(--purple)',key:'tests_taken'},
+      {icon:'📊',val:'78%',label:'Average Score',col:'var(--faculty)',key:'avg_score'},
+      {icon:'🏆',val:'#4',label:'Best Rank',col:'var(--yellow)',key:'best_rank'},
+      {icon:'🎯',val:'89%',label:'Accuracy',col:'var(--student)',key:'accuracy'}
+    ].map(function(s){
+      return '<div class="enhanced-card" style="text-align:center;cursor:pointer" onclick="window.viewTestMetricDetail(\'' + s.key + '\')"><div style="font-size:24px;margin-bottom:8px">'+s.icon+'</div><div style="font-family:Syne,sans-serif;font-size:26px;font-weight:900;color:'+s.col+'">'+s.val+'</div><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px">'+s.label+'</div></div>';
     }).join('') + '</div>';
 
   // Upcoming tests
@@ -1274,8 +1299,8 @@ PAGES['student_tests'] = function() {
         + '<span>📅 '+t.date+'</span><span>🕐 '+t.time+'</span><span>⏱️ '+t.dur+'</span><span>📊 '+t.marks+' marks</span><span>❓ '+t.qs+' questions</span></div>'
         + '<div style="display:flex;gap:6px"><span class="badge badge-purple">'+t.sub+'</span><span class="badge '+(t.diff==='Hard'?'badge-red':'badge-yellow')+'">'+t.diff+'</span></div></div>'
         + '<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">'
-        + '<button class="btn btn-solid" onclick="startMockQuiz()">🚀 Start Test</button>'
-        + '<button class="btn btn-sm btn-purple" onclick="toast(\'Syllabus downloaded\',\'📋\')">📋 Syllabus</button></div>'
+        + '<button class="btn btn-solid" onclick="window.startMockQuiz()">🚀 Start Test</button>'
+        + '<button class="btn btn-sm btn-purple" onclick="window.viewTestSyllabus(\''+t.title.replace(/'/g,"\\'")+'\')">📋 Syllabus</button></div>'
         + '</div></div>';
     }).join('') + '</div>';
 
@@ -1290,18 +1315,11 @@ PAGES['student_tests'] = function() {
         + '<div style="font-size:12px;color:var(--muted);margin-bottom:6px">'+t.date+' · '+t.time+' taken · Rank #'+t.rank+'</div>'
         + '<div style="display:flex;gap:10px;font-size:12px"><span style="color:#4ade80;font-weight:700">✓ '+t.correct+'</span><span style="color:#ff2d6b;font-weight:700">✗ '+t.wrong+'</span><span style="color:var(--muted)">⊘ '+t.skip+' skipped</span></div></div>'
         + '<div style="text-align:right;flex-shrink:0"><div style="font-family:Syne,sans-serif;font-size:20px;font-weight:900;color:'+color+'">'+t.score+'<span style="font-size:13px;color:var(--muted)">/'+t.total+'</span></div>'
-        + '<button class="btn btn-sm btn-purple" style="margin-top:6px" onclick="openQuizAnalytics(\''+t.title.replace(/'/g,"\\'")+'\','+t.score+','+t.total+','+t.correct+','+t.wrong+','+t.skip+')">📊 Analysis</button></div>'
+        + '<button class="btn btn-sm btn-purple" style="margin-top:6px" onclick="window.openQuizAnalytics(\''+t.title.replace(/'/g,"\\'")+'\','+t.score+','+t.total+','+t.correct+','+t.wrong+','+t.skip+')">📊 Analysis</button></div>'
         + '</div></div>';
     }).join('') + '</div>';
 
-  // Performance comparison chart
-  var chartHtml = '<div class="card"><div class="card-header"><div class="card-title">📈 Performance Trend</div></div>'
-    + '<div class="chart-bars" style="height:120px">'
-    + [{l:'T8',v:65},{l:'T9',v:72},{l:'T10',v:78},{l:'T11',v:68},{l:'T12',v:83},{l:'T13',v:89}].map(function(b){
-      return '<div class="bar-wrap"><div class="bar" style="height:'+b.v+'%;background:linear-gradient(to top,'+(b.v>=80?'#4ade80,#00d4c8':b.v>=70?'#fbbf24,#ff6b35':'#ff2d6b,#ff6b35')+')" title="'+b.v+'%"></div><div class="bar-label">'+b.l+'</div></div>';
-    }).join('') + '</div></div>';
-
-  return analytics + '<div class="grid-2">' + upcomingHtml + chartHtml + '</div>' + completedHtml;
+  return analytics + upcomingHtml + completedHtml;
 };
 
 function startMockQuiz() {
@@ -1667,8 +1685,9 @@ window.filterDoubts = function() {
 PAGES['student_announcements'] = function() {
   var rawAnns = window.LMS_ANNOUNCEMENTS || [];
   
-  // Filter for students: target is 'all' or 'student'
+  // Filter for students: target is 'all' or 'student' (exclude drafts)
   var studentAnns = rawAnns.filter(function(a) {
+    if (a.draft) return false;
     var target = (a.target || 'all').toLowerCase();
     return target === 'all' || target === 'student';
   });
@@ -2021,7 +2040,7 @@ PAGES['student_progress'] = function() {
     { icon:'📝', val:'29',  label:'Tests Done',    col:'var(--purple)' },
     { icon:'🏆', val:'#4',  label:'Batch Rank',    col:'var(--yellow)' },
   ]);
-  var chart = makeChartBars([{m:'Oct',v:65},{m:'Nov',v:72},{m:'Dec',v:69},{m:'Jan',v:78},{m:'Feb',v:74},{m:'Mar',v:82}], 'linear-gradient(180deg,var(--student),rgba(74,222,128,.3))');
+  var chart = makeChartBars([{m:'',v:65},{m:'',v:72},{m:'',v:69},{m:'',v:78},{m:'',v:74},{m:'',v:82}], 'linear-gradient(180deg,var(--student),rgba(74,222,128,.3))');
   var subj = [{s:'Physics',a:74,c:'#ff2d6b'},{s:'Chemistry',a:82,c:'#00d4c8'},{s:'Maths',a:68,c:'#6c47ff'},{s:'Biology',a:79,c:'#4ade80'}];
   var subjHtml = subj.map(function(s) {
     return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px"><span>' + s.s + '</span><span style="color:' + s.c + ';font-weight:700">' + s.a + '%</span></div>' + makeProgress(s.a, s.c) + '</div>';
@@ -2041,7 +2060,7 @@ PAGES['student_progress'] = function() {
 
   return stats
     + '<div class="grid-2">'
-    + '<div class="card"><div class="card-header"><div class="card-title">📈 Monthly Performance</div></div>' + chart + '</div>'
+    + '<div class="card"><div class="card-header"><div class="card-title">📈 Monthly Performance</div><button class="btn btn-sm btn-purple" onclick="window.viewMonthlyPerformanceDetail()">👁️ View Details</button></div>' + chart + '</div>'
     + '<div class="card"><div class="card-header"><div class="card-title">📚 Subject Accuracy</div></div>' + subjHtml + '</div>'
     + '</div>'
     + '<div class="card"><div class="card-header"><div class="card-title">📋 Test History</div>'
@@ -2451,45 +2470,148 @@ function openScheduleClassModal() {
 }
 
 PAGES['faculty_tests'] = function() {
-  var tests = [
-    { n:'Chapter 5 — Wave Optics DPP',      type:'DPP',   batch:'JEE Adv A',   qs:20, deadline:'Mar 15', att:98,  pub:true },
-    { n:'Weekly Test — Thermodynamics',      type:'Weekly',batch:'JEE Adv A,B', qs:30, deadline:'Mar 18', att:145, pub:true },
-    { n:'Mock Test 14 — Full Syllabus',      type:'Mock',  batch:'All',         qs:90, deadline:'Mar 20', att:67,  pub:true },
-    { n:'Biology — Cell Division DPP',       type:'DPP',   batch:'NEET',        qs:15, deadline:'Mar 16', att:0,   pub:false },
-  ];
+  var tests = window.mockTests || [];
   var html = '<div style="display:flex;justify-content:flex-end;margin-bottom:14px">'
-    + '<button class="btn btn-teal" onclick="openCreateTestModal()">➕ Create Test</button></div>'
+    + '<button class="btn btn-teal" onclick="window.openCreateTestModal()">➕ Create Test</button></div>'
     + '<div class="card"><div class="tbl-wrap"><table><thead><tr><th>Test</th><th>Type</th><th>Batch</th><th>Qs</th><th>Deadline</th><th>Attempts</th><th>Action</th></tr></thead><tbody>'
     + tests.map(function(t) {
-        return '<tr onclick="openTestResultsModal(\'' + t.n.replace(/'/g,"\\'") + '\',\'' + t.att + '\')">'
+        return '<tr onclick="window.openTestResultsModal(\'' + t.n.replace(/'/g,"\\'") + '\',\'' + t.att + '\')">'
           + '<td>' + t.n + '</td><td><span class="badge badge-purple">' + t.type + '</span></td><td>' + t.batch + '</td><td>' + t.qs + '</td><td>' + t.deadline + '</td>'
           + '<td>' + (t.att>0 ? '<span style="color:var(--faculty);font-weight:700">' + t.att + '</span>' : '<span style="color:var(--muted)">Draft</span>') + '</td>'
           + '<td><div style="display:flex;gap:5px">'
-          + '<button class="btn btn-sm btn-teal" onclick="event.stopPropagation();openTestResultsModal(\'' + t.n.replace(/'/g,"\\'") + '\',\'' + t.att + '\')">📊 Results</button>'
-          + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Editing...\',\'✏️\')">✏️</button></div></td></tr>';
+          + '<button class="btn btn-sm btn-teal" onclick="event.stopPropagation();window.openTestResultsModal(\'' + t.n.replace(/'/g,"\\'") + '\',\'' + t.att + '\')">📊 Results</button>'
+          + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();window.openEditTestModal(\'' + t.id + '\')">✏️</button></div></td></tr>';
       }).join('') + '</tbody></table></div></div>';
   return html;
 };
 
-function openCreateTestModal() {
-  var body = makeInputGroup('Test Title','text','e.g. Chapter 6 — Optics DPP')
-    + '<div class="inp-row">'
-    + makeInputGroup('Test Type','select','DPP, Chapter Test, Weekly Test, Full Mock')
-    + makeInputGroup('Subject','select','Physics, Chemistry, Maths, All')
-    + '</div><div class="inp-row">'
-    + makeInputGroup('Questions','text','','20')
-    + makeInputGroup('Duration','select','30 min, 45 min, 60 min, 90 min, 3 hours')
-    + '</div><div class="inp-row">'
-    + makeInputGroup('Correct Marks','text','','+4')
-    + makeInputGroup('Wrong Marks','text','','-1')
+function makeTestFormHtml(testData) {
+  var t = testData || { n: '', type: 'DPP', subject: 'Physics', qs: '20', duration: '60 min', marksCorrect: '+4', marksWrong: '-1', batch: 'JEE Advanced A', startDate: '', endDate: '' };
+  
+  var html = '<div style="display:flex;flex-direction:column;gap:12px">'
+    + '<div class="inp-group"><label>Test Title</label><input type="text" id="test-title" class="inp-field" placeholder="e.g. Chapter 6 — Optics DPP" value="' + t.n.replace(/"/g,'&quot;') + '"></div>'
+    + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="inp-group"><label>Test Type</label><select id="test-type" class="inp-field">'
+      + ['DPP', 'Chapter Test', 'Weekly Test', 'Full Mock'].map(function(o) { return '<option ' + (o === t.type ? 'selected' : '') + '>' + o + '</option>'; }).join('')
+      + '</select></div>'
+    + '<div class="inp-group"><label>Subject</label><select id="test-subject" class="inp-field">'
+      + ['Physics', 'Chemistry', 'Maths', 'All'].map(function(o) { return '<option ' + (o === t.subject ? 'selected' : '') + '>' + o + '</option>'; }).join('')
+      + '</select></div>'
     + '</div>'
-    + makeInputGroup('Assign to Batch','select','JEE Advanced A, JEE Advanced B, NEET Batch, All Batches')
-    + '<div class="inp-row">'
-    + makeInputGroup('Start Date','date','')
-    + makeInputGroup('End Date','date','')
+    + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="inp-group"><label>Questions</label><input type="text" id="test-qs" class="inp-field" value="' + t.qs + '"></div>'
+    + '<div class="inp-group"><label>Duration</label><select id="test-duration" class="inp-field">'
+      + ['30 min', '45 min', '60 min', '90 min', '3 hours'].map(function(o) { return '<option ' + (o === t.duration ? 'selected' : '') + '>' + o + '</option>'; }).join('')
+      + '</select></div>'
+    + '</div>'
+    + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="inp-group"><label>Correct Marks</label><input type="text" id="test-correct" class="inp-field" value="' + t.marksCorrect + '"></div>'
+    + '<div class="inp-group"><label>Wrong Marks</label><input type="text" id="test-wrong" class="inp-field" value="' + t.marksWrong + '"></div>'
+    + '</div>'
+    + '<div class="inp-group"><label>Assign to Batch</label><select id="test-batch" class="inp-field">'
+      + ['JEE Advanced A', 'JEE Advanced B', 'NEET Batch', 'All Batches'].map(function(o) { return '<option ' + (o === t.batch ? 'selected' : '') + '>' + o + '</option>'; }).join('')
+      + '</select></div>'
+    + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="inp-group"><label>Start Date</label><input type="date" id="test-start" class="inp-field" value="' + t.startDate + '"></div>'
+    + '<div class="inp-group"><label>End Date</label><input type="date" id="test-end" class="inp-field" value="' + t.endDate + '"></div>'
+    + '</div>'
     + '</div>';
-  openDetail('📝 Create New Test', body, '<button class="btn btn-solid" onclick="toast(\'Test created and published!\',\'📝\');closeModal(\'modal-detail\')">📤 Publish Test</button>');
+  return html;
 }
+
+window.openCreateTestModal = function() {
+  var body = makeTestFormHtml();
+  openDetail('📝 Create New Test', body, '<button class="btn btn-solid" onclick="window.saveCreatedTest()">📤 Publish Test</button>');
+};
+
+window.openEditTestModal = function(id) {
+  var t = window.mockTests.find(function(item) { return item.id === id; });
+  if (!t) {
+    toast('Test not found', '⚠️');
+    return;
+  }
+  var body = makeTestFormHtml(t);
+  openDetail('✏️ Edit Test: ' + t.n, body, '<button class="btn btn-solid" onclick="window.saveEditedTest(\'' + id + '\')">💾 Save Changes</button>');
+};
+
+window.saveCreatedTest = function() {
+  var titleInput = document.getElementById('test-title');
+  var typeSelect = document.getElementById('test-type');
+  var subjectSelect = document.getElementById('test-subject');
+  var qsInput = document.getElementById('test-qs');
+  var durSelect = document.getElementById('test-duration');
+  var correctInput = document.getElementById('test-correct');
+  var wrongInput = document.getElementById('test-wrong');
+  var batchSelect = document.getElementById('test-batch');
+  var startInput = document.getElementById('test-start');
+  var endInput = document.getElementById('test-end');
+  
+  if (!titleInput || !titleInput.value.trim()) {
+    toast('Test Title is required!', '⚠️');
+    return;
+  }
+  
+  var newTest = {
+    id: 'test-' + (window.mockTests.length + 1),
+    n: titleInput.value.trim(),
+    type: typeSelect ? typeSelect.value : 'DPP',
+    subject: subjectSelect ? subjectSelect.value : 'Physics',
+    qs: qsInput ? parseInt(qsInput.value) || 20 : 20,
+    duration: durSelect ? durSelect.value : '60 min',
+    marksCorrect: correctInput ? correctInput.value : '+4',
+    marksWrong: wrongInput ? wrongInput.value : '-1',
+    batch: batchSelect ? batchSelect.value : 'JEE Advanced A',
+    startDate: startInput ? startInput.value : '',
+    endDate: endInput ? endInput.value : '',
+    deadline: endInput && endInput.value ? new Date(endInput.value).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : 'Mar 25',
+    att: 0,
+    pub: true
+  };
+  
+  window.mockTests.push(newTest);
+  closeModal('modal-detail');
+  toast('Test created and published!', '📝');
+  loadPage('faculty_tests');
+};
+
+window.saveEditedTest = function(id) {
+  var titleInput = document.getElementById('test-title');
+  var typeSelect = document.getElementById('test-type');
+  var subjectSelect = document.getElementById('test-subject');
+  var qsInput = document.getElementById('test-qs');
+  var durSelect = document.getElementById('test-duration');
+  var correctInput = document.getElementById('test-correct');
+  var wrongInput = document.getElementById('test-wrong');
+  var batchSelect = document.getElementById('test-batch');
+  var startInput = document.getElementById('test-start');
+  var endInput = document.getElementById('test-end');
+  
+  if (!titleInput || !titleInput.value.trim()) {
+    toast('Test Title is required!', '⚠️');
+    return;
+  }
+  
+  var t = window.mockTests.find(function(item) { return item.id === id; });
+  if (t) {
+    t.n = titleInput.value.trim();
+    t.type = typeSelect ? typeSelect.value : 'DPP';
+    t.subject = subjectSelect ? subjectSelect.value : 'Physics';
+    t.qs = qsInput ? parseInt(qsInput.value) || 20 : 20;
+    t.duration = durSelect ? durSelect.value : '60 min';
+    t.marksCorrect = correctInput ? correctInput.value : '+4';
+    t.marksWrong = wrongInput ? wrongInput.value : '-1';
+    t.batch = batchSelect ? batchSelect.value : 'JEE Advanced A';
+    t.startDate = startInput ? startInput.value : '';
+    t.endDate = endInput ? endInput.value : '';
+    if (endInput && endInput.value) {
+      t.deadline = new Date(endInput.value).toLocaleDateString('en-US', {month:'short', day:'numeric'});
+    }
+  }
+  
+  closeModal('modal-detail');
+  toast('Test updated successfully!', '✅');
+  loadPage('faculty_tests');
+};
 
 function openTestResultsModal(title, attempts) {
   var body = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px">'
@@ -2515,7 +2637,7 @@ PAGES['faculty_tracker'] = function() {
   return '<div style="display:flex;justify-content:space-between;margin-bottom:14px">'
     + '<select class="inp-field" style="width:180px" onchange="toast(\'Filter applied\',\'🔍\')"><option>JEE Advanced A</option><option>JEE Advanced B</option><option>NEET Batch</option></select>'
     + '<button class="btn btn-red" onclick="toast(\'Showing at-risk students\',\'⚠️\')">⚠️ At-Risk Students</button></div>'
-    + '<div class="card"><div class="tbl-wrap"><table><thead><tr><th>Student</th><th>Avg Score</th><th>Attendance</th><th>Tests</th><th>Trend</th><th>Action</th></tr></thead><tbody>'
+    + '<div class="card"><div class="tbl-wrap"><table><thead><tr><th>Student</th><th>Avg Score</th><th>Attendance</th><th>Tests</th><th>Trend</th><th>Feedback</th></tr></thead><tbody>'
     + students.map(function(s) {
         return '<tr style="' + (s.alert?'background:rgba(255,45,107,.04)':'') + '" onclick="openSendFeedback(\'' + s.n + '\')">'
           + '<td><div style="display:flex;align-items:center;gap:8px">'
@@ -2537,10 +2659,10 @@ function openSendFeedback(name) {
 
 PAGES['faculty_analytics'] = function() {
   var stats = makeStats([
-    { icon:'👁', val:'12.4K',label:'Video Views',      col:'var(--faculty)' },
-    { icon:'⭐', val:'4.7',  label:'Avg Rating',       col:'var(--yellow)' },
-    { icon:'📝', val:'14',   label:'Tests Created',    col:'var(--purple)' },
-    { icon:'✅', val:'87%',  label:'Class Completion', col:'var(--student)' },
+    { icon:'👁', val:'12.4K',label:'Video Views',      col:'var(--faculty)', onclick: "window.viewFacultyAnalyticsDetail('video_views')" },
+    { icon:'⭐', val:'4.7',  label:'Avg Rating',       col:'var(--yellow)', onclick: "window.viewFacultyAnalyticsDetail('avg_rating')" },
+    { icon:'📝', val:'14',   label:'Tests Created',    col:'var(--purple)', onclick: "window.viewFacultyAnalyticsDetail('tests_created')" },
+    { icon:'✅', val:'87%',  label:'Class Completion', col:'var(--student)', onclick: "window.viewFacultyAnalyticsDetail('class_completion')" },
   ]);
   var chart = makeChartBars([{m:'Oct',v:70},{m:'Nov',v:78},{m:'Dec',v:65},{m:'Jan',v:82},{m:'Feb',v:75},{m:'Mar',v:88}], 'linear-gradient(180deg,var(--faculty),rgba(0,212,200,.3))');
   var top3 = [{t:'Electrostatics Lecture',v:312,c:'#ff2d6b'},{t:'Organic Chemistry',v:289,c:'#00d4c8'},{t:'Thermodynamics',v:245,c:'#6c47ff'}];
@@ -2592,12 +2714,17 @@ PAGES['faculty_doubts'] = function() {
 };
 
 PAGES['faculty_reports'] = function() {
-  var cards = [['Classes Taken','42','var(--faculty)'],['Tests Created','8','var(--purple)'],['Doubts Resolved','156','var(--student)'],['Student Rating','4.7⭐','var(--yellow)']];
+  var cards = [
+    { label: 'Classes Taken', val: '42', col: 'var(--faculty)', key: 'classes_taken' },
+    { label: 'Tests Created', val: '8', col: 'var(--purple)', key: 'tests_created' },
+    { label: 'Doubts Resolved', val: '156', col: 'var(--student)', key: 'doubts_resolved' },
+    { label: 'Student Rating', val: '4.7⭐', col: 'var(--yellow)', key: 'student_rating' }
+  ];
   return '<div class="card"><div class="card-header"><div class="card-title">📋 Monthly Performance Report</div>'
-    + '<button class="btn btn-sm btn-teal" onclick="window.exportFacultyReport()">⬇ Export</button></div>'
+    + '<button class="btn btn-sm btn-teal" onclick="window.exportFacultyReport()">⬇ Export All</button></div>'
     + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:11px">'
     + cards.map(function(c) {
-        return '<div class="fee-card" style="text-align:center"><div style="font-size:22px;font-weight:800;color:' + c[2] + ';font-family:Syne,sans-serif">' + c[1] + '</div><div style="font-size:11px;color:var(--muted);margin-top:3px">' + c[0] + '</div></div>';
+        return '<div class="fee-card" style="text-align:center;cursor:pointer" onclick="window.viewFacultyReportDetail(\'' + c.key + '\')"><div style="font-size:22px;font-weight:800;color:' + c.col + ';font-family:Syne,sans-serif">' + c.val + '</div><div style="font-size:11px;color:var(--muted);margin-top:3px">' + c.label + '</div></div>';
       }).join('') + '</div></div>';
 };
 
@@ -4802,7 +4929,7 @@ function exportNotifications() {
 
 PAGES['admin_announcements'] = function() {
   var form = '<div class="card" style="margin-bottom:14px">'
-    + '<div class="card-title" style="margin-bottom:14px">📢 Create Announcement</div>'
+    + '<div class="card-title" id="admin_announcements_form_title" style="margin-bottom:14px">' + (window.currentEditingDraftId ? '✏️ Edit Announcement Draft' : '📢 Create Announcement') + '</div>'
     + '<div class="inp-group"><label style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Title</label>'
     + '<input class="inp-field" id="ann-title" placeholder="e.g. Holiday Notice"></div>'
     + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">'
@@ -4816,8 +4943,8 @@ PAGES['admin_announcements'] = function() {
     + '<div class="inp-group"><label style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Message</label>'
     + '<textarea class="inp-field" id="ann-msg" rows="3" placeholder="Write announcement.."></textarea></div>'
     + '<div style="display:flex;gap:10px;margin-top:14px">'
-    + '<button class="btn btn-solid" style="background:#ff2d6b;color:#fff;display:flex;align-items:center;gap:6px" onclick="publishAnnouncement()">📢 Publish</button>'
-    + '<button class="btn btn-purple" style="display:flex;align-items:center;gap:6px" onclick="toast(\'Saved as draft\',\'💾\')">💾 Draft</button></div>'
+    + '<button class="btn btn-solid" style="background:#ff2d6b;color:#fff;display:flex;align-items:center;gap:6px" onclick="window.saveAnnouncement(false)">📢 Publish</button>'
+    + '<button class="btn btn-purple" style="display:flex;align-items:center;gap:6px" onclick="window.saveAnnouncement(true)">💾 Draft</button></div>'
     + '</div>';
 
   var list = '<div class="card">'
@@ -5274,6 +5401,10 @@ function apPwMatch(v) {
 
 
 async function publishAnnouncement() {
+  await saveAnnouncement(false);
+}
+
+async function saveAnnouncement(isDraft) {
   var titleInput = document.getElementById('ann-title');
   var catSelect = document.getElementById('ann-cat');
   var priSelect = document.getElementById('ann-pri');
@@ -5295,32 +5426,402 @@ async function publishAnnouncement() {
   var targetVal = targetSelect ? targetSelect.value : 'all';
   var msgVal = msgText.value.trim();
   
+  var payload = {
+    title: titleVal,
+    body: msgVal,
+    cat: catVal,
+    urgent: priVal === 'Important' || priVal === 'Urgent',
+    target: targetVal,
+    draft: !!isDraft
+  };
+  
   try {
-    await api('/api/announcements', {
-      method: 'POST',
-      body: JSON.stringify({
-        title: titleVal,
-        body: msgVal,
-        cat: catVal,
-        urgent: priVal === 'Important' || priVal === 'Urgent',
-        target: targetVal
-      })
+    var url = '/api/announcements';
+    var method = 'POST';
+    if (window.currentEditingDraftId) {
+      url = '/api/announcements/' + window.currentEditingDraftId;
+      method = 'PUT';
+    }
+    
+    await api(url, {
+      method: method,
+      body: JSON.stringify(payload)
     });
     
-    toast('Announcement published successfully!', '📢');
+    toast(isDraft ? 'Draft saved successfully!' : 'Announcement published successfully!', isDraft ? '💾' : '📢');
     
     titleInput.value = '';
     msgText.value = '';
     if (catSelect) catSelect.selectedIndex = 0;
     if (priSelect) priSelect.selectedIndex = 0;
     if (targetSelect) targetSelect.selectedIndex = 0;
+    window.currentEditingDraftId = null;
+    
+    var formHeader = document.querySelector('#admin_announcements_form_title');
+    if (formHeader) formHeader.textContent = '📢 Create Announcement';
     
     await syncLMSData();
     loadPage('announcements');
   } catch (err) {
-    toast('Failed to publish: ' + err.message, '❌');
+    toast('Failed to save: ' + err.message, '❌');
   }
 }
+
+window.editAnnouncementDraft = function(id) {
+  var rawAnn = window.LMS_ANNOUNCEMENTS || [];
+  var a = rawAnn.find(function(item) { return (item._id || item.id) === id; });
+  if (!a) {
+    toast('Draft not found', '⚠️');
+    return;
+  }
+  
+  window.currentEditingDraftId = id;
+  
+  var titleInput = document.getElementById('ann-title');
+  var catSelect = document.getElementById('ann-cat');
+  var priSelect = document.getElementById('ann-pri');
+  var targetSelect = document.getElementById('ann-target');
+  var msgText = document.getElementById('ann-msg');
+  
+  if (titleInput) titleInput.value = a.title || a.t || '';
+  if (msgText) msgText.value = a.body || a.b || '';
+  if (catSelect) catSelect.value = a.cat || 'General';
+  if (priSelect) priSelect.value = (a.urgent ? 'Important' : (a.pri || 'Normal'));
+  if (targetSelect) targetSelect.value = a.target || 'all';
+  
+  if (titleInput) {
+    titleInput.scrollIntoView({ behavior: 'smooth' });
+    titleInput.focus();
+  }
+  
+  var formHeader = document.querySelector('#admin_announcements_form_title');
+  if (formHeader) {
+    formHeader.textContent = '✏️ Edit Announcement Draft';
+  }
+  
+  toast('Draft loaded into editor!', '✏️');
+};
+
+window.viewAdminAnnouncementDetail = function(id) {
+  var rawAnn = window.LMS_ANNOUNCEMENTS || [];
+  var a = rawAnn.find(function(item) { return (item._id || item.id) === id; });
+  if (!a) {
+    var mocks = [
+      { id:'mock-1', title:'JEE Mock Test 14 — Sunday',       cat:'Exam',    pri:'Important', date:'Mar 12', views:342, target:'student', draft:false, body:'The mock test series starts on March 25. Attendance is mandatory for all enrolled students.' },
+      { id:'mock-2', title:'Fee Due Date Extended to Mar 20',  cat:'Fee',     pri:'Important', date:'Mar 10', views:428, target:'student', draft:false, body:'Dear students, the deadline to clear your remaining fees has been extended to March 20. Please make the payment soon.' },
+      { id:'mock-3', title:'Holi Holiday — March 25',          cat:'General', pri:'Normal',   date:'Mar 8',  views:895, target:'all',     draft:false, body:'Campus will remain closed on March 25 for Holi celebrations. Online doubt classes will resume on March 26.' },
+      { id:'mock-4', title:'New Physics Notes Uploaded',       cat:'Academic',pri:'Normal',   date:'Mar 7',  views:267, target:'student', draft:false, body:'New revision notes for wave optics and electrostatics have been uploaded. Check the library.' },
+    ];
+    a = mocks.find(function(item) { return item.id === id; });
+  }
+  if (!a) {
+    toast('Announcement not found', '⚠️');
+    return;
+  }
+  var title = a.title || a.t || 'Announcement';
+  var body = a.body || '';
+  var cat = a.cat || 'Notice';
+  var date = a.date || a.d || 'Just now';
+  window.openAnnouncementDetail(title, body, cat, date);
+};
+
+window.viewFacultyAnalyticsDetail = function(key) {
+  var title = '';
+  var body = '';
+  var downloadFnName = '';
+  
+  if (key === 'video_views') {
+    title = '👁 Video Views Analytics';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Video engagement report for your lectures.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Video Title</th><th>Subject</th><th>Views</th><th>Watch Time (Hours)</th></tr></thead><tbody>'
+      + [
+        ['Electrostatics Lecture 1', 'Physics', '4,280', '1,420'],
+        ['Electrostatics Lecture 2', 'Physics', '3,950', '1,280'],
+        ['Organic Chemistry Basics', 'Chemistry', '2,890', '950'],
+        ['Thermodynamics Chapter 1', 'Physics', '1,280', '480']
+      ].map(function(r) {
+        return '<tr><td>'+r[0]+'</td><td><span class="badge badge-purple">'+r[1]+'</span></td><td style="font-weight:700;color:var(--faculty)">'+r[2]+'</td><td>'+r[3]+'</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFnName = 'window.downloadFacultyAnalyticsCSV(\'video_views\')';
+  } else if (key === 'avg_rating') {
+    title = '⭐ Student Rating Analytics';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Detailed rating and feedback summary.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Lecture / Topic</th><th>Rating</th><th>Feedback Count</th><th>Positive Ratio</th></tr></thead><tbody>'
+      + [
+        ['Electrostatics Complete Series', '4.8 ⭐', '84', '95%'],
+        ['Organic Chemistry Nomenclature', '4.6 ⭐', '62', '89%'],
+        ['Thermodynamics Revision Pack', '4.7 ⭐', '45', '91%'],
+        ['Cell Division DPP Discussion', '4.5 ⭐', '28', '85%']
+      ].map(function(r) {
+        return '<tr><td>'+r[0]+'</td><td style="font-weight:700;color:var(--yellow)">'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFnName = 'window.downloadFacultyAnalyticsCSV(\'avg_rating\')';
+  } else if (key === 'tests_created') {
+    title = '📝 Tests Created & Completion';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Roster of mock tests, DPPs, and student analytics.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Test Name</th><th>Batch</th><th>Questions</th><th>Avg Score</th></tr></thead><tbody>'
+      + [
+        ['Chapter 5 — Wave Optics DPP', 'JEE Adv A', '20', '74%'],
+        ['Weekly Test — Thermodynamics', 'JEE Adv A,B', '30', '68%'],
+        ['Mock Test 14 — Full Syllabus', 'All Batches', '90', '71%'],
+        ['Biology — Cell Division DPP', 'NEET Batch', '15', 'N/A (Draft)']
+      ].map(function(r) {
+        return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td style="font-weight:700;color:var(--purple)">'+r[3]+'</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFnName = 'window.downloadFacultyAnalyticsCSV(\'tests_created\')';
+  } else if (key === 'class_completion') {
+    title = '✅ Class Completion & Attendance';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Monthly syllabus coverage and attendance percentage.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Batch Name</th><th>Classes Taken</th><th>Completion %</th><th>Avg Attendance</th></tr></thead><tbody>'
+      + [
+        ['JEE Advanced A', '18', '92%', '89%'],
+        ['JEE Advanced B', '15', '85%', '84%'],
+        ['NEET Batch', '9', '84%', '88%']
+      ].map(function(r) {
+        return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td style="font-weight:700;color:var(--student)">'+r[2]+'</td><td>'+r[3]+'</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFnName = 'window.downloadFacultyAnalyticsCSV(\'class_completion\')';
+  }
+  
+  var footer = '<button class="btn btn-teal" onclick="' + downloadFnName + '">⬇ Download CSV</button>'
+    + '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\')">Close</button>';
+    
+  openDetail(title, body, footer);
+};
+
+window.downloadFacultyAnalyticsCSV = function(key) {
+  var rows = [];
+  var filename = '';
+  
+  if (key === 'video_views') {
+    filename = 'faculty_video_views_analytics.csv';
+    rows = [
+      ['Video Title', 'Subject', 'Views', 'Watch Time (Hours)'],
+      ['Electrostatics Lecture 1', 'Physics', '4280', '1420'],
+      ['Electrostatics Lecture 2', 'Physics', '3950', '1280'],
+      ['Organic Chemistry Basics', 'Chemistry', '2890', '950'],
+      ['Thermodynamics Chapter 1', 'Physics', '1280', '480']
+    ];
+  } else if (key === 'avg_rating') {
+    filename = 'faculty_avg_rating_analytics.csv';
+    rows = [
+      ['Lecture / Topic', 'Rating', 'Feedback Count', 'Positive Ratio'],
+      ['Electrostatics Complete Series', '4.8', '84', '95%'],
+      ['Organic Chemistry Nomenclature', '4.6', '62', '89%'],
+      ['Thermodynamics Revision Pack', '4.7', '45', '91%'],
+      ['Cell Division DPP Discussion', '4.5', '28', '85%']
+    ];
+  } else if (key === 'tests_created') {
+    filename = 'faculty_tests_analytics.csv';
+    rows = [
+      ['Test Name', 'Batch', 'Questions', 'Avg Score'],
+      ['Chapter 5 — Wave Optics DPP', 'JEE Adv A', '20', '74%'],
+      ['Weekly Test — Thermodynamics', 'JEE Adv A,B', '30', '68%'],
+      ['Mock Test 14 — Full Syllabus', 'All Batches', '90', '71%'],
+      ['Biology — Cell Division DPP', 'NEET Batch', '15', 'Draft']
+    ];
+  } else if (key === 'class_completion') {
+    filename = 'faculty_class_completion_analytics.csv';
+    rows = [
+      ['Batch Name', 'Classes Taken', 'Completion %', 'Avg Attendance'],
+      ['JEE Advanced A', '18', '92%', '89%'],
+      ['JEE Advanced B', '15', '85%', '84%'],
+      ['NEET Batch', '9', '84%', '88%']
+    ];
+  }
+  
+  var csv = rows.map(function(r) { return r.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Report downloaded successfully!', '⬇');
+};
+
+window.viewFacultyReportDetail = function(key) {
+  var title = '';
+  var body = '';
+  var downloadFnName = '';
+  
+  if (key === 'classes_taken') {
+    title = '👨‍🏫 Classes Taken Details';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Log of recent classes taken this month.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Batch</th><th>Class Title</th><th>Date</th><th>Duration</th></tr></thead><tbody>'
+      + [
+        ['JEE Advanced A', 'Electrostatics Revision', 'Mar 10', '1.5 Hours'],
+        ['JEE Advanced B', 'Thermodynamics Basics', 'Mar 8', '2 Hours'],
+        ['NEET Batch', 'Cell Division Part 2', 'Mar 5', '1 Hour'],
+        ['JEE Advanced A', 'Wave Optics Introduction', 'Mar 2', '1.5 Hours']
+      ].map(function(r) {
+        return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td style="font-weight:700;color:var(--faculty)">'+r[3]+'</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFnName = 'window.downloadFacultyReportCSV(\'classes_taken\')';
+  } else if (key === 'tests_created') {
+    title = '📝 Tests Created Details';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Log of tests and DPPs created this month.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Test Title</th><th>Batch</th><th>Questions</th><th>Status</th></tr></thead><tbody>'
+      + [
+        ['Chapter 5 — Wave Optics DPP', 'JEE Adv A', '20', 'Active'],
+        ['Weekly Test — Thermodynamics', 'JEE Adv A,B', '30', 'Active'],
+        ['Mock Test 14 — Full Syllabus', 'All', '90', 'Active'],
+        ['Biology — Cell Division DPP', 'NEET', '15', 'Draft']
+      ].map(function(r) {
+        return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td style="font-weight:700;color:var(--purple)">'+r[3]+'</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFnName = 'window.downloadFacultyReportCSV(\'tests_created\')';
+  } else if (key === 'doubts_resolved') {
+    title = '💬 Doubts Resolved Details';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Log of student doubts resolved this month.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Student</th><th>Doubt Topic</th><th>Date</th><th>Status</th></tr></thead><tbody>'
+      + [
+        ['Sneha Patel', 'Gauss Law Flux Calculation', 'Mar 12', 'Resolved'],
+        ['Rohan Gupta', 'Carnot Cycle Efficiency', 'Mar 10', 'Resolved'],
+        ['Arjun Sharma', 'Wave Optics Interference', 'Mar 8', 'Resolved'],
+        ['Kavya Reddy', 'Cell Division Stages', 'Mar 7', 'Resolved']
+      ].map(function(r) {
+        return '<tr><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td style="font-weight:700;color:var(--student)">'+r[3]+'</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFnName = 'window.downloadFacultyReportCSV(\'doubts_resolved\')';
+  } else if (key === 'student_rating') {
+    title = '⭐ Student Rating Details';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Summary of feedback and student ratings received.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Student</th><th>Rating</th><th>Feedback / Comment</th><th>Date</th></tr></thead><tbody>'
+      + [
+        ['Sneha Patel', '5 ⭐', 'Explains concepts very clearly. Examples are excellent!', 'Mar 10'],
+        ['Arjun Sharma', '5 ⭐', 'Best physics teacher I have had. Very patient.', 'Mar 9'],
+        ['Rohan Gupta', '4 ⭐', 'Good style. Would appreciate more solved examples.', 'Mar 8'],
+        ['Ananya Singh', '5 ⭐', 'Easy to understand.', 'Mar 7']
+      ].map(function(r) {
+        return '<tr><td>'+r[0]+'</td><td style="font-weight:700;color:var(--yellow)">'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFnName = 'window.downloadFacultyReportCSV(\'student_rating\')';
+  }
+  
+  var footer = '<button class="btn btn-teal" onclick="' + downloadFnName + '">⬇ Download CSV</button>'
+    + '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\')">Close</button>';
+    
+  openDetail(title, body, footer);
+};
+
+window.downloadFacultyReportCSV = function(key) {
+  var rows = [];
+  var filename = '';
+  
+  if (key === 'classes_taken') {
+    filename = 'classes_taken_report.csv';
+    rows = [
+      ['Batch', 'Class Title', 'Date', 'Duration'],
+      ['JEE Advanced A', 'Electrostatics Revision', 'Mar 10', '1.5 Hours'],
+      ['JEE Advanced B', 'Thermodynamics Basics', 'Mar 8', '2 Hours'],
+      ['NEET Batch', 'Cell Division Part 2', 'Mar 5', '1 Hour'],
+      ['JEE Advanced A', 'Wave Optics Introduction', 'Mar 2', '1.5 Hours']
+    ];
+  } else if (key === 'tests_created') {
+    filename = 'tests_created_report.csv';
+    rows = [
+      ['Test Title', 'Batch', 'Questions', 'Status'],
+      ['Chapter 5 — Wave Optics DPP', 'JEE Adv A', '20', 'Active'],
+      ['Weekly Test — Thermodynamics', 'JEE Adv A,B', '30', 'Active'],
+      ['Mock Test 14 — Full Syllabus', 'All', '90', 'Active'],
+      ['Biology — Cell Division DPP', 'NEET', '15', 'Draft']
+    ];
+  } else if (key === 'doubts_resolved') {
+    filename = 'doubts_resolved_report.csv';
+    rows = [
+      ['Student', 'Doubt Topic', 'Date', 'Status'],
+      ['Sneha Patel', 'Gauss Law Flux Calculation', 'Mar 12', 'Resolved'],
+      ['Rohan Gupta', 'Carnot Cycle Efficiency', 'Mar 10', 'Resolved'],
+      ['Arjun Sharma', 'Wave Optics Interference', 'Mar 8', 'Resolved'],
+      ['Kavya Reddy', 'Cell Division Stages', 'Mar 7', 'Resolved']
+    ];
+  } else if (key === 'student_rating') {
+    filename = 'student_rating_report.csv';
+    rows = [
+      ['Student', 'Rating', 'Feedback / Comment', 'Date'],
+      ['Sneha Patel', '5', 'Explains concepts very clearly. Examples are excellent!', 'Mar 10'],
+      ['Arjun Sharma', '5', 'Best physics teacher I have had. Very patient.', 'Mar 9'],
+      ['Rohan Gupta', '4', 'Good style. Would appreciate more solved examples.', 'Mar 8'],
+      ['Ananya Singh', '5', 'Easy to understand.', 'Mar 7']
+    ];
+  }
+  
+  var csv = rows.map(function(r) { return r.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Report downloaded successfully!', '⬇');
+};
+
+window.viewMonthlyPerformanceDetail = function() {
+  var title = '📈 Monthly Performance Details';
+  var body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Your monthly score averages, test count, and total study hours.</div>'
+    + '<div class="tbl-wrap"><table><thead><tr><th>Month</th><th>Avg Score</th><th>Tests Completed</th><th>Study Hours</th><th>Status / Remarks</th></tr></thead><tbody>'
+    + [
+      ['March 2026', '82%', '5 Tests', '150 Hours', 'Outstanding 🌟'],
+      ['February 2026', '74%', '5 Tests', '130 Hours', 'Consistent 👍'],
+      ['January 2026', '78%', '6 Tests', '140 Hours', 'Excellent Peak 🚀'],
+      ['December 2025', '69%', '4 Tests', '115 Hours', 'Needs Focus 📖'],
+      ['November 2025', '72%', '5 Tests', '125 Hours', 'Steady Progress 📈'],
+      ['October 2025', '65%', '4 Tests', '110 Hours', 'Starting Month 🌱']
+    ].map(function(r) {
+      return '<tr>'
+        + '<td style="font-weight:600">'+r[0]+'</td>'
+        + '<td style="color:var(--student);font-weight:700">'+r[1]+'</td>'
+        + '<td>'+r[2]+'</td>'
+        + '<td>'+r[3]+'</td>'
+        + '<td>'+r[4]+'</td>'
+        + '</tr>';
+    }).join('')
+    + '</tbody></table></div>';
+    
+  var footer = '<button class="btn btn-teal" onclick="window.downloadMonthlyPerformanceCSV()">⬇ Download CSV</button>'
+    + '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\')">Close</button>';
+    
+  openDetail(title, body, footer, 'sm');
+};
+
+window.downloadMonthlyPerformanceCSV = function() {
+  var rows = [
+    ['Month', 'Avg Score', 'Tests Completed', 'Study Hours', 'Status / Remarks'],
+    ['March 2026', '82%', '5 Tests', '150 Hours', 'Outstanding'],
+    ['February 2026', '74%', '5 Tests', '130 Hours', 'Consistent'],
+    ['January 2026', '78%', '6 Tests', '140 Hours', 'Excellent Peak'],
+    ['December 2025', '69%', '4 Tests', '115 Hours', 'Needs Focus'],
+    ['November 2025', '72%', '5 Tests', '125 Hours', 'Steady Progress'],
+    ['October 2025', '65%', '4 Tests', '110 Hours', 'Starting Month']
+  ];
+  
+  var csv = rows.map(function(r) { return r.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'monthly_performance_report.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Report downloaded successfully!', '⬇');
+};
 
 window.currentAdminAnnFilter = 'all';
 
@@ -5348,21 +5849,24 @@ window.renderAdminAnnList = function() {
   
   var listData = filtered.map(function(a) {
     return {
+      id: a._id || a.id,
       t: a.title || a.t || 'Announcement',
       cat: a.cat || 'Notice',
       pri: a.pri || (a.urgent ? 'Important' : 'Normal'),
       d: a.date || a.d || 'Just now',
       v: a.views || a.v || 350,
-      target: a.target || 'all'
+      target: a.target || 'all',
+      draft: !!a.draft,
+      body: a.body || ''
     };
   });
   
   if (listData.length === 0 && filterVal === 'all') {
     listData = [
-      { t:'JEE Mock Test 14 — Sunday',       cat:'Exam',    pri:'Important',d:'Mar 12',v:342, target:'student' },
-      { t:'Fee Due Date Extended to Mar 20',  cat:'Fee',     pri:'Important',d:'Mar 10',v:428, target:'student' },
-      { t:'Holi Holiday — March 25',          cat:'General', pri:'Normal',   d:'Mar 8', v:895, target:'all' },
-      { t:'New Physics Notes Uploaded',       cat:'Academic',pri:'Normal',   d:'Mar 7', v:267, target:'student' },
+      { id:'mock-1', t:'JEE Mock Test 14 — Sunday',       cat:'Exam',    pri:'Important',d:'Mar 12',v:342, target:'student', draft:false },
+      { id:'mock-2', t:'Fee Due Date Extended to Mar 20',  cat:'Fee',     pri:'Important',d:'Mar 10',v:428, target:'student', draft:false },
+      { id:'mock-3', t:'Holi Holiday — March 25',          cat:'General', pri:'Normal',   d:'Mar 8', v:895, target:'all',     draft:false },
+      { id:'mock-4', t:'New Physics Notes Uploaded',       cat:'Academic',pri:'Normal',   d:'Mar 7', v:267, target:'student', draft:false },
     ];
   }
   
@@ -5372,23 +5876,50 @@ window.renderAdminAnnList = function() {
   } else {
     html = listData.map(function(a) {
       var badgeClass = a.pri === 'Important' || a.pri === 'Urgent' ? 'badge-yellow' : 'badge-purple';
+      var badgeText = a.pri;
+      var clickHandler = 'window.viewAdminAnnouncementDetail(\'' + a.id + '\')';
+      
+      if (a.draft) {
+        badgeText = 'Draft 💾';
+        badgeClass = 'badge-orange';
+        clickHandler = 'window.editAnnouncementDraft(\'' + a.id + '\')';
+      }
       
       var targetBadge = '';
       if (a.target === 'student') targetBadge = '<span class="badge badge-green" style="margin-right:6px">Student</span>';
       else if (a.target === 'faculty') targetBadge = '<span class="badge badge-teal" style="margin-right:6px">Faculty</span>';
       else targetBadge = '<span class="badge badge-purple" style="margin-right:6px;background:rgba(255,255,255,0.08);color:var(--muted)">All</span>';
 
-      return '<div class="list-item" style="cursor:pointer" onclick="toast(\'' + a.t.replace(/'/g,"\\'") + '\',\'📢\')">'
+      return '<div class="list-item" style="cursor:pointer" onclick="' + clickHandler + '">'
         + '<div class="li-icon" style="background:var(--surface2)">📢</div>'
-        + '<div class="li-content"><div class="li-title" style="font-weight:600">' + a.t + '</div>'
+        + '<div class="li-content"><div class="li-title" style="font-weight:600">' + a.t + (a.draft ? ' <span style="font-size:11px;color:var(--orange);font-style:italic">(Click to Edit)</span>' : '') + '</div>'
         + '<div class="li-sub" style="display:flex;align-items:center;gap:6px;margin-top:2px">' + targetBadge + '<span>' + a.cat + ' • ' + a.d + ' • ' + a.v + ' views</span></div></div>'
-        + '<span class="badge ' + badgeClass + '">' + a.pri + '</span></div>';
+        + '<span class="badge ' + badgeClass + '">' + badgeText + '</span></div>';
     }).join('');
   }
   
   var container = document.getElementById('admin-ann-list-container');
   if (container) {
     container.innerHTML = html;
+  }
+  
+  if (window.currentEditingDraftId) {
+    var a = rawAnn.find(function(item) { return (item._id || item.id) === window.currentEditingDraftId; });
+    if (a) {
+      setTimeout(function() {
+        var titleInput = document.getElementById('ann-title');
+        var catSelect = document.getElementById('ann-cat');
+        var priSelect = document.getElementById('ann-pri');
+        var targetSelect = document.getElementById('ann-target');
+        var msgText = document.getElementById('ann-msg');
+        
+        if (titleInput && !titleInput.value) titleInput.value = a.title || a.t || '';
+        if (msgText && !msgText.value) msgText.value = a.body || a.b || '';
+        if (catSelect) catSelect.value = a.cat || 'General';
+        if (priSelect) priSelect.value = (a.urgent ? 'Important' : (a.pri || 'Normal'));
+        if (targetSelect) targetSelect.value = a.target || 'all';
+      }, 50);
+    }
   }
 };
 
@@ -6765,6 +7296,25 @@ window.deleteLibraryItem = async function(id, isVideo) {
 
 // ── Live Class Modal (Video Player with chat) ──
 function openLiveClassModal() {
+  window.mockChatMessages = window.mockChatMessages || [
+    {n:'Sneha P.',m:'Great explanation sir!',t:'2m ago',c:'#6c47ff'},
+    {n:'Rohan G.',m:'Can you repeat the formula?',t:'1m ago',c:'#ff6b35'},
+    {n:'Ananya S.',m:'Thank you! Very clear 👏',t:'30s ago',c:'#4ade80'},
+    {n:'Dr. Priya',m:'Check slide 14 for the derivation',t:'15s ago',c:'#00d4c8'}
+  ];
+
+  window.renderLivePlayerChat = function() {
+    var container = document.getElementById('live-chat-messages-inplayer');
+    if (!container) return;
+    container.innerHTML = window.mockChatMessages.map(function(msg){
+      return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">'
+        + '<div style="width:24px;height:24px;border-radius:50%;background:'+msg.c+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+msg.n[0]+'</div>'
+        + '<div><div style="font-size:11px"><span style="font-weight:700;color:'+msg.c+'">'+msg.n+'</span> <span style="color:var(--muted);font-size:10px">'+msg.t+'</span></div>'
+        + '<div style="font-size:12px;color:var(--text);margin-top:2px">'+msg.m+'</div></div></div>';
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+  };
+
   var sampleVideos = [
     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
     'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
@@ -6793,25 +7343,33 @@ function openLiveClassModal() {
     // Chat panel
     + '<div style="flex:1;min-width:200px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;display:flex;flex-direction:column;max-height:350px">'
     + '<div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700">💬 Live Chat</div>'
-    + '<div style="flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px">'
-    + [{n:'Sneha P.',m:'Great explanation sir!',t:'2m ago',c:'#6c47ff'},{n:'Rohan G.',m:'Can you repeat the formula?',t:'1m ago',c:'#ff6b35'},{n:'Ananya S.',m:'Thank you! Very clear 👏',t:'30s ago',c:'#4ade80'},{n:'Dr. Priya',m:'Check slide 14 for the derivation',t:'15s ago',c:'#00d4c8'}].map(function(msg){
-      return '<div style="display:flex;gap:8px;align-items:flex-start"><div style="width:24px;height:24px;border-radius:50%;background:'+msg.c+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+msg.n[0]+'</div><div><div style="font-size:11px"><span style="font-weight:700;color:'+msg.c+'">'+msg.n+'</span> <span style="color:var(--muted);font-size:10px">'+msg.t+'</span></div><div style="font-size:12px;color:var(--text);margin-top:2px">'+msg.m+'</div></div></div>';
-    }).join('')
-    + '</div>'
-    + '<div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:6px"><input id="live-chat-input" class="inp-field" placeholder="Type a message..." style="flex:1;padding:8px 10px;font-size:12px" onkeydown="if(event.key===\'Enter\'){sendLiveChat()}">'
-    + '<button class="btn btn-sm btn-solid" onclick="sendLiveChat()">Send</button></div></div></div>'
+    + '<div id="live-chat-messages-inplayer" style="flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px"></div>'
+    + '<div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:6px"><input id="live-chat-input-inplayer" class="inp-field" placeholder="Type a message..." style="flex:1;padding:8px 10px;font-size:12px" onkeydown="if(event.key===\'Enter\'){window.sendLiveChatFromPlayer()}">'
+    + '<button class="btn btn-sm btn-solid" onclick="window.sendLiveChatFromPlayer()">Send</button></div></div></div>'
     + '<div style="font-size:14px;font-weight:700;margin-bottom:4px">⚛️ Physics — Electrostatics: Gauss Law</div>'
     + '<div style="font-size:12px;color:var(--muted)">Dr. Priya Mehta &nbsp;•&nbsp; JEE Advanced Batch A &nbsp;•&nbsp; HD Quality</div>';
 
   openDetail('🎥 Live Class', body, '<button class="btn btn-red" onclick="toast(\'Left class\',\'👋\');closeModal(\'modal-detail\')">Leave Class</button>');
+  
+  setTimeout(function() {
+    window.renderLivePlayerChat();
+  }, 50);
 }
 
-function sendLiveChat() {
-  var input = document.getElementById('live-chat-input');
+window.sendLiveChatFromPlayer = function() {
+  var input = document.getElementById('live-chat-input-inplayer');
   if (!input || !input.value.trim()) return;
-  toast('Message sent: ' + input.value.substring(0, 30), '💬');
+  
+  window.mockChatMessages.push({
+    n: 'Arjun S. (You)',
+    m: input.value.trim(),
+    t: 'Just now',
+    c: 'var(--student)'
+  });
+  
   input.value = '';
-}
+  window.renderLivePlayerChat();
+};
 
 // ── Doubt Detail (used in dashboard) ──
 function openDoubtDetail(question, status) {
@@ -7184,6 +7742,214 @@ window.exportPayments = exportPayments;
 window.openAnnouncementDetail = openAnnouncementDetail;
 window.openEditProfile = openEditProfile;
 window.openFeeReceipt = openFeeReceipt;
+window.openLiveClassChatModal = function() {
+  window.mockChatMessages = window.mockChatMessages || [
+    {n:'Sneha P.',m:'Great explanation sir!',t:'2m ago',c:'#6c47ff'},
+    {n:'Rohan G.',m:'Can you repeat the formula?',t:'1m ago',c:'#ff6b35'},
+    {n:'Ananya S.',m:'Thank you! Very clear 👏',t:'30s ago',c:'#4ade80'},
+    {n:'Dr. Priya',m:'Check slide 14 for the derivation',t:'15s ago',c:'#00d4c8'}
+  ];
+
+  window.renderLiveChatMessages = function() {
+    var container = document.getElementById('live-chat-messages-modal');
+    if (!container) return;
+    container.innerHTML = window.mockChatMessages.map(function(msg){
+      return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">'
+        + '<div style="width:24px;height:24px;border-radius:50%;background:'+msg.c+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+msg.n[0]+'</div>'
+        + '<div><div style="font-size:11px"><span style="font-weight:700;color:'+msg.c+'">'+msg.n+'</span> <span style="color:var(--muted);font-size:10px">'+msg.t+'</span></div>'
+        + '<div style="font-size:12px;color:var(--text);margin-top:2px">'+msg.m+'</div></div></div>';
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+  };
+
+  window.sendLiveChatFromModal = function() {
+    var input = document.getElementById('live-chat-input-modal');
+    if (!input || !input.value.trim()) return;
+    
+    window.mockChatMessages.push({
+      n: 'Arjun S. (You)',
+      m: input.value.trim(),
+      t: 'Just now',
+      c: 'var(--student)'
+    });
+    
+    input.value = '';
+    window.renderLiveChatMessages();
+  };
+
+  var body = '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;display:flex;flex-direction:column;height:350px">'
+    + '<div id="live-chat-messages-modal" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;height:280px"></div>'
+    + '<div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:6px">'
+    + '<input id="live-chat-input-modal" class="inp-field" placeholder="Type a message..." style="flex:1;padding:8px 10px;font-size:12px" onkeydown="if(event.key===\'Enter\'){window.sendLiveChatFromModal()}">'
+    + '<button class="btn btn-sm btn-solid" onclick="window.sendLiveChatFromModal()">Send</button></div></div>';
+
+  openDetail('💬 Live Class Chat — Gauss Law', body, '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\')">Close</button>', 'sm');
+  
+  setTimeout(function() {
+    window.renderLiveChatMessages();
+  }, 50);
+};
+
+window.viewTestSyllabus = function(title) {
+  var syllabusDetails = '';
+  if (title.indexOf('Thermodynamics') !== -1) {
+    syllabusDetails = '<h3>📚 Physics — Thermodynamics</h3>'
+      + '<ul style="margin-left:20px;line-height:1.6;font-size:13px;color:var(--text);margin-top:10px">'
+      + '<li>Thermal Equilibrium & Temperature</li>'
+      + '<li>First Law of Thermodynamics & Internal Energy</li>'
+      + '<li>Thermodynamic Processes (Isothermal, Adiabatic, Isobaric)</li>'
+      + '<li>Second Law of Thermodynamics: Heat Engines & Refrigerators</li>'
+      + '<li>Reversible & Irreversible Processes, Carnot Engine</li>'
+      + '</ul>';
+  } else if (title.indexOf('Cell Division') !== -1) {
+    syllabusDetails = '<h3>📚 Biology — Cell Cycle & Cell Division</h3>'
+      + '<ul style="margin-left:20px;line-height:1.6;font-size:13px;color:var(--text);margin-top:10px">'
+      + '<li>Cell Cycle Phases (G1, S, G2, M Phases)</li>'
+      + '<li>Mitosis: Stages, Significance, and Regulation</li>'
+      + '<li>Meiosis: Meiosis I and Meiosis II</li>'
+      + '<li>Comparison between Mitosis and Meiosis</li>'
+      + '</ul>';
+  } else {
+    // Default to Full Syllabus
+    syllabusDetails = '<h3>📚 Full Syllabus JEE (Main & Advanced)</h3>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;font-size:12px;color:var(--text)">'
+      + '<div><strong>Physics:</strong> Mechanics, Waves, Electromagnetism, Optics, Thermodynamics, Modern Physics.</div>'
+      + '<div><strong>Chemistry:</strong> Organic Synthesis, Chemical Bonding, Thermodynamics, Coordination Compounds, Kinetics.</div>'
+      + '<div><strong>Mathematics:</strong> Calculus, Vectors & 3D, Matrices & Determinants, Coordinate Geometry, Probability.</div>'
+      + '</div>';
+  }
+
+  var body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Syllabus coverage details for <strong>' + title + '</strong>.</div>'
+    + '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:14px">'
+    + syllabusDetails
+    + '</div>';
+
+  var footer = '<button class="btn btn-teal" onclick="toast(\'Syllabus PDF downloaded!\',\'⬇️\');closeModal(\'modal-detail\')">⬇️ Download PDF</button>'
+    + '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\')">Close</button>';
+
+  openDetail('📋 Test Syllabus — Details', body, footer, 'md');
+};
+
+window.viewTestMetricDetail = function(key) {
+  var title = '';
+  var body = '';
+  var downloadFn = '';
+
+  if (key === 'tests_taken') {
+    title = '📝 Tests Taken Details';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Your complete checklist of tests attempted.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Test Title</th><th>Date</th><th>Score</th><th>Percentile</th><th>Rank</th></tr></thead><tbody>'
+      + [
+        ['Mock Test 13 — Physics + Chem', 'Mar 10', '267/300', '89%', '#3'],
+        ['Weekly Test — Organic Chem', 'Mar 7', '72/100', '72%', '#12'],
+        ['Mock Test 12 — Full Syllabus', 'Mar 3', '298/360', '83%', '#5']
+      ].map(function(r) {
+        return '<tr><td style="font-weight:600">'+r[0]+'</td><td>'+r[1]+'</td><td style="color:var(--student);font-weight:700">'+r[2]+'</td><td>'+r[3]+'</td><td>'+r[4]+'</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFn = 'window.downloadTestMetricCSV(\'tests_taken\')';
+  } else if (key === 'avg_score') {
+    title = '📊 Subject Performance Details';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Subject-wise score metrics and average weightages.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Subject</th><th>Average Score</th><th>Weightage</th><th>Syllabus Progress</th></tr></thead><tbody>'
+      + [
+        ['Physics', '74%', '33%', '80%'],
+        ['Chemistry', '82%', '33%', '85%'],
+        ['Maths', '68%', '34%', '75%']
+      ].map(function(r) {
+        return '<tr><td style="font-weight:600">'+r[0]+'</td><td style="color:var(--student);font-weight:700">'+r[1]+'</td><td>'+r[2]+'</td><td>'+r[3]+'</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFn = 'window.downloadTestMetricCSV(\'avg_score\')';
+  } else if (key === 'best_rank') {
+    title = '🏆 Best Rank & Leaderboard';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Current top ranks inside your batch series.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Rank</th><th>Student Name</th><th>Total Score</th><th>Accuracy</th></tr></thead><tbody>'
+      + [
+        ['#1', 'Sneha Patel', '290/300', '96%'],
+        ['#2', 'Rohan Gupta', '282/300', '94%'],
+        ['#3', 'Ananya Singh', '274/300', '91%'],
+        ['#4', 'Arjun Sharma (You)', '267/300', '89%']
+      ].map(function(r) {
+        var isMe = r[1].indexOf('You') !== -1;
+        var style = isMe ? ' style="background:rgba(108,71,255,0.08);font-weight:700"' : '';
+        return '<tr' + style + '><td>' + r[0] + '</td><td>' + r[1] + '</td><td style="color:var(--student)">' + r[2] + '</td><td>' + r[3] + '</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFn = 'window.downloadTestMetricCSV(\'best_rank\')';
+  } else if (key === 'accuracy') {
+    title = '🎯 Accuracy & Question Analysis';
+    body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">Granular breakdown of attempted questions.</div>'
+      + '<div class="tbl-wrap"><table><thead><tr><th>Category</th><th>Count</th><th>Percentage</th></tr></thead><tbody>'
+      + [
+        ['Correct Answers', '181 Questions', '89%'],
+        ['Incorrect Answers', '22 Questions', '11%'],
+        ['Unattempted/Skipped', '8 Questions', '—']
+      ].map(function(r) {
+        return '<tr><td style="font-weight:600">'+r[0]+'</td><td style="font-weight:700">'+r[1]+'</td><td>'+r[2]+'</td></tr>';
+      }).join('')
+      + '</tbody></table></div>';
+    downloadFn = 'window.downloadTestMetricCSV(\'accuracy\')';
+  }
+
+  var footer = '<button class="btn btn-teal" onclick="' + downloadFn + '">⬇ Download CSV</button>'
+    + '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\')">Close</button>';
+
+  openDetail(title, body, footer, 'sm');
+};
+
+window.downloadTestMetricCSV = function(key) {
+  var rows = [];
+  var filename = '';
+
+  if (key === 'tests_taken') {
+    filename = 'tests_taken_report.csv';
+    rows = [
+      ['Test Title', 'Date', 'Score', 'Percentile', 'Rank'],
+      ['Mock Test 13 — Physics + Chem', 'Mar 10', '267/300', '89%', '#3'],
+      ['Weekly Test — Organic Chem', 'Mar 7', '72/100', '72%', '#12'],
+      ['Mock Test 12 — Full Syllabus', 'Mar 3', '298/360', '83%', '#5']
+    ];
+  } else if (key === 'avg_score') {
+    filename = 'subject_performance_report.csv';
+    rows = [
+      ['Subject', 'Average Score', 'Weightage', 'Syllabus Progress'],
+      ['Physics', '74%', '33%', '80%'],
+      ['Chemistry', '82%', '33%', '85%'],
+      ['Maths', '68%', '33%', '75%']
+    ];
+  } else if (key === 'best_rank') {
+    filename = 'leaderboard_best_rank.csv';
+    rows = [
+      ['Rank', 'Student Name', 'Total Score', 'Accuracy'],
+      ['#1', 'Sneha Patel', '290/300', '96%'],
+      ['#2', 'Rohan Gupta', '282/300', '94%'],
+      ['#3', 'Ananya Singh', '274/300', '91%'],
+      ['#4', 'Arjun Sharma (You)', '267/300', '89%']
+    ];
+  } else if (key === 'accuracy') {
+    filename = 'question_accuracy_report.csv';
+    rows = [
+      ['Category', 'Count', 'Percentage'],
+      ['Correct Answers', '181 Questions', '89%'],
+      ['Incorrect Answers', '22 Questions', '11%'],
+      ['Unattempted/Skipped', '8 Questions', '—']
+    ];
+  }
+
+  var csv = rows.map(function(r) { return r.map(function(v) { return '"' + String(v).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Report downloaded successfully!', '⬇');
+};
+
 window.openTestSolution = openTestSolution;
 window.submitAddStudent = submitAddStudent;
 window.submitAddFaculty = submitAddFaculty;
@@ -7218,6 +7984,11 @@ window.exportEnrollmentDetails = exportEnrollmentDetails;
 window.downloadPurchaseActivityReceipt = downloadPurchaseActivityReceipt;
 window.downloadStudentFeeReceipt = downloadStudentFeeReceipt;
 window.downloadGenericFeeReceipt = downloadGenericFeeReceipt;
+
+window.saveAnnouncement = saveAnnouncement;
+window.editAnnouncementDraft = editAnnouncementDraft;
+window.viewFacultyAnalyticsDetail = viewFacultyAnalyticsDetail;
+window.downloadFacultyAnalyticsCSV = downloadFacultyAnalyticsCSV;
 
 window.approveContent = approveContent;
 window.askAIDoubt = askAIDoubt;
