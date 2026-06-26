@@ -1158,8 +1158,8 @@ PAGES['student_videos'] = function() {
         + '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">by '+v.fac+'</div>'
         + '<div style="display:flex;gap:6px">'
         + '<button class="btn btn-solid btn-sm" style="flex:1;justify-content:center" onclick="window.openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">▶ Watch</button>'
-        + '<button class="btn btn-purple btn-sm" onclick="window.openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">📝</button>'
-        + '<button class="btn btn-yellow btn-sm" onclick="toast(\'Generating AI Quiz...\',\'🤖\'); setTimeout(function(){window.startMockQuiz()}, 600)">🤖</button>'
+        + '<button class="btn btn-purple btn-sm" onclick="window.viewLectureNotes(\''+v.title.replace(/'/g,"\\'")+'\')">📝</button>'
+        + '<button class="btn btn-yellow btn-sm" onclick="window.openAIVideoAssistant(\''+v.title.replace(/'/g,"\\'")+'\')">🤖</button>'
         + '</div></div></div>';
     }).join('') + '</div>';
 
@@ -7742,6 +7742,136 @@ window.exportPayments = exportPayments;
 window.openAnnouncementDetail = openAnnouncementDetail;
 window.openEditProfile = openEditProfile;
 window.openFeeReceipt = openFeeReceipt;
+window.viewLectureNotes = function(title) {
+  var notesContent = '';
+  if (title.indexOf('Gauss') !== -1 || title.indexOf('Electrostatics') !== -1) {
+    notesContent = '<h3>⚡ Electrostatics — Gauss Law Notes</h3>'
+      + '<p style="margin-top:8px;font-size:13px;color:var(--text)">Gauss\'s Law states that the net electric flux through any closed surface is equal to the net charge enclosed divided by the permittivity of free space.</p>'
+      + '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;margin-top:10px;font-family:monospace;color:#00d4c8">'
+      + 'Φ_E = ∮ E · dA = Q_enclosed / ε_0'
+      + '</div>'
+      + '<h4 style="margin-top:12px;font-size:12px;color:var(--yellow)">Key Concepts:</h4>'
+      + '<ul style="margin-left:20px;font-size:12px;color:var(--muted);line-height:1.6">'
+      + '<li>Flux is independent of the shape or size of the closed surface.</li>'
+      + '<li>Used to find electric fields easily for symmetric charge distributions (spherical, cylindrical, planar).</li>'
+      + '<li>Permittivity constant ε_0 = 8.854 × 10⁻¹² F/m.</li>'
+      + '</ul>';
+  } else if (title.indexOf('Capacitors') !== -1) {
+    notesContent = '<h3>💡 Capacitors — Energy & Combinations</h3>'
+      + '<p style="margin-top:8px;font-size:13px;color:var(--text)">A capacitor is a device used to store electrical energy in an electric field. The ratio of charge to potential difference is capacitance.</p>'
+      + '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:12px;margin-top:10px;font-family:monospace;color:#00d4c8">'
+      + 'Series: 1/C_eq = 1/C_1 + 1/C_2 + ...<br>Parallel: C_eq = C_1 + C_2 + ...<br>Stored Energy: U = 1/2 C V² = 1/2 Q V'
+      + '</div>';
+  } else if (title.indexOf('Organic') !== -1 || title.indexOf('IUPAC') !== -1) {
+    notesContent = '<h3>🧪 Organic Chemistry — IUPAC Naming</h3>'
+      + '<p style="margin-top:8px;font-size:13px;color:var(--text)">Rules for naming organic chemical compounds based on IUPAC guidelines.</p>'
+      + '<ul style="margin-left:20px;font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px">'
+      + '<li>Identify the longest continuous carbon chain (Parent Chain).</li>'
+      + '<li>Identify principal functional groups (Suffix) and substituents (Prefix).</li>'
+      + '<li>Number the carbon atoms starting from the end closer to functional group of higher priority.</li>'
+      + '</ul>';
+  } else {
+    // General study notes
+    notesContent = '<h3>📚 Lecture Summary Notes</h3>'
+      + '<p style="margin-top:8px;font-size:13px;color:var(--text)">Revision material, sample formulas, and textbook reference points for <strong>' + title + '</strong>.</p>'
+      + '<ul style="margin-left:20px;font-size:12px;color:var(--muted);line-height:1.6;margin-top:8px">'
+      + '<li>Standard conceptual breakdowns of chapter sections.</li>'
+      + '<li>Important board and competitive exam practice points.</li>'
+      + '<li>Refer to reference handbook for advanced derivations.</li>'
+      + '</ul>';
+  }
+
+  var body = '<div style="margin-bottom:12px;font-size:12px;color:var(--muted)">Class study notes for <strong>' + title + '</strong>.</div>'
+    + '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:16px;margin-bottom:14px">'
+    + notesContent
+    + '</div>';
+
+  var footer = '<button class="btn btn-teal" onclick="toast(\'PDF Lecture Notes downloaded!\',\'⬇️\');closeModal(\'modal-detail\')">⬇️ Download PDF</button>'
+    + '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\')">Close</button>';
+
+  openDetail('📝 Lecture Notes Summary', body, footer, 'md');
+};
+
+window.openAIVideoAssistant = function(title) {
+  var body = '<div style="text-align:center;padding:10px">'
+    + '<div style="font-size:44px;margin-bottom:10px">🤖</div>'
+    + '<div style="font-family:Syne,sans-serif;font-size:16px;font-weight:800;margin-bottom:4px">AI Chapter Assistant</div>'
+    + '<div style="font-size:12px;color:var(--muted);margin-bottom:16px">Get instant help for <strong>' + title + '</strong></div>'
+    + '<div style="display:grid;grid-template-columns:1fr;gap:10px">'
+    + '<button class="btn btn-teal" style="justify-content:center" onclick="window.startAIVideoQuiz(\''+title.replace(/'/g,"\\'")+'\')">📝 Start 3-Question Practice Quiz</button>'
+    + '<button class="btn btn-purple" style="justify-content:center" onclick="window.openAIDoubtChat(\''+title.replace(/'/g,"\\'")+'\')">💬 Ask Doubts to AI Copilot</button>'
+    + '</div></div>';
+
+  openDetail('🤖 AI Copilot — ' + title, body, '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\')">Close</button>', 'sm');
+};
+
+window.startAIVideoQuiz = function(title) {
+  closeModal('modal-detail');
+  toast('Loading AI generated quiz for ' + title, '🤖');
+  setTimeout(function() {
+    window.startMockQuiz();
+  }, 400);
+};
+
+window.openAIDoubtChat = function(title) {
+  closeModal('modal-detail');
+  setTimeout(function() {
+    var body = '<div style="display:flex;flex-direction:column;height:350px">'
+      + '<div id="ai-video-chat-msgs" style="flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:8px;font-size:12px">'
+      + '<div style="background:rgba(0,212,200,.06);border:1px solid rgba(0,212,200,.15);border-radius:10px;padding:10px;color:var(--text)">'
+      + '🤖 <strong>AI Tutor:</strong> Hi Arjun! I\'m ready to help you with <strong>' + title + '</strong>. Ask me anything about the derivations, formula, or concepts.</div>'
+      + '</div>'
+      + '<div style="padding:8px 0;display:flex;gap:6px">'
+      + '<input id="ai-video-chat-input" class="inp-field" placeholder="Ask a doubt..." style="flex:1;padding:8px 10px;font-size:12px" onkeydown="if(event.key===\'Enter\'){window.sendAIVideoDoubt(\''+title.replace(/'/g,"\\'")+'\')}">'
+      + '<button class="btn btn-sm btn-solid" onclick="window.sendAIVideoDoubt(\''+title.replace(/'/g,"\\'")+'\')">Ask</button></div></div>';
+
+    openDetail('🤖 AI Doubt Solver', body, '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\')">Close</button>', 'sm');
+  }, 300);
+};
+
+window.sendAIVideoDoubt = function(title) {
+  var input = document.getElementById('ai-video-chat-input');
+  if (!input || !input.value.trim()) return;
+
+  var container = document.getElementById('ai-video-chat-msgs');
+  if (!container) return;
+
+  var userText = input.value.trim();
+  input.value = '';
+
+  // Append user message
+  container.innerHTML += '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px;margin-top:6px">'
+    + '👤 <strong>You:</strong> ' + userText + '</div>';
+
+  // Auto scroll
+  container.scrollTop = container.scrollHeight;
+
+  // Append AI thinking
+  var thinkingId = 'ai-thinking-' + Date.now();
+  container.innerHTML += '<div id="' + thinkingId + '" style="background:rgba(0,212,200,.03);border:1px solid rgba(0,212,200,.08);border-radius:10px;padding:10px;margin-top:6px;color:var(--muted)">'
+    + '🤖 <em>AI Tutor is thinking...</em></div>';
+  container.scrollTop = container.scrollHeight;
+
+  // Answer after a delay
+  setTimeout(function() {
+    var thinkingEl = document.getElementById(thinkingId);
+    if (!thinkingEl) return;
+
+    var explanation = '';
+    if (userText.toLowerCase().indexOf('gauss') !== -1 || userText.toLowerCase().indexOf('flux') !== -1) {
+      explanation = 'Flux through a closed surface depends only on the charge enclosed: Φ = Q_enclosed / ε_0. It does not depend on the position of charge inside or the shape of the surface!';
+    } else {
+      explanation = 'Great question! In ' + title + ', this concept is critical. Remember to review the parent formulas, watch the derivation steps, and try the worked examples in slide notes.';
+    }
+
+    thinkingEl.innerHTML = '🤖 <strong>AI Tutor:</strong> ' + explanation;
+    thinkingEl.style.color = 'var(--text)';
+    thinkingEl.style.background = 'rgba(0,212,200,.06)';
+    thinkingEl.style.borderColor = 'rgba(0,212,200,.15)';
+    container.scrollTop = container.scrollHeight;
+  }, 1000);
+};
+
 window.openLiveClassChatModal = function() {
   window.mockChatMessages = window.mockChatMessages || [
     {n:'Sneha P.',m:'Great explanation sir!',t:'2m ago',c:'#6c47ff'},
