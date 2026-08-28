@@ -9,5 +9,19 @@ export default defineConfig({
         changeOrigin: true
       }
     }
-  }
+  },
+  optimizeDeps: {
+    exclude: []
+  },
+  plugins: [
+    {
+      name: 'skip-import-analysis-main',
+      enforce: 'pre',
+      transform(code, id) {
+        if (id.includes('main.js')) {
+          return { code, map: null };
+        }
+      }
+    }
+  ]
 });

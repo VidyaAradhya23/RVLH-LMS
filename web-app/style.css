@@ -710,3 +710,109 @@ select option{background-color:#0b0f1e;color:#eef2ff}
 .hud-progress{height:8px;background:#0f172a;border-radius:4px;overflow:hidden;box-shadow:inset 0 2px 4px #00000080}
 .hud-progress-fill{height:100%;background:linear-gradient(90deg,#3b82f6,#8b5cf6);transition:width .3s ease}
 .hud-left,.hud-right{width:100%;justify-content:space-between}
+
+/* ══════════════════════════════════════════════
+   LIVE CLASS — TABS (Chat / Q&A / Poll / Hands)
+══════════════════════════════════════════════ */
+.lc-tab-bar{display:flex;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.02);border-radius:12px 12px 0 0;overflow:hidden;flex-shrink:0}
+.lc-tab{flex:1;padding:10px 6px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);background:transparent;border:none;cursor:pointer;transition:all .2s;position:relative;display:flex;align-items:center;justify-content:center;gap:5px}
+.lc-tab:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.lc-tab.active{color:#fff;background:rgba(108,71,255,.15)}
+.lc-tab.active::after{content:'';position:absolute;bottom:0;left:10%;right:10%;height:2px;background:linear-gradient(90deg,#6c47ff,#a855f7);border-radius:2px 2px 0 0}
+.lc-tab-badge{background:#ff2d6b;color:#fff;border-radius:20px;padding:1px 5px;font-size:9px;font-weight:900;min-width:16px;text-align:center;line-height:16px;animation:pulseDot 1.5s infinite}
+.lc-panel{flex:1;overflow-y:auto;display:none;flex-direction:column}
+.lc-panel.active{display:flex}
+
+/* ── Q&A Question Cards ── */
+.qa-question{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 12px;margin-bottom:8px;transition:all .2s}
+.qa-question:hover{border-color:rgba(108,71,255,.3);background:rgba(108,71,255,.05)}
+.qa-question.answered{border-color:rgba(74,222,128,.25);background:rgba(74,222,128,.04)}
+.qa-meta{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.qa-avatar{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;flex-shrink:0}
+.qa-name{font-size:11px;font-weight:700}
+.qa-time{font-size:10px;color:var(--muted);margin-left:auto}
+.qa-text{font-size:12px;color:var(--text);line-height:1.5;margin-bottom:7px}
+.qa-actions{display:flex;align-items:center;gap:6px}
+.qa-upvote{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:4px}
+.qa-upvote:hover,.qa-upvote.voted{background:rgba(108,71,255,.15);border-color:rgba(108,71,255,.4);color:#a78bff}
+.qa-answer-btn{background:rgba(0,212,200,.1);border:1px solid rgba(0,212,200,.25);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:#00d4c8;cursor:pointer;transition:all .2s}
+.qa-answer-btn:hover{background:rgba(0,212,200,.2)}
+.qa-answered-badge{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.25);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:#4ade80;display:flex;align-items:center;gap:3px}
+.qa-answer-bubble{background:rgba(0,212,200,.07);border:1px solid rgba(0,212,200,.2);border-radius:8px;padding:8px 10px;margin-top:7px;font-size:12px;color:var(--text);line-height:1.5}
+.qa-answer-bubble span{font-size:10px;font-weight:700;color:#00d4c8;display:block;margin-bottom:3px}
+.qa-input-bar{padding:10px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:7px;flex-shrink:0;background:rgba(255,255,255,.02)}
+.qa-input-bar input{flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--text);outline:none;transition:border-color .2s}
+.qa-input-bar input:focus{border-color:rgba(108,71,255,.5)}
+.qa-submit-btn{background:linear-gradient(135deg,#6c47ff,#a855f7);border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;color:#fff;cursor:pointer;white-space:nowrap;transition:opacity .2s}
+.qa-submit-btn:hover{opacity:.85}
+
+/* ── Live Poll ── */
+.poll-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px;margin-bottom:10px}
+.poll-question{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:12px;line-height:1.4}
+.poll-option{margin-bottom:8px;cursor:pointer}
+.poll-option-btn{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:9px 12px;text-align:left;font-size:12px;font-weight:600;color:var(--text);cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.poll-option-btn:hover{border-color:rgba(108,71,255,.4);background:rgba(108,71,255,.08)}
+.poll-option-btn.selected{border-color:rgba(108,71,255,.5);background:rgba(108,71,255,.12);color:#a78bff}
+.poll-option-btn.voted{cursor:default}
+.poll-bar{position:absolute;inset:0;background:rgba(108,71,255,.15);transform-origin:left;border-radius:8px;transition:transform .6s cubic-bezier(.4,0,.2,1)}
+.poll-option-label{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center}
+.poll-pct{font-size:11px;font-weight:800;color:#a78bff}
+.poll-meta{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:11px;color:var(--muted)}
+.poll-create-form{display:flex;flex-direction:column;gap:8px}
+.poll-create-form input{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--text);outline:none;transition:border-color .2s}
+.poll-create-form input:focus{border-color:rgba(108,71,255,.5)}
+.poll-launch-btn{background:linear-gradient(135deg,#ff2d6b,#a855f7);border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;transition:opacity .2s;margin-top:4px}
+.poll-launch-btn:hover{opacity:.85}
+.poll-no-active{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:var(--muted);font-size:13px;padding:30px}
+
+/* ── Raised Hands ── */
+.hand-item{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:9px 12px;margin-bottom:7px;transition:all .2s}
+.hand-item:hover{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.04)}
+.hand-avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0}
+.hand-name{font-size:13px;font-weight:700;flex:1}
+.hand-time{font-size:10px;color:var(--muted)}
+.hand-call-btn{background:rgba(74,222,128,.12);border:1px solid rgba(74,222,128,.25);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#4ade80;cursor:pointer;transition:all .2s}
+.hand-call-btn:hover{background:rgba(74,222,128,.25)}
+.hand-dismiss-btn{background:rgba(255,45,107,.08);border:1px solid rgba(255,45,107,.2);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:700;color:#ff2d6b;cursor:pointer;transition:all .2s}
+.hand-dismiss-btn:hover{background:rgba(255,45,107,.18)}
+@keyframes handRaise{0%{transform:translateY(0)}50%{transform:translateY(-8px) rotate(-10deg)}100%{transform:translateY(0)}}
+.raise-hand-btn-active{animation:handRaise .6s ease infinite;color:#fbbf24!important}
+@keyframes handPulse{0%,100%{box-shadow:0 0 0 0 rgba(251,191,36,.5)}70%{box-shadow:0 0 0 8px rgba(251,191,36,0)}}
+.raise-hand-btn-active{animation:handRaise .6s ease infinite,handPulse 1.5s infinite!important}
+
+/* ── Pinned Message ── */
+.lc-pinned{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);border-radius:8px;padding:8px 12px;margin:8px 8px 0;display:flex;align-items:flex-start;gap:8px;flex-shrink:0}
+.lc-pinned-icon{font-size:13px;flex-shrink:0;margin-top:1px}
+.lc-pinned-body{flex:1;min-width:0}
+.lc-pinned-label{font-size:9px;font-weight:800;letter-spacing:1px;color:#fbbf24;text-transform:uppercase;margin-bottom:2px}
+.lc-pinned-text{font-size:12px;color:var(--text);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── Chat Message Reactions ── */
+.chat-msg-wrap{display:flex;gap:8px;align-items:flex-start;padding:6px 0;position:relative}
+.chat-msg-wrap:hover .chat-react-trigger{opacity:1}
+.chat-avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0}
+.chat-body{flex:1;min-width:0}
+.chat-name-row{display:flex;align-items:baseline;gap:6px;margin-bottom:2px}
+.chat-name{font-size:11px;font-weight:700}
+.chat-ts{font-size:10px;color:var(--muted)}
+.chat-text{font-size:12px;color:var(--text);line-height:1.45;word-break:break-word}
+.chat-reactions{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.chat-reaction{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);border-radius:20px;padding:2px 7px;font-size:11px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:3px}
+.chat-reaction:hover,.chat-reaction.mine{background:rgba(108,71,255,.15);border-color:rgba(108,71,255,.35)}
+.chat-react-trigger{position:absolute;right:0;top:6px;opacity:0;transition:opacity .15s;background:rgba(20,22,40,.9);border:1px solid rgba(255,255,255,.09);border-radius:20px;padding:3px 8px;display:flex;gap:4px;cursor:pointer;font-size:13px}
+.chat-react-trigger button{background:none;border:none;cursor:pointer;font-size:14px;line-height:1;padding:0 2px;transition:transform .15s}
+.chat-react-trigger button:hover{transform:scale(1.3)}
+.chat-pin-msg{background:rgba(255,255,255,.04);border:none;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s;margin-left:auto}
+.chat-pin-msg:hover{color:#fbbf24;background:rgba(251,191,36,.1)}
+
+/* ── Faculty Answer Modal ── */
+.qa-answer-form{display:flex;flex-direction:column;gap:10px;padding:12px}
+.qa-answer-form textarea{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--text);outline:none;resize:vertical;min-height:80px;transition:border-color .2s}
+.qa-answer-form textarea:focus{border-color:rgba(0,212,200,.5)}
+
+/* ── Active Poll Banner (Student) ── */
+.poll-active-banner{background:linear-gradient(135deg,rgba(108,71,255,.15),rgba(168,85,247,.1));border:1px solid rgba(108,71,255,.3);border-radius:12px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;animation:glowPulse 2s infinite}
+.poll-active-dot{width:8px;height:8px;border-radius:50%;background:#a855f7;animation:pulseDot 1s infinite;flex-shrink:0}
+
+/* ── Student Raise Hand Floating State ── */
+.lc-hand-count{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.25);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:#fbbf24;display:flex;align-items:center;gap:4px}

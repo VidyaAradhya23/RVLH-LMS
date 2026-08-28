@@ -7164,31 +7164,62 @@ function openLiveClassModal() {
     container.scrollTop = container.scrollHeight;
   };
 
-  var sampleVideos = [
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+  var sampleList = window.LMS_SAMPLE_VIDEOS || [
+    { name: '⚛️ Physics — Electrostatics & Motion', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
+    { name: '🧪 Chemistry — Reaction Dynamics & Molecules', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' },
+    { name: '🔥 Physics — Thermodynamics & Heat Transfer', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' },
+    { name: '📐 Mathematics — Calculus & Vectors', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4' },
+    { name: '🧬 Biology — Cell Division & Genetics', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4' },
+    { name: '💻 Computer Science — Algorithms & Systems', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoylikes.mp4' },
+    { name: '🔬 Quantum Physics — Optics & Wave Mechanics', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' }
   ];
-  var vidSrc = sampleVideos[Math.floor(Math.random() * sampleVideos.length)];
+  window.LMS_SAMPLE_VIDEOS = sampleList;
+
+  window.changeLiveClassSampleVideo = window.changeLiveClassSampleVideo || function(src) {
+    var player = document.getElementById('lms-live-player');
+    if (player) {
+      player.src = src;
+      player.load();
+      player.play().catch(function(e) { console.log('Autoplay error:', e); });
+      toast('Switched sample live video stream! 🎥', '🎥');
+    }
+  };
+
+  var vidSrc = sampleList[Math.floor(Math.random() * sampleList.length)].url;
+
+  var optionsHtml = sampleList.map(function(s) {
+    var sel = (s.url === vidSrc) ? ' selected' : '';
+    return '<option value="' + s.url + '"' + sel + '>' + s.name + '</option>';
+  }).join('');
 
   var body = '<div style="display:flex;gap:14px;margin-bottom:14px">'
     + '<div style="flex:2;min-width:0">'
     + '<div style="position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9">'
-    + '<video id="lms-live-player" controls autoplay style="width:100%;height:100%;display:block;background:#000" preload="metadata">'
+    + '<video id="lms-live-player" src="' + vidSrc + '" controls autoplay muted playsinline style="width:100%;height:100%;display:block;background:#000" preload="auto">'
     + '<source src="' + vidSrc + '" type="video/mp4">Your browser does not support HTML5 video.</video>'
-    + '<div style="position:absolute;top:10px;left:10px;display:flex;gap:6px">'
+    + '<div id="lms-live-player-overlay" onclick="window.startLiveVideoWithAudio()" style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;transition:opacity .3s">'
+    + '<div style="background:linear-gradient(135deg,#6c47ff,#a855f7);border:1px solid rgba(255,255,255,.3);border-radius:30px;padding:12px 26px;display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.6)">'
+    + '<span style="font-size:22px">▶</span> Play Stream with Sound</div></div>'
+    + '<div style="position:absolute;top:10px;left:10px;display:flex;gap:6px;z-index:6;pointer-events:none">'
     + '<span class="live-badge" style="font-size:11px;padding:4px 10px"><div class="live-dot"></div>LIVE</span>'
     + '<span style="background:rgba(0,0,0,.6);backdrop-filter:blur(4px);padding:4px 10px;border-radius:20px;font-size:11px;color:#fff">👥 142 watching</span></div>'
-    + '<div style="position:absolute;top:10px;right:10px"><span style="background:rgba(255,45,107,.2);border:1px solid rgba(255,45,107,.3);padding:3px 8px;border-radius:20px;font-size:10px;color:#ff2d6b;font-weight:700">🔴 REC</span></div>'
+    + '<div style="position:absolute;top:10px;right:10px;z-index:6;pointer-events:none"><span style="background:rgba(255,45,107,.2);border:1px solid rgba(255,45,107,.3);padding:3px 8px;border-radius:20px;font-size:10px;color:#ff2d6b;font-weight:700">🔴 REC</span></div>'
     + '</div>'
-    + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
+    + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center">'
     + '<button class="btn btn-purple" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.playbackRate=1;toast(\'Speed: 1x\',\'▶\')">1x</button>'
     + '<button class="btn btn-purple" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.playbackRate=1.5;toast(\'Speed: 1.5x\',\'⚡\')">1.5x</button>'
     + '<button class="btn btn-purple" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.playbackRate=2;toast(\'Speed: 2x\',\'⚡\')">2x</button>'
     + '<button class="btn btn-teal" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.requestFullscreen()">⛶ Fullscreen</button>'
     + '<button class="btn btn-yellow" onclick="toast(\'Hand raised! ✋\',\'🖐️\')">✋ Raise Hand</button>'
     + '<button class="btn btn-purple" onclick="toast(\'Notes opened\',\'📝\')">📝 Notes</button>'
-    + '</div></div>'
+    + '</div>'
+    + '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.08)">'
+    + '<span style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap">📹 Live Sample Stream:</span>'
+    + '<select id="live-sample-video-select" class="inp-field" style="padding:4px 8px;font-size:12px;flex:1;background:var(--bg-card,#1a1d36);color:var(--text,#fff);border-radius:6px" onchange="window.changeLiveClassSampleVideo(this.value)">'
+    + optionsHtml
+    + '</select>'
+    + '</div>'
+    + '</div>'
     // Chat panel
     + '<div style="flex:1;min-width:200px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;display:flex;flex-direction:column;max-height:350px">'
     + '<div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700">💬 Live Chat</div>'
@@ -7202,6 +7233,23 @@ function openLiveClassModal() {
 
   setTimeout(function() {
     window.renderLivePlayerChat();
+    var player = document.getElementById('lms-live-player');
+    var ov = document.getElementById('lms-live-player-overlay');
+    if (player) {
+      player.src = vidSrc;
+      player.load();
+      player.play().then(function() {
+        if (ov) ov.style.display = 'none';
+      }).catch(function(err) {
+        console.log('Autoplay fallback:', err);
+      });
+      player.onplay = function() {
+        if (ov) ov.style.display = 'none';
+      };
+      player.onpause = function() {
+        if (ov && !player.ended) ov.style.display = 'flex';
+      };
+    }
   }, 50);
 }
 

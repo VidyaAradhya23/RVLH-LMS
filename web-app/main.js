@@ -1153,61 +1153,45 @@ PAGES['student_videos'] = function() {
         + '<div style="padding:14px">'
         + '<div style="display:flex;gap:6px;margin-bottom:8px">'
         + '<span style="background:rgba(0,198,255,.12);color:#00c6ff;border:1px solid rgba(0,198,255,.25);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">'+v.sub+'</span>'
-        + '<span style="background:rgba(108,71,255,.12);color:#a78bff;border:1px solid rgba(108,71,255,.25);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">'+(v.batch || 'JEE/NEET')+'</span></div>'
-        + '<div style="font-family:Syne,sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;line-height:1.35">'+v.title+'</div>'
-        + '<div style="font-size:12px;color:var(--muted);margin-bottom:12px">by '+v.fac+'</div>'
-        + '<div style="display:flex;gap:6px">'
-        + '<button class="btn btn-solid btn-sm" style="flex:1;justify-content:center" onclick="window.openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">▶ Watch</button>'
-        + '<button class="btn btn-purple btn-sm" onclick="window.viewLectureNotes(\''+v.title.replace(/'/g,"\\'")+'\')">📝</button>'
-        + '<button class="btn btn-yellow btn-sm" onclick="window.openAIVideoAssistant(\''+v.title.replace(/'/g,"\\'")+'\')">🤖</button>'
-        + '</div></div></div>';
+        + '<span style="background:rgba(108,71,255,.12);color:#a78bff;border:1px solid rgba(108,71,255,.25);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">'+(v.batch||'General')+'</span>'
+        + '</div>'
+        + '<div style="font-size:13px;font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+v.title+'</div>'
+        + '<div style="font-size:11px;color:var(--muted)">'+v.fac+'</div>'
+        + '</div></div>';
     }).join('') + '</div>';
 
-  var historyHtml = '<div class="card" style="margin-top:20px"><div class="card-header"><div class="card-title">📜 Watch History</div></div>'
-    + '<div style="display:flex;flex-direction:column;gap:6px">'
-    + [{t:'Thermodynamics — Entropy',when:'Yesterday',pct:100},{t:'Organic Chemistry — Alcohols',when:'2 days ago',pct:85},{t:'Coordinate Geometry',when:'3 days ago',pct:60}].map(function(h){
-      return '<div class="list-item" style="cursor:pointer" onclick="window.openVideoWithNotes(\''+h.t.replace(/'/g,"\\'")+'\',\'📹\')"><div class="li-icon" style="background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.15)">📹</div><div class="li-content"><div class="li-title">'+h.t+'</div><div class="li-sub">Watched '+h.when+' · '+h.pct+'% completed</div></div><span class="badge '+(h.pct===100?'badge-green':'badge-yellow')+'">'+h.pct+'%</span></div>';
-    }).join('') + '</div></div>';
-
-  window.currentVideoFilter = window.currentVideoFilter || 'All Subjects';
-
-  return featuredHtml + filterBar + videoGrid + historyHtml;
+  return featuredHtml + filterBar + videoGrid;
 };
 
-// Global helper functions for Videos page
-window.setVideoFilter = function(sub) {
-  window.currentVideoFilter = sub;
-  document.querySelectorAll('.itab-vid').forEach(function(btn) {
-    var text = btn.textContent.trim().toLowerCase();
-    var matchText = sub.toLowerCase();
-    if (matchText === 'all') matchText = 'all subjects';
-    if (text === matchText) {
-      btn.classList.add('active');
-    } else {
-      btn.classList.remove('active');
-    }
-  });
-};
+// ──────────────── LIVE CLASS SHARED STATE ────────────────
+window.liveClassState = window.liveClassState || {
 
-window.filterVideos = function() {
-  var searchField = document.getElementById('video-search');
-  var query = searchField ? searchField.value.toLowerCase() : '';
-  var filter = window.currentVideoFilter || 'all';
-  var items = document.querySelectorAll('.video-card-item');
-  items.forEach(function(item) {
-    var title = item.getAttribute('data-title').toLowerCase();
-    var fac = item.getAttribute('data-fac').toLowerCase();
-    var sub = item.getAttribute('data-sub').toLowerCase();
-    
-    var matchesSearch = title.indexOf(query) > -1 || fac.indexOf(query) > -1;
-    var matchesFilter = filter.toLowerCase() === 'all' || filter.toLowerCase() === 'all subjects' || sub.toLowerCase() === filter.toLowerCase();
-    
-    if (matchesSearch && matchesFilter) {
-      item.style.display = 'block';
-    } else {
-      item.style.display = 'none';
-    }
-  });
+  chatMessages: [
+    {id:1,n:'Sneha P.',m:'Great explanation sir! The Gauss Law derivation is very clear 🙌',t:'3m ago',c:'#6c47ff',reactions:[{e:'❤️',count:3,mine:false},{e:'👍',count:5,mine:false}],pinned:false},
+    {id:2,n:'Rohan G.',m:'Can you repeat the formula for electric flux through a closed surface?',t:'2m ago',c:'#ff6b35',reactions:[],pinned:false},
+    {id:3,n:'Ananya S.',m:'Thank you! Very clear explanation 👏',t:'1m ago',c:'#4ade80',reactions:[{e:'🔥',count:2,mine:false}],pinned:false},
+    {id:4,n:'Dr. Priya (Faculty)',m:'Check slide 14 for the full derivation. Remember: ∮E·dA = Q/ε₀',t:'45s ago',c:'#00d4c8',reactions:[{e:'👍',count:8,mine:false}],pinned:true,isFaculty:true}
+  ],
+  pinnedMsg: 'Check slide 14 for the full derivation. Remember: ∮E·dA = Q/ε₀',
+  questions: [
+    {id:1,n:'Rohan G.',c:'#ff6b35',q:'Why does the electric field inside a conductor become zero in electrostatic equilibrium?',t:'5m ago',votes:7,myVote:false,answered:true,answer:'Great question! In electrostatic equilibrium, free charges redistribute until the net field inside is zero. Any residual field would cause charge movement, contradicting the equilibrium condition.',answeredBy:'Dr. Priya Mehta'},
+    {id:2,n:'Meera K.',c:'#a855f7',q:'How do we apply Gauss Law when charge distribution is not symmetric?',t:'3m ago',votes:12,myVote:false,answered:false,answer:''},
+    {id:3,n:'Arjun S.',c:'#fbbf24',q:'What is the significance of choosing a Gaussian surface?',t:'1m ago',votes:4,myVote:false,answered:false,answer:''}
+  ],
+  activePoll: {
+    active: true,
+    question: 'What is the electric field inside a uniformly charged solid sphere at distance r < R?',
+    options: ['Zero (E = 0)', 'Proportional to r (E ∝ r)', 'Inversely proportional to r (E ∝ 1/r)', 'Proportional to r² (E ∝ r²)'],
+    votes: [4, 18, 5, 2],
+    totalVotes: 29,
+    myVote: -1
+  },
+  raisedHands: [
+    {id:1, n:'Kiran Patel', c:'#ff6b35', since:'2m ago', called:false},
+    {id:2, n:'Sneha Roy', c:'#4ade80', since:'1m ago', called:false}
+  ],
+  studentHandRaised: false,
+  nextMsgId: 5
 };
 
 // ──────────────── STUDENT LIVE CLASS (ENHANCED) ────────────────
@@ -1225,26 +1209,41 @@ PAGES['student_live'] = function() {
     { title:'Cell Division - Mitosis',        sub:'Biology',  dur:'52 min', views:167 },
   ];
 
+  var s = window.liveClassState;
+  var qCount = s.questions.filter(function(q){return !q.answered;}).length;
+  var pollActive = s.activePoll && s.activePoll.active;
+  var handRaised = s.studentHandRaised;
+
+  // Status badges for the live card overlay
+  var badges = '<div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:12px">';
+  if(qCount > 0) badges += '<span style="background:rgba(168,85,247,.2);border:1px solid rgba(168,85,247,.4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#a855f7">🙋 '+qCount+' Q&A pending</span>';
+  if(pollActive) badges += '<span class="poll-active-banner" style="padding:4px 12px;font-size:11px;font-weight:700;margin:0"><div class="poll-active-dot"></div>Poll Active!</span>';
+  badges += '</div>';
+
+  // Raise hand button (toggleable)
+  var raiseHandBtn = '<button id="stu-raise-hand-btn" class="btn btn-yellow'+(handRaised?' raise-hand-btn-active':'')+'" '
+    + 'onclick="window.toggleStudentHand()" style="font-size:20px;padding:10px 16px" title="Raise Hand">✋'+(handRaised?' (Raised)':'')+'</button>';
+
   // Immersive live class card
   var liveBox = '<div class="enhanced-card border-glow" style="margin-bottom:20px;padding:0;overflow:hidden">'
-    + '<div style="position:relative;aspect-ratio:21/9;background:linear-gradient(135deg,rgba(10,12,28,.95),rgba(20,22,50,.95),rgba(108,71,255,.1));display:flex;align-items:center;justify-content:center;min-height:200px">'
+    + '<div style="position:relative;aspect-ratio:21/9;background:linear-gradient(135deg,rgba(10,12,28,.95),rgba(20,22,50,.95),rgba(108,71,255,.1));display:flex;align-items:center;justify-content:center;min-height:220px">'
     + '<div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:8px"><span class="live-badge" style="font-size:12px;padding:5px 14px"><div class="live-dot"></div>LIVE NOW</span><span style="background:rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;color:rgba(255,255,255,.8)">👥 142 watching</span></div>'
-    + '<div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px"><span style="background:rgba(255,45,107,.15);border:1px solid rgba(255,45,107,.3);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#ff2d6b;display:flex;align-items:center;gap:4px">🔴 REC</span><span style="background:rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:3px 10px;border-radius:20px;font-size:11px;color:rgba(255,255,255,.7)">🖥️ Screen Shared</span></div>'
-    + '<div style="text-align:center"><div style="font-size:52px;margin-bottom:12px">⚛️</div>'
+    + '<div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px"><span style="background:rgba(255,45,107,.15);border:1px solid rgba(255,45,107,.3);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#ff2d6b">🔴 REC</span><span style="background:rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:3px 10px;border-radius:20px;font-size:11px;color:rgba(255,255,255,.7)">🖥️ Screen Share</span></div>'
+    + '<div style="text-align:center;padding:0 20px"><div style="font-size:48px;margin-bottom:10px">⚛️</div>'
     + '<div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">Physics — Electrostatics: Gauss Law</div>'
-    + '<div style="color:var(--muted);font-size:13px;margin-bottom:16px">Dr. Priya Mehta &nbsp;•&nbsp; JEE Advanced Batch A</div>'
+    + '<div style="color:var(--muted);font-size:13px;margin-bottom:12px">Dr. Priya Mehta &nbsp;•&nbsp; JEE Advanced Batch A</div>'
+    + badges
     + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'
-    + '<button class="btn btn-red glow-join" onclick="openLiveClassModal()" style="font-weight:800;padding:12px 32px;font-size:15px;border-radius:12px">🎥 Join Live Class</button>'
-    + '<button class="btn btn-purple" onclick="toast(\'Hand raised! ✋\',\'🖐️\')" style="font-size:20px;padding:10px 16px" title="Raise Hand">✋</button>'
-    + '<button class="btn btn-teal" onclick="window.openLiveClassChatModal()" style="padding:10px 16px" title="Open Chat">💬 Chat</button>'
+    + '<button class="btn btn-red glow-join" onclick="openLiveClassModal()" style="font-weight:800;padding:12px 28px;font-size:15px;border-radius:12px">🎥 Join Live Class</button>'
+    + raiseHandBtn
     + '</div></div>'
     + '<div style="position:absolute;bottom:14px;left:14px;display:flex;gap:6px">'
-    + [{n:'Dr. Priya',c:'#6c47ff'},{n:'Student',c:'#4ade80'},{n:'Arjun',c:'#ff6b35'}].map(function(p){return '<div style="width:32px;height:32px;border-radius:50%;background:'+p.c+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;border:2px solid rgba(10,12,28,.8)" title="'+p.n+'">'+p.n[0]+'</div>';}).join('')
-    + '<div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted);border:2px solid rgba(10,12,28,.8)">+139</div></div>'
+    + [{n:'Dr. Priya',c:'#6c47ff'},{n:'Sneha',c:'#4ade80'},{n:'Arjun',c:'#ff6b35'}].map(function(p){return '<div style="width:30px;height:30px;border-radius:50%;background:'+p.c+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;border:2px solid rgba(10,12,28,.8)">'+p.n[0]+'</div>';}).join('')
+    + '<div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted);border:2px solid rgba(10,12,28,.8)">+139</div></div>'
     + '</div></div>';
 
   var upHtml = upcoming.map(function(c) {
-    return '<div class="sched-item" onclick="toast(\'Reminder set!\',\'🔔\')">'
+    return '<div class="sched-item" onclick="toast(\'Reminder set!\',\'🔔\')">'  
       + '<div class="sched-time"><div class="st">' + c.time + '</div><div class="sd">' + c.date + '</div></div>'
       + '<div class="sched-body"><div class="sched-title">' + c.sub + ': ' + c.topic + '</div>'
       + '<div class="sched-meta">' + c.fac + ' • ' + c.n + ' enrolled</div></div>'
@@ -1261,6 +1260,19 @@ PAGES['student_live'] = function() {
     + '<div class="card"><div class="card-header"><div class="card-title">📅 Upcoming Classes</div></div>' + upHtml + '</div>'
     + '<div class="card"><div class="card-header"><div class="card-title">📼 Recorded Lectures</div></div>' + recHtml + '</div>'
     + '</div>';
+};
+
+window.toggleStudentHand = function() {
+  var s = window.liveClassState;
+  s.studentHandRaised = !s.studentHandRaised;
+  if (s.studentHandRaised) {
+    s.raisedHands.push({ id: Date.now(), n: (G && G.user ? G.user.name : 'You'), c: '#4ade80', since: 'Just now', called: false });
+    toast('Hand raised! ✋ Faculty can see your request', '✋');
+  } else {
+    s.raisedHands = s.raisedHands.filter(function(h){ return h.n !== (G && G.user ? G.user.name : 'You'); });
+    toast('Hand lowered', '👋');
+  }
+  loadPage('student_live');
 };
 
 
@@ -2289,15 +2301,50 @@ PAGES['faculty_dashboard'] = function() {
 
 function openFacultyClassModal(topic, batch, time, status) {
   var isLive = status === 'live';
-  var body = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:15px">'
-    + makeFeeCard('Batch', batch) + makeFeeCard('Time', time) + '</div>'
-    + (isLive
-      ? '<div class="video-box" style="margin-bottom:13px"><div class="video-inner"><div class="live-badge"><div class="live-dot"></div>CLASS IS LIVE</div><button class="play-btn" onclick="toast(\'Joining...\',\'📡\')">▶</button></div></div>'
-        + '<div style="display:flex;gap:8px"><button class="btn btn-red" onclick="toast(\'Going live!\',\'📡\');closeModal(\'modal-detail\')">🔴 Go Live</button>'
-        + '<button class="btn btn-purple" onclick="toast(\'Attendance taken\',\'✅\')">✅ Attendance</button></div>'
-      : '<div style="display:flex;gap:8px"><button class="btn btn-teal" onclick="toast(\'Class started!\',\'📡\');closeModal(\'modal-detail\')">▶ Start Class</button>'
-        + '<button class="btn btn-purple" onclick="toast(\'Students notified!\',\'🔔\')">🔔 Notify</button></div>');
-  openDetail('📡 ' + topic, body, '');
+
+  if (!isLive) {
+    // Simple upcoming class modal
+    var body = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:15px">'
+      + makeFeeCard('Batch', batch) + makeFeeCard('Time', time) + '</div>'
+      + '<div style="display:flex;gap:8px">'
+      + '<button class="btn btn-teal" onclick="toast(\'Class started! 📡\',\'📡\');closeModal(\'modal-detail\');">▶ Start Class</button>'
+      + '<button class="btn btn-purple" onclick="toast(\'Students notified! 🔔\',\'🔔\')">🔔 Notify Students</button>'
+      + '<button class="btn btn-yellow" onclick="openScheduleClassModal()">📅 Reschedule</button>'
+      + '</div>';
+    openDetail('📅 ' + topic + ' — ' + batch, body, '');
+    return;
+  }
+
+  // ── FULL FACULTY LIVE CONTROL PANEL ──
+  var s = window.liveClassState;
+  var unanswered = s.questions.filter(function(q){return !q.answered;}).length;
+  var hands = s.raisedHands.filter(function(h){return !h.called;}).length;
+
+  var controlsBar = '<div style="display:flex;gap:7px;flex-wrap:wrap;padding:12px 0 14px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:12px">'
+    + '<div class="live-badge" style="font-size:11px;padding:4px 12px"><div class="live-dot"></div>CLASS LIVE</div>'
+    + '<span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:var(--text)">👥 142 students</span>'
+    + '<button class="btn btn-sm btn-purple" onclick="toast(\'Attendance recorded ✅\',\'✅\')">✅ Auto Attendance</button>'
+    + '<button class="btn btn-sm btn-teal" onclick="openDigitalBlackboard()">🎨 Whiteboard</button>'
+    + '<button class="btn btn-sm btn-red" style="margin-left:auto" onclick="toast(\'Class ended\',\'⏹\');closeModal(\'modal-detail\')">⏹ End Class</button>'
+    + '</div>';
+
+  var facTabs = [
+    {id:'chat',  icon:'💬', label:'Chat'},
+    {id:'qa',    icon:'🙋', label:'Q&A'},
+    {id:'hands', icon:'✋', label:'Hands'},
+    {id:'poll',  icon:'📊', label:'Poll'}
+  ];
+  var sidePanel = lcBuildSidePanel('fac', facTabs, 'chat', '360px');
+
+  var body = controlsBar + sidePanel;
+
+  openDetail('🎛️ Live Control — ' + topic, body,
+    '<button class="btn btn-red" onclick="toast(\'Class ended\',\'⏹\');closeModal(\'modal-detail\')" >⏹ End Class</button>'
+  );
+
+  setTimeout(function() {
+    window.lcRenderChat('fac');
+  }, 60);
 }
 
 function openResolveDoubt(student, doubtText) {
@@ -2434,24 +2481,44 @@ PAGES['faculty_live'] = function() {
     { t:'09:00',batch:'JEE Adv A', topic:'Modern Physics',    n:142,tomorrow:true },
     { t:'11:00',batch:'Crash',     topic:'Revision Mechanics', n:56, tomorrow:true },
   ];
-  var liveCard = '<div class="card" style="border-color:rgba(255,45,107,.3);background:rgba(255,45,107,.03);margin-bottom:16px">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center">'
-    + '<div><div class="live-badge" style="margin-bottom:7px"><div class="live-dot"></div>LIVE NOW</div>'
-    + '<div style="font-family:Syne,sans-serif;font-size:16px;font-weight:700">Physics — Electrostatics: Gauss Law</div>'
-    + '<div style="color:var(--muted);font-size:13px;margin-top:3px">JEE Advanced Batch A • 142 students</div></div>'
-    + '<div style="display:flex;gap:7px">'
-    + '<button class="btn btn-red" onclick="openFacultyClassModal(\'Electrostatics\',\'JEE Adv A\',\'09:00\',\'live\')">🔴 Manage</button>'
-    + '<button class="btn btn-purple" onclick="toast(\'Attendance taken\',\'✅\')">✅</button></div></div></div>';
+
+  var s = window.liveClassState;
+  var unanswered = s.questions.filter(function(q){return !q.answered;}).length;
+  var hands = s.raisedHands.filter(function(h){return !h.called;}).length;
+  var pollActive = s.activePoll && s.activePoll.active;
+
+  // Activity badges for the live card
+  var actBadges = '';
+  if (unanswered > 0) actBadges += '<span style="background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:#a855f7">🙋 '+unanswered+' Questions</span> ';
+  if (hands > 0) actBadges += '<span style="background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:#fbbf24">✋ '+hands+' Hands Raised</span> ';
+  if (pollActive) actBadges += '<span style="background:rgba(108,71,255,.12);border:1px solid rgba(108,71,255,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:#a78bff">📊 Poll Active</span>';
+
+  var liveCard = '<div class="enhanced-card" style="border-color:rgba(255,45,107,.3);background:rgba(255,45,107,.03);margin-bottom:16px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">'
+    + '<div style="flex:1">'
+    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+    + '<div class="live-badge" style="font-size:12px"><div class="live-dot"></div>LIVE NOW</div>'
+    + '<span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">👥 142 students</span>'
+    + '</div>'
+    + '<div style="font-family:Syne,sans-serif;font-size:16px;font-weight:700;margin-bottom:4px">Physics — Electrostatics: Gauss Law</div>'
+    + '<div style="color:var(--muted);font-size:13px;margin-bottom:10px">JEE Advanced Batch A • Started 23 min ago</div>'
+    + (actBadges ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' + actBadges + '</div>' : '')
+    + '</div>'
+    + '<div style="display:flex;flex-direction:column;gap:7px;flex-shrink:0">'
+    + '<button class="btn btn-red" style="font-weight:800" onclick="openFacultyClassModal(\'Electrostatics\',\'JEE Adv A\',\'09:00\',\'live\')">🎛️ Open Control Panel</button>'
+    + '<button class="btn btn-sm btn-purple" onclick="toast(\'Attendance auto-recorded ✅\',\'✅\')">✅ Auto Attendance</button>'
+    + '<button class="btn btn-sm btn-teal" onclick="openDigitalBlackboard()">🎨 Whiteboard</button>'
+    + '</div></div></div>';
 
   var upHtml = '<div class="card"><div class="card-header"><div class="card-title">📅 Scheduled Classes</div>'
     + '<button class="btn btn-teal" onclick="openScheduleClassModal()">➕ Schedule</button></div>'
     + upcoming.map(function(c) {
         return '<div class="sched-item" onclick="openFacultyClassModal(\'' + c.topic + '\',\'' + c.batch + '\',\'' + c.t + '\',\'upcoming\')">'
           + '<div class="sched-time"><div class="st">' + c.t + '</div><div class="sd">' + (c.tomorrow?'Tmrw':'Today') + '</div></div>'
-          + '<div class="sched-body"><div class="sched-title">' + c.batch + ': ' + c.topic + '</div><div class="sched-meta">' + c.n + ' students</div></div>'
+          + '<div class="sched-body"><div class="sched-title">' + c.batch + ': ' + c.topic + '</div><div class="sched-meta">' + c.n + ' students enrolled</div></div>'
           + '<div style="display:flex;gap:5px">'
-          + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Editing...\',\'✏️\')">✏️</button>'
-          + '<button class="btn btn-sm btn-teal" onclick="event.stopPropagation();toast(\'Students notified!\',\'🔔\')">🔔</button></div></div>';
+          + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Editing class...\',\'✏️\')">✏️</button>'
+          + '<button class="btn btn-sm btn-teal" onclick="event.stopPropagation();toast(\'Students notified! 🔔\',\'🔔\')">🔔</button></div></div>';
       }).join('') + '</div>';
   return liveCard + upHtml;
 };
@@ -7294,67 +7361,545 @@ window.deleteLibraryItem = async function(id, isVideo) {
 // MISSING FUNCTIONS & ENHANCEMENTS — APPENDED TO FILE
 // ══════════════════════════════════════════════════
 
-// ── Live Class Modal (Video Player with chat) ──
-function openLiveClassModal() {
-  window.mockChatMessages = window.mockChatMessages || [
-    {n:'Sneha P.',m:'Great explanation sir!',t:'2m ago',c:'#6c47ff'},
-    {n:'Rohan G.',m:'Can you repeat the formula?',t:'1m ago',c:'#ff6b35'},
-    {n:'Ananya S.',m:'Thank you! Very clear 👏',t:'30s ago',c:'#4ade80'},
-    {n:'Dr. Priya',m:'Check slide 14 for the derivation',t:'15s ago',c:'#00d4c8'}
+// ──────────────── LIVE CLASS — SHARED RENDER HELPERS ────────────────
+
+window.lcSwitchTab = function(panelId, clickedTab, context) {
+  var prefix = context || 'lc';
+  var panels = document.querySelectorAll('[data-lc-panel][data-lc-context="'+prefix+'"]');
+  var tabs = document.querySelectorAll('[data-lc-tab][data-lc-context="'+prefix+'"]');
+  panels.forEach(function(p){ p.classList.remove('active'); });
+  tabs.forEach(function(t){ t.classList.remove('active'); });
+  var panel = document.getElementById(prefix+'-panel-'+panelId);
+  if (panel) panel.classList.add('active');
+  if (clickedTab) clickedTab.classList.add('active');
+  if (panelId === 'chat') window.lcRenderChat(prefix);
+  if (panelId === 'qa') window.lcRenderQA(prefix);
+  if (panelId === 'poll') window.lcRenderPoll(prefix);
+  if (panelId === 'hands') window.lcRenderHands(prefix);
+};
+
+window.lcRenderChat = function(ctx) {
+  var s = window.liveClassState;
+  var listId = ctx+'-panel-chat';
+  var panel = document.getElementById(listId);
+  if (!panel) return;
+  var pinned = s.chatMessages.find(function(m){ return m.pinned; });
+  var pinnedHtml = '';
+  if (pinned) {
+    pinnedHtml = '<div class="lc-pinned"><div class="lc-pinned-icon">📌</div><div class="lc-pinned-body"><div class="lc-pinned-label">Pinned</div><div class="lc-pinned-text">'+pinned.m+'</div></div></div>';
+  }
+  var isFaculty = (G && G.role === 'faculty');
+  var msgsHtml = '<div style="flex:1;overflow-y:auto;padding:10px 10px 6px">' +
+    s.chatMessages.map(function(msg){
+      var reactHtml = '';
+      if (msg.reactions && msg.reactions.length) {
+        reactHtml = '<div class="chat-reactions">' + msg.reactions.map(function(r,ri){
+          return '<button class="chat-reaction'+(r.mine?' mine':'')+'" onclick="window.lcToggleReaction('+msg.id+','+ri+',\''+ctx+'\')">' + r.e + ' <span>'+r.count+'</span></button>';
+        }).join('') + '</div>';
+      }
+      var pinBtn = isFaculty ? '<button class="chat-pin-msg" onclick="window.lcPinMsg('+msg.id+',\''+ctx+'\')" title="Pin">'+(msg.pinned?'📌 Unpin':'📌 Pin')+'</button>' : '';
+      var reactTrigger = '<div class="chat-react-trigger">'
+        + ['❤️','👍','😂','🔥'].map(function(e){ return '<button onclick="window.lcAddReaction('+msg.id+',\''+e+'\',\''+ctx+'\')" title="React '+e+'">'+e+'</button>'; }).join('')
+        + '</div>';
+      return '<div class="chat-msg-wrap">'
+        + '<div class="chat-avatar" style="background:'+msg.c+'">' + msg.n[0] + '</div>'
+        + '<div class="chat-body">'
+        + '<div class="chat-name-row"><span class="chat-name" style="color:'+msg.c+'">'+msg.n+'</span>'+(msg.isFaculty?'<span style="background:rgba(0,212,200,.12);border:1px solid rgba(0,212,200,.25);border-radius:10px;padding:1px 6px;font-size:9px;font-weight:700;color:#00d4c8">FACULTY</span>':'')+'<span class="chat-ts">'+msg.t+'</span>'+pinBtn+'</div>'
+        + '<div class="chat-text">'+msg.m+'</div>'
+        + reactHtml + '</div>'
+        + reactTrigger
+        + '</div>';
+    }).join('') + '</div>';
+  var inputHtml = '<div class="qa-input-bar"><input id="'+ctx+'-chat-input" class placeholder="Send a message..." placeholder="Send a message..." onkeydown="if(event.key===\'Enter\'){window.lcSendChat(\''+ctx+'\')}"><button class="qa-submit-btn" onclick="window.lcSendChat(\''+ctx+'\')" style="padding:8px 12px">Send</button></div>';
+  panel.innerHTML = pinnedHtml + msgsHtml + inputHtml;
+  var msgDiv = panel.querySelector('[style*="overflow-y:auto"]');
+  if (msgDiv) msgDiv.scrollTop = msgDiv.scrollHeight;
+  // style input
+  var inp = document.getElementById(ctx+'-chat-input');
+  if (inp) { inp.style.cssText='flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--text);outline:none'; }
+};
+
+window.lcSendChat = function(ctx) {
+  var inp = document.getElementById(ctx+'-chat-input');
+  if (!inp || !inp.value.trim()) return;
+  var s = window.liveClassState;
+  var name = (G && G.user ? G.user.name : 'You');
+  s.chatMessages.push({id: s.nextMsgId++, n: name, m: inp.value.trim(), t:'Just now', c:'#4ade80', reactions:[], pinned:false});
+  inp.value = '';
+  window.lcRenderChat(ctx);
+};
+
+window.lcToggleReaction = function(msgId, reactIdx, ctx) {
+  var s = window.liveClassState;
+  var msg = s.chatMessages.find(function(m){ return m.id===msgId; });
+  if (!msg || !msg.reactions[reactIdx]) return;
+  var r = msg.reactions[reactIdx];
+  r.mine = !r.mine;
+  r.count += r.mine ? 1 : -1;
+  window.lcRenderChat(ctx);
+};
+
+window.lcAddReaction = function(msgId, emoji, ctx) {
+  var s = window.liveClassState;
+  var msg = s.chatMessages.find(function(m){ return m.id===msgId; });
+  if (!msg) return;
+  var existing = msg.reactions.find(function(r){ return r.e===emoji; });
+  if (existing) { existing.mine = !existing.mine; existing.count += existing.mine?1:-1; }
+  else { msg.reactions.push({e:emoji,count:1,mine:true}); }
+  window.lcRenderChat(ctx);
+};
+
+window.lcPinMsg = function(msgId, ctx) {
+  var s = window.liveClassState;
+  s.chatMessages.forEach(function(m){ m.pinned = false; });
+  var msg = s.chatMessages.find(function(m){ return m.id===msgId; });
+  if (msg) { msg.pinned = true; s.pinnedMsg = msg.m; toast('Message pinned!','📌'); }
+  window.lcRenderChat(ctx);
+};
+
+window.lcRenderQA = function(ctx) {
+  var s = window.liveClassState;
+  var panel = document.getElementById(ctx+'-panel-qa');
+  if (!panel) return;
+  var isFaculty = (G && G.role === 'faculty');
+  var sorted = s.questions.slice().sort(function(a,b){ return b.votes-a.votes; });
+  var qHtml = sorted.length ? sorted.map(function(q){
+    var ansHtml = q.answered
+      ? '<div class="qa-answer-bubble"><span>✅ Answered by '+q.answeredBy+'</span>'+q.answer+'</div>'
+      : '';
+    var actionHtml = isFaculty
+      ? (q.answered ? '<span class="qa-answered-badge">✅ Answered</span>' : '<button class="qa-answer-btn" onclick="window.lcOpenAnswerModal('+q.id+')">Answer</button>')
+      : '<button class="qa-upvote'+(q.myVote?' voted':'')+'" onclick="window.lcUpvote('+q.id+',\''+ctx+'\')" title="Upvote">👍 '+q.votes+'</button>';
+    return '<div class="qa-question'+(q.answered?' answered':'')+'">'  
+      + '<div class="qa-meta"><div class="qa-avatar" style="background:'+q.c+'">'+q.n[0]+'</div><span class="qa-name">'+q.n+'</span><span class="qa-time">'+q.t+'</span></div>'
+      + '<div class="qa-text">'+q.q+'</div>'
+      + '<div class="qa-actions">' + actionHtml + (!isFaculty?'<span style="font-size:10px;color:var(--muted);margin-left:auto">' + q.votes + ' votes</span>':'') + '</div>'
+      + ansHtml + '</div>';
+  }).join('') : '<div class="poll-no-active"><div style="font-size:32px">🙋</div><div>No questions yet</div><div style="font-size:12px">Be the first to ask!</div></div>';
+
+  var inputHtml = !isFaculty
+    ? '<div class="qa-input-bar"><input id="'+ctx+'-qa-input" placeholder="Ask a question..." onkeydown="if(event.key===\'Enter\'){window.lcSubmitQuestion(\''+ctx+'\')}"><button class="qa-submit-btn" onclick="window.lcSubmitQuestion(\''+ctx+'\')" style="padding:8px 14px">Ask ❓</button></div>'
+    : '';
+
+  panel.innerHTML = '<div style="flex:1;overflow-y:auto;padding:10px">' + qHtml + '</div>' + inputHtml;
+  var inp = document.getElementById(ctx+'-qa-input');
+  if (inp) inp.style.cssText='flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--text);outline:none';
+};
+
+window.lcSubmitQuestion = function(ctx) {
+  var inp = document.getElementById(ctx+'-qa-input');
+  if (!inp || !inp.value.trim()) return;
+  var s = window.liveClassState;
+  var name = (G && G.user ? G.user.name : 'You');
+  s.questions.push({id: Date.now(), n:name, c:'#4ade80', q:inp.value.trim(), t:'Just now', votes:0, myVote:false, answered:false, answer:''});
+  inp.value = '';
+  toast('Question submitted! ✅','🙋');
+  window.lcRenderQA(ctx);
+};
+
+window.lcUpvote = function(qId, ctx) {
+  var s = window.liveClassState;
+  var q = s.questions.find(function(x){ return x.id===qId; });
+  if (!q) return;
+  q.myVote = !q.myVote;
+  q.votes += q.myVote ? 1 : -1;
+  window.lcRenderQA(ctx);
+};
+
+window.lcOpenAnswerModal = function(qId) {
+  var s = window.liveClassState;
+  var q = s.questions.find(function(x){ return x.id===qId; });
+  if (!q) return;
+  var body = '<div style="margin-bottom:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px">'
+    + '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Student Question</div>'
+    + '<div style="font-size:13px;line-height:1.5">'+q.q+'</div></div>'
+    + '<div class="qa-answer-form"><textarea id="fac-answer-textarea" placeholder="Type your answer here..." style="width:100%"></textarea></div>';
+  openDetail('✍️ Answer Question', body,
+    '<button class="btn btn-solid" onclick="window.lcPostAnswer('+qId+')">📤 Post Answer</button>'
+  );
+};
+
+window.lcPostAnswer = function(qId) {
+  var ta = document.getElementById('fac-answer-textarea');
+  if (!ta || !ta.value.trim()) { toast('Please type an answer', '⚠️'); return; }
+  var s = window.liveClassState;
+  var q = s.questions.find(function(x){ return x.id===qId; });
+  if (!q) return;
+  q.answered = true;
+  q.answer = ta.value.trim();
+  q.answeredBy = (G && G.user ? G.user.name : 'Faculty');
+  toast('Answer posted! Students can see it now ✅', '✅');
+  closeModal('modal-detail');
+  // re-render if faculty panel is open
+  if (document.getElementById('fac-panel-qa')) window.lcRenderQA('fac');
+};
+
+window.lcRenderPoll = function(ctx) {
+  var s = window.liveClassState;
+  var panel = document.getElementById(ctx+'-panel-poll');
+  if (!panel) return;
+  var isFaculty = (G && G.role === 'faculty');
+  var p = s.activePoll;
+
+  if (isFaculty) {
+    // Faculty sees: if poll active → results + end button; else → create form
+    var facHtml = '';
+    if (p && p.active) {
+      var totalV = p.votes.reduce(function(a,b){return a+b;},0) || 1;
+      facHtml = '<div style="padding:10px">'  
+        + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><div style="font-size:13px;font-weight:700">🗳️ Live Poll Results</div>'
+        + '<button class="btn btn-sm btn-red" onclick="window.lcEndPoll()">⏹ End Poll</button></div>'
+        + '<div class="poll-card">' 
+        + '<div class="poll-question">'+p.question+'</div>'
+        + p.options.map(function(opt,i){
+            var pct = Math.round(p.votes[i]/totalV*100);
+            return '<div class="poll-option"><div class="poll-option-btn voted"><div class="poll-bar" style="transform:scaleX('+pct/100+')"></div><div class="poll-option-label"><span>'+opt+'</span><span class="poll-pct">'+pct+'% ('+p.votes[i]+')</span></div></div></div>';
+          }).join('')
+        + '<div class="poll-meta"><span>👥 '+totalV+' votes</span></div>'
+        + '</div></div>';
+    } else {
+      facHtml = '<div style="padding:10px"><div style="font-size:13px;font-weight:700;margin-bottom:12px">📊 Create Live Poll</div>'
+        + '<div class="poll-create-form">'
+        + '<input id="'+ctx+'-poll-q" placeholder="Poll question e.g. What is ε₀ equal to?">'
+        + '<input id="'+ctx+'-poll-o1" placeholder="Option 1">'
+        + '<input id="'+ctx+'-poll-o2" placeholder="Option 2">'
+        + '<input id="'+ctx+'-poll-o3" placeholder="Option 3 (optional)">'
+        + '<input id="'+ctx+'-poll-o4" placeholder="Option 4 (optional)">'
+        + '<button class="poll-launch-btn" onclick="window.lcLaunchPoll(\''+ctx+'\')" id="poll-launch-btn">🚀 Launch Poll to Students</button>'
+        + '</div></div>';
+    }
+    panel.innerHTML = facHtml;
+  } else {
+    // Student view
+    if (!p || !p.active) {
+      panel.innerHTML = '<div class="poll-no-active"><div style="font-size:36px">📊</div><div>No active poll</div><div style="font-size:12px">Faculty will launch a poll during the class</div></div>';
+      return;
+    }
+    var totalV2 = p.votes.reduce(function(a,b){return a+b;},0) || 1;
+    var voted = p.myVote >= 0;
+    var pollHtml = '<div style="padding:10px"><div class="poll-active-banner" style="margin-bottom:10px"><div class="poll-active-dot"></div><span style="font-size:12px;font-weight:700">Live Poll — vote now!</span></div>'  
+      + '<div class="poll-card">'  
+      + '<div class="poll-question">'+p.question+'</div>'
+      + p.options.map(function(opt,i){
+          if (voted) {
+            var pct2 = Math.round(p.votes[i]/totalV2*100);
+            return '<div class="poll-option"><div class="poll-option-btn voted'+(p.myVote===i?' selected':'')+'"><div class="poll-bar" style="transform:scaleX('+pct2/100+')"></div><div class="poll-option-label"><span>'+opt+(p.myVote===i?' ✓':'')+'</span><span class="poll-pct">'+pct2+'%</span></div></div></div>';
+          } else {
+            return '<div class="poll-option"><button class="poll-option-btn" onclick="window.lcVotePoll('+i+',\''+ctx+'\')">' + opt + '</button></div>';
+          }
+        }).join('')
+      + (voted?'<div class="poll-meta"><span>👥 '+totalV2+' votes</span><span style="color:#4ade80;font-weight:700">✅ Voted</span></div>':'')
+      + '</div></div>';
+    panel.innerHTML = pollHtml;
+  }
+};
+
+window.lcLaunchPoll = function(ctx) {
+  var q = document.getElementById(ctx+'-poll-q'); var q1 = document.getElementById(ctx+'-poll-o1'); var q2 = document.getElementById(ctx+'-poll-o2');
+  var q3 = document.getElementById(ctx+'-poll-o3'); var q4 = document.getElementById(ctx+'-poll-o4');
+  if (!q||!q.value.trim()||!q1||!q1.value.trim()||!q2||!q2.value.trim()) { toast('Question and at least 2 options required','⚠️'); return; }
+  var opts = [q1.value.trim(), q2.value.trim()];
+  if (q3&&q3.value.trim()) opts.push(q3.value.trim());
+  if (q4&&q4.value.trim()) opts.push(q4.value.trim());
+  window.liveClassState.activePoll = { active:true, question:q.value.trim(), options:opts, votes:opts.map(function(){return 0;}), myVote:-1, totalVotes:0 };
+  // Seed some mock votes so faculty sees data
+  window.liveClassState.activePoll.votes[0] = 14;
+  window.liveClassState.activePoll.votes[1] = 8;
+  if (opts[2]) window.liveClassState.activePoll.votes[2] = 5;
+  toast('Poll launched! 🚀 Students can vote now','📊');
+  window.lcRenderPoll(ctx);
+};
+
+window.lcVotePoll = function(optIdx, ctx) {
+  var p = window.liveClassState.activePoll;
+  if (!p||p.myVote>=0) return;
+  p.votes[optIdx]++;
+  p.myVote = optIdx;
+  toast('Vote submitted!','✅');
+  window.lcRenderPoll(ctx);
+};
+
+window.lcEndPoll = function() {
+  window.liveClassState.activePoll.active = false;
+  toast('Poll ended','⏹');
+  window.lcRenderPoll('fac');
+};
+
+window.lcRenderHands = function(ctx) {
+  var s = window.liveClassState;
+  var panel = document.getElementById(ctx+'-panel-hands');
+  if (!panel) return;
+  var isFaculty = (G && G.role === 'faculty');
+  var hands = s.raisedHands.filter(function(h){return !h.called;});
+  var calledHands = s.raisedHands.filter(function(h){return h.called;});
+  var html = '';
+  if (!hands.length && !calledHands.length) {
+    html = '<div class="poll-no-active"><div style="font-size:36px">✋</div><div>No raised hands</div><div style="font-size:12px">Students can raise their hand from the class</div></div>';
+  } else {
+    if (hands.length) {
+      html += '<div style="padding:10px"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Waiting (' + hands.length + ')</div>'
+        + hands.map(function(h){
+          var btns = isFaculty
+            ? '<button class="hand-call-btn" onclick="window.lcCallHand('+h.id+')">📞 Call</button><button class="hand-dismiss-btn" onclick="window.lcDismissHand('+h.id+')">✕</button>'
+            : '<span class="hand-time">'+h.since+'</span>';
+          return '<div class="hand-item"><div class="hand-avatar" style="background:'+h.c+'">'+h.n[0]+'</div><div class="hand-name">'+h.n+'</div>'+btns+'</div>';
+        }).join('') + '</div>';
+    }
+    if (calledHands.length) {
+      html += '<div style="padding:10px"><div style="font-size:11px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Called (' + calledHands.length + ')</div>'
+        + calledHands.map(function(h){
+          return '<div class="hand-item" style="opacity:.6"><div class="hand-avatar" style="background:'+h.c+'">'+h.n[0]+'</div><div class="hand-name">'+h.n+'</div><span style="font-size:11px;color:#4ade80;font-weight:700">✅ Called</span></div>';
+        }).join('') + '</div>';
+    }
+  }
+  panel.innerHTML = html;
+};
+
+window.lcCallHand = function(hId) {
+  var s = window.liveClassState;
+  var h = s.raisedHands.find(function(x){return x.id===hId;});
+  if (h) { h.called = true; toast('Calling '+h.n+'... 📞','📞'); }
+  window.lcRenderHands('fac');
+};
+
+window.lcDismissHand = function(hId) {
+  var s = window.liveClassState;
+  s.raisedHands = s.raisedHands.filter(function(x){return x.id!==hId;});
+  window.lcRenderHands('fac');
+};
+
+function lcBuildSidePanel(ctx, tabs, activeTab, height) {
+  height = height || '400px';
+  var unanswered = window.liveClassState.questions.filter(function(q){return !q.answered;}).length;
+  var hands = window.liveClassState.raisedHands.filter(function(h){return !h.called;}).length;
+  var pollActive = window.liveClassState.activePoll && window.liveClassState.activePoll.active;
+
+  var tabBar = '<div class="lc-tab-bar">' + tabs.map(function(t,i){
+    var badge = '';
+    if (t.id==='qa' && unanswered>0) badge='<span class="lc-tab-badge">'+unanswered+'</span>';
+    else if (t.id==='hands' && hands>0) badge='<span class="lc-tab-badge">'+hands+'</span>';
+    else if (t.id==='poll' && pollActive) badge='<span class="lc-tab-badge" style="background:#a855f7">!</span>';
+    return '<button class="lc-tab'+(t.id===activeTab?' active':'')+'" data-lc-tab="'+t.id+'" data-lc-context="'+ctx+'" onclick="window.lcSwitchTab(\''+t.id+'\',this,\''+ctx+'\')">'+t.icon+' '+t.label+badge+'</button>';
+  }).join('') + '</div>';
+
+  var panels = tabs.map(function(t){
+    return '<div id="'+ctx+'-panel-'+t.id+'" class="lc-panel'+(t.id===activeTab?' active':'')+'" data-lc-panel="'+t.id+'" data-lc-context="'+ctx+'"></div>';
+  }).join('');
+
+  return '<div style="flex:1;min-width:220px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;display:flex;flex-direction:column;height:'+height+';overflow:hidden">' + tabBar + panels + '</div>';
+}
+
+// ── Live Class Modal (Video Player with full Chat/Q&A/Poll tabs) ──
+window.LMS_SAMPLE_VIDEOS = [
+  { name: '⚛️ Physics — Electrostatics & Motion', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
+  { name: '🧪 Chemistry — Reaction Dynamics & Molecules', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' },
+  { name: '🔥 Physics — Thermodynamics & Heat Transfer', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' },
+  { name: '📐 Mathematics — Calculus & Vectors', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4' },
+  { name: '🧬 Biology — Cell Division & Genetics', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4' },
+  { name: '💻 Computer Science — Algorithms & Systems', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoylikes.mp4' },
+  { name: '🔬 Quantum Physics — Optics & Wave Mechanics', url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4' }
+];
+
+window.changeLiveClassSampleVideo = function(src) {
+  var player = document.getElementById('lms-live-player');
+  var ov = document.getElementById('lms-live-player-overlay');
+  if (player) {
+    player.src = src;
+    player.load();
+    player.play().then(function() {
+      if (ov) ov.style.display = 'none';
+      toast('Switched live stream sample! 🎥', '🎥');
+    }).catch(function(e) {
+      player.muted = true;
+      player.play().catch(function(){});
+      if (ov) ov.style.display = 'none';
+      toast('Switched live stream sample! 🎥', '🎥');
+    });
+  }
+};
+
+window.startLiveVideoWithAudio = function() {
+  var player = document.getElementById('lms-live-player');
+  var ov = document.getElementById('lms-live-player-overlay');
+  if (player) {
+    player.muted = false;
+    player.play().then(function() {
+      if (ov) ov.style.display = 'none';
+      toast('Live stream playing! 🔊', '🔊');
+    }).catch(function() {
+      player.muted = true;
+      player.play().catch(function(){});
+      if (ov) ov.style.display = 'none';
+    });
+  }
+};
+
+window.toggleLiveClassNotes = function() {
+  var box = document.getElementById('live-class-notes-box');
+  if (!box) return;
+  if (box.style.display === 'none' || !box.style.display) {
+    box.style.display = 'block';
+    toast('Live Lecture Notes opened 📝', '📝');
+  } else {
+    box.style.display = 'none';
+  }
+};
+
+window.insertLiveClassTimestamp = function() {
+  var video = document.getElementById('lms-live-player');
+  var ta = document.getElementById('live-class-notes-textarea');
+  if (!ta) return;
+  var secs = video ? Math.floor(video.currentTime) : 0;
+  var m = Math.floor(secs / 60);
+  var s = secs % 60;
+  var ts = '[' + (m < 10 ? '0' + m : m) + ':' + (s < 10 ? '0' + s : s) + '] ';
+  ta.value += (ta.value.length && !ta.value.endsWith('\n') ? '\n' : '') + ts;
+  ta.focus();
+  toast('Inserted timestamp ' + ts + ' ⏱️', '⏱️');
+};
+
+window.saveLiveClassNotes = function() {
+  var ta = document.getElementById('live-class-notes-textarea');
+  if (!ta || !ta.value.trim()) { toast('Notes are empty ⚠️', '⚠️'); return; }
+  localStorage.setItem('lms_live_notes', ta.value.trim());
+  toast('Notes saved to local storage! 💾', '💾');
+};
+
+window.copyLiveClassNotes = function() {
+  var ta = document.getElementById('live-class-notes-textarea');
+  if (!ta || !ta.value.trim()) { toast('No notes to copy ⚠️', '⚠️'); return; }
+  navigator.clipboard.writeText(ta.value.trim()).then(function() {
+    toast('Notes copied to clipboard! 📋', '📋');
+  }).catch(function() {
+    toast('Failed to copy ❌', '❌');
+  });
+};
+
+function openLiveClassModal(classData) {
+  var sampleList = window.LMS_SAMPLE_VIDEOS;
+  var title = '⚛️ Physics — Electrostatics: Gauss Law';
+  var teacher = 'Dr. Priya Mehta';
+  var sub = 'JEE Advanced Batch A';
+  var vidSrc = sampleList[0].url;
+
+  if (classData && typeof classData === 'object') {
+    if (classData.topic || classData.title) title = (classData.sub ? classData.sub + ' — ' : '') + (classData.topic || classData.title);
+    if (classData.fac || classData.teacher) teacher = classData.fac || classData.teacher;
+    if (classData.batch) sub = classData.batch;
+    if (classData.videoUrl) vidSrc = classData.videoUrl;
+    else vidSrc = sampleList[Math.floor(Math.random() * sampleList.length)].url;
+  } else if (typeof classData === 'string' && classData.startsWith('http')) {
+    vidSrc = classData;
+  } else if (typeof classData === 'string' && classData.length > 0) {
+    title = classData;
+    vidSrc = sampleList[Math.floor(Math.random() * sampleList.length)].url;
+  } else {
+    vidSrc = sampleList[Math.floor(Math.random() * sampleList.length)].url;
+  }
+
+  var sideTabs = [
+    {id:'chat', icon:'💬', label:'Chat'},
+    {id:'qa',   icon:'🙋', label:'Q&A'},
+    {id:'poll', icon:'📊', label:'Poll'}
   ];
+  var sidePanel = lcBuildSidePanel('stu', sideTabs, 'chat', '380px');
 
-  window.renderLivePlayerChat = function() {
-    var container = document.getElementById('live-chat-messages-inplayer');
-    if (!container) return;
-    container.innerHTML = window.mockChatMessages.map(function(msg){
-      return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">'
-        + '<div style="width:24px;height:24px;border-radius:50%;background:'+msg.c+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+msg.n[0]+'</div>'
-        + '<div><div style="font-size:11px"><span style="font-weight:700;color:'+msg.c+'">'+msg.n+'</span> <span style="color:var(--muted);font-size:10px">'+msg.t+'</span></div>'
-        + '<div style="font-size:12px;color:var(--text);margin-top:2px">'+msg.m+'</div></div></div>';
-    }).join('');
-    container.scrollTop = container.scrollHeight;
-  };
+  var optionsHtml = sampleList.map(function(s) {
+    var sel = (s.url === vidSrc) ? ' selected' : '';
+    return '<option value="' + s.url + '"' + sel + '>' + s.name + '</option>';
+  }).join('');
 
-  var sampleVideos = [
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-  ];
-  var vidSrc = sampleVideos[Math.floor(Math.random() * sampleVideos.length)];
+  var isHandRaised = window.liveClassState && window.liveClassState.studentHandRaised;
+  var handBtnText = isHandRaised ? '✋ Hand Raised!' : '✋ Raise Hand';
+  var handBtnClass = 'btn btn-sm btn-yellow' + (isHandRaised ? ' raise-hand-btn-active' : '');
+  var savedNotes = localStorage.getItem('lms_live_notes') || '';
 
-  var body = '<div style="display:flex;gap:14px;margin-bottom:14px">'
+  var body = '<div style="display:flex;gap:14px;margin-bottom:12px">'
     + '<div style="flex:2;min-width:0">'
     + '<div style="position:relative;background:#000;border-radius:12px;overflow:hidden;aspect-ratio:16/9">'
-    + '<video id="lms-live-player" controls autoplay style="width:100%;height:100%;display:block;background:#000" preload="metadata">'
+    + '<video id="lms-live-player" src="' + vidSrc + '" controls autoplay muted playsinline style="width:100%;height:100%;display:block;background:#000" preload="auto">'
     + '<source src="' + vidSrc + '" type="video/mp4">Your browser does not support HTML5 video.</video>'
-    + '<div style="position:absolute;top:10px;left:10px;display:flex;gap:6px">'
+    + '<div id="lms-live-player-overlay" onclick="window.startLiveVideoWithAudio()" style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:5;transition:opacity .3s">'
+    + '<div style="background:linear-gradient(135deg,#6c47ff,#a855f7);border:1px solid rgba(255,255,255,.3);border-radius:30px;padding:12px 26px;display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.6)">'
+    + '<span style="font-size:22px">▶</span> Play Stream with Sound</div></div>'
+    + '<div style="position:absolute;top:10px;left:10px;display:flex;gap:6px;z-index:6;pointer-events:none">'
     + '<span class="live-badge" style="font-size:11px;padding:4px 10px"><div class="live-dot"></div>LIVE</span>'
     + '<span style="background:rgba(0,0,0,.6);backdrop-filter:blur(4px);padding:4px 10px;border-radius:20px;font-size:11px;color:#fff">👥 142 watching</span></div>'
-    + '<div style="position:absolute;top:10px;right:10px"><span style="background:rgba(255,45,107,.2);border:1px solid rgba(255,45,107,.3);padding:3px 8px;border-radius:20px;font-size:10px;color:#ff2d6b;font-weight:700">🔴 REC</span></div>'
+    + '<div style="position:absolute;top:10px;right:10px;z-index:6;pointer-events:none"><span style="background:rgba(255,45,107,.2);border:1px solid rgba(255,45,107,.3);padding:3px 8px;border-radius:20px;font-size:10px;color:#ff2d6b;font-weight:700">🔴 REC</span></div>'
     + '</div>'
-    + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
-    + '<button class="btn btn-purple" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.playbackRate=1;toast(\'Speed: 1x\',\'▶\')">1x</button>'
-    + '<button class="btn btn-purple" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.playbackRate=1.5;toast(\'Speed: 1.5x\',\'⚡\')">1.5x</button>'
-    + '<button class="btn btn-purple" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.playbackRate=2;toast(\'Speed: 2x\',\'⚡\')">2x</button>'
-    + '<button class="btn btn-teal" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.requestFullscreen()">⛶ Fullscreen</button>'
-    + '<button class="btn btn-yellow" onclick="toast(\'Hand raised! ✋\',\'🖐️\')">✋ Raise Hand</button>'
-    + '<button class="btn btn-purple" onclick="toast(\'Notes opened\',\'📝\')">📝 Notes</button>'
+    + '<div style="display:flex;gap:7px;margin-top:10px;flex-wrap:wrap;align-items:center">'
+    + '<button class="btn btn-sm btn-purple" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.playbackRate=1;toast(\'1x\',\'▶\')">1x</button>'
+    + '<button class="btn btn-sm btn-purple" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.playbackRate=1.5;toast(\'1.5x\',\'⚡\')">1.5x</button>'
+    + '<button class="btn btn-sm btn-purple" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.playbackRate=2;toast(\'2x\',\'⚡\')">2x</button>'
+    + '<button class="btn btn-sm btn-teal" onclick="var v=document.getElementById(\'lms-live-player\');if(v)v.requestFullscreen()">⛶ Full</button>'
+    + '<button id="modal-raise-hand-btn" class="' + handBtnClass + '" onclick="window.modalToggleHand()" style="transition:all .3s">' + handBtnText + '</button>'
+    + '<button class="btn btn-sm btn-purple" onclick="window.toggleLiveClassNotes()">📝 Notes</button>'
+    + '</div>'
+    + '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.08)">'
+    + '<span style="font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap">📹 Live Sample Stream:</span>'
+    + '<select id="live-sample-video-select" class="inp-field" style="padding:4px 8px;font-size:12px;flex:1;background:var(--bg-card,#1a1d36);color:var(--text,#fff);border-radius:6px" onchange="window.changeLiveClassSampleVideo(this.value)">'
+    + optionsHtml
+    + '</select>'
+    + '</div>'
+    + '<div id="live-class-notes-box" style="display:none;margin-top:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:10px">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+    + '<span style="font-size:12px;font-weight:700;color:var(--text)">📝 Live Lecture Notes</span>'
+    + '<div style="display:flex;gap:5px">'
+    + '<button class="btn btn-sm btn-purple" style="font-size:10px;padding:2px 8px" onclick="window.insertLiveClassTimestamp()">⏱️ Timestamp</button>'
+    + '<button class="btn btn-sm btn-teal" style="font-size:10px;padding:2px 8px" onclick="window.saveLiveClassNotes()">💾 Save</button>'
+    + '<button class="btn btn-sm btn-yellow" style="font-size:10px;padding:2px 8px" onclick="window.copyLiveClassNotes()">📋 Copy</button>'
     + '</div></div>'
-    // Chat panel
-    + '<div style="flex:1;min-width:200px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;display:flex;flex-direction:column;max-height:350px">'
-    + '<div style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700">💬 Live Chat</div>'
-    + '<div id="live-chat-messages-inplayer" style="flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:8px"></div>'
-    + '<div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:6px"><input id="live-chat-input-inplayer" class="inp-field" placeholder="Type a message..." style="flex:1;padding:8px 10px;font-size:12px" onkeydown="if(event.key===\'Enter\'){window.sendLiveChatFromPlayer()}">'
-    + '<button class="btn btn-sm btn-solid" onclick="window.sendLiveChatFromPlayer()">Send</button></div></div></div>'
-    + '<div style="font-size:14px;font-weight:700;margin-bottom:4px">⚛️ Physics — Electrostatics: Gauss Law</div>'
-    + '<div style="font-size:12px;color:var(--muted)">Dr. Priya Mehta &nbsp;•&nbsp; JEE Advanced Batch A &nbsp;•&nbsp; HD Quality</div>';
+    + '<textarea id="live-class-notes-textarea" class="inp-field" placeholder="Type key formulas, doubts & notes here..." rows="3" style="width:100%;font-size:12px;resize:vertical;background:rgba(0,0,0,.3)">' + savedNotes + '</textarea>'
+    + '</div>'
+    + '</div>'
+    + sidePanel + '</div>'
+    + '<div style="font-size:14px;font-weight:700;margin-bottom:3px">' + title + '</div>'
+    + '<div style="font-size:12px;color:var(--muted)">' + teacher + ' &nbsp;•&nbsp; ' + sub + ' &nbsp;•&nbsp; HD Quality Stream</div>';
 
-  openDetail('🎥 Live Class', body, '<button class="btn btn-red" onclick="toast(\'Left class\',\'👋\');closeModal(\'modal-detail\')">Leave Class</button>');
-  
+  openDetail('🎥 Live Class', body,
+    '<button class="btn btn-red" onclick="toast(\'Left class\',\'👋\');closeModal(\'modal-detail\')" >Leave Class</button>'
+  );
+
   setTimeout(function() {
-    window.renderLivePlayerChat();
-  }, 50);
+    window.lcRenderChat('stu');
+    var player = document.getElementById('lms-live-player');
+    var ov = document.getElementById('lms-live-player-overlay');
+    if (player) {
+      player.src = vidSrc;
+      player.load();
+      player.play().then(function() {
+        if (ov) ov.style.display = 'none';
+      }).catch(function(err) {
+        console.log('Autoplay fallback:', err);
+      });
+      player.onplay = function() {
+        if (ov) ov.style.display = 'none';
+      };
+      player.onpause = function() {
+        if (ov && !player.ended) ov.style.display = 'flex';
+      };
+    }
+  }, 60);
 }
+
+window.modalToggleHand = function() {
+  var s = window.liveClassState;
+  s.studentHandRaised = !s.studentHandRaised;
+  var btn = document.getElementById('modal-raise-hand-btn');
+  if (btn) {
+    if (s.studentHandRaised) {
+      btn.textContent = '✋ Hand Raised!';
+      btn.classList.add('raise-hand-btn-active');
+      s.raisedHands.push({ id: Date.now(), n: (G&&G.user?G.user.name:'You'), c:'#4ade80', since:'Just now', called:false });
+      toast('Hand raised! Faculty can see your request ✋','✋');
+    } else {
+      btn.textContent = '✋ Raise Hand';
+      btn.classList.remove('raise-hand-btn-active');
+      s.raisedHands = s.raisedHands.filter(function(h){ return h.n !== (G&&G.user?G.user.name:'You'); });
+      toast('Hand lowered','👋');
+    }
+  }
+};
 
 window.sendLiveChatFromPlayer = function() {
   var input = document.getElementById('live-chat-input-inplayer');
@@ -7927,51 +8472,16 @@ window.confirmUnlockCourse = async function(courseId, courseTitle) {
 };
 
 window.openLiveClassChatModal = function() {
-  window.mockChatMessages = window.mockChatMessages || [
-    {n:'Sneha P.',m:'Great explanation sir!',t:'2m ago',c:'#6c47ff'},
-    {n:'Rohan G.',m:'Can you repeat the formula?',t:'1m ago',c:'#ff6b35'},
-    {n:'Ananya S.',m:'Thank you! Very clear 👏',t:'30s ago',c:'#4ade80'},
-    {n:'Dr. Priya',m:'Check slide 14 for the derivation',t:'15s ago',c:'#00d4c8'}
+  // Opens a standalone chat/Q&A panel (used from student live class page chat button)
+  var sideTabs = [
+    {id:'chat', icon:'💬', label:'Chat'},
+    {id:'qa',   icon:'🙋', label:'Q&A'},
+    {id:'poll', icon:'📊', label:'Poll'}
   ];
-
-  window.renderLiveChatMessages = function() {
-    var container = document.getElementById('live-chat-messages-modal');
-    if (!container) return;
-    container.innerHTML = window.mockChatMessages.map(function(msg){
-      return '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">'
-        + '<div style="width:24px;height:24px;border-radius:50%;background:'+msg.c+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+msg.n[0]+'</div>'
-        + '<div><div style="font-size:11px"><span style="font-weight:700;color:'+msg.c+'">'+msg.n+'</span> <span style="color:var(--muted);font-size:10px">'+msg.t+'</span></div>'
-        + '<div style="font-size:12px;color:var(--text);margin-top:2px">'+msg.m+'</div></div></div>';
-    }).join('');
-    container.scrollTop = container.scrollHeight;
-  };
-
-  window.sendLiveChatFromModal = function() {
-    var input = document.getElementById('live-chat-input-modal');
-    if (!input || !input.value.trim()) return;
-    
-    window.mockChatMessages.push({
-      n: 'Arjun S. (You)',
-      m: input.value.trim(),
-      t: 'Just now',
-      c: 'var(--student)'
-    });
-    
-    input.value = '';
-    window.renderLiveChatMessages();
-  };
-
-  var body = '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;display:flex;flex-direction:column;height:350px">'
-    + '<div id="live-chat-messages-modal" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;height:280px"></div>'
-    + '<div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.06);display:flex;gap:6px">'
-    + '<input id="live-chat-input-modal" class="inp-field" placeholder="Type a message..." style="flex:1;padding:8px 10px;font-size:12px" onkeydown="if(event.key===\'Enter\'){window.sendLiveChatFromModal()}">'
-    + '<button class="btn btn-sm btn-solid" onclick="window.sendLiveChatFromModal()">Send</button></div></div>';
-
-  openDetail('💬 Live Class Chat — Gauss Law', body, '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\')">Close</button>', 'sm');
-  
-  setTimeout(function() {
-    window.renderLiveChatMessages();
-  }, 50);
+  var sidePanel = lcBuildSidePanel('cmo', sideTabs, 'chat', '360px');
+  var body = '<div style="height:380px;display:flex;flex-direction:column">' + sidePanel + '</div>';
+  openDetail('💬 Live Class — Gauss Law', body, '<button class="btn btn-solid" onclick="closeModal(\'modal-detail\')">Close</button>', 'sm');
+  setTimeout(function() { window.lcRenderChat('cmo'); }, 60);
 };
 
 window.viewTestSyllabus = function(title) {
@@ -8201,6 +8711,28 @@ window.toggleIntegration = toggleIntegration;
 window.toggleSetting = toggleSetting;
 window.viewQuestionPaper = viewQuestionPaper;
 window.toggleFieldPw = toggleFieldPw;
+
+// Live Class Feature Exports
+window.lcSwitchTab = window.lcSwitchTab;
+window.lcRenderChat = window.lcRenderChat;
+window.lcSendChat = window.lcSendChat;
+window.lcToggleReaction = window.lcToggleReaction;
+window.lcAddReaction = window.lcAddReaction;
+window.lcPinMsg = window.lcPinMsg;
+window.lcRenderQA = window.lcRenderQA;
+window.lcSubmitQuestion = window.lcSubmitQuestion;
+window.lcUpvote = window.lcUpvote;
+window.lcOpenAnswerModal = window.lcOpenAnswerModal;
+window.lcPostAnswer = window.lcPostAnswer;
+window.lcRenderPoll = window.lcRenderPoll;
+window.lcLaunchPoll = window.lcLaunchPoll;
+window.lcVotePoll = window.lcVotePoll;
+window.lcEndPoll = window.lcEndPoll;
+window.lcRenderHands = window.lcRenderHands;
+window.lcCallHand = window.lcCallHand;
+window.lcDismissHand = window.lcDismissHand;
+window.toggleStudentHand = window.toggleStudentHand;
+window.modalToggleHand = window.modalToggleHand;
 
 window.submitDoubtResolution = async function(doubtId) {
   var textarea = document.getElementById('doubt-resolve-textarea');

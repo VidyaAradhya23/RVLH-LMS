@@ -210,9 +210,9 @@ async function seedData() {
 
   // 5. Seed Live Classes
   liveClasses.push(
-    { _id: genId(), time: 'LIVE', date: 'NOW', sub: 'Physics', topic: 'Electrostatics: Gauss Law', fac: 'Dr. Priya Mehta', online: 142, status: 'ongoing' },
-    { _id: genId(), time: '11:00 AM', date: 'Today', sub: 'Chemistry', topic: 'Aldehydes & Ketones', fac: 'Prof. Amit Singh', online: 0, status: 'upcoming' },
-    { _id: genId(), time: '02:00 PM', date: 'Today', sub: 'Maths', topic: 'Integration by Parts', fac: 'Mr. Raj Sharma', online: 0, status: 'upcoming' }
+    { _id: genId(), time: 'LIVE', date: 'NOW', sub: 'Physics', topic: 'Electrostatics: Gauss Law', fac: 'Dr. Priya Mehta', online: 142, status: 'ongoing', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4' },
+    { _id: genId(), time: '11:00 AM', date: 'Today', sub: 'Chemistry', topic: 'Aldehydes & Ketones', fac: 'Prof. Amit Singh', online: 0, status: 'upcoming', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4' },
+    { _id: genId(), time: '02:00 PM', date: 'Today', sub: 'Maths', topic: 'Integration by Parts', fac: 'Mr. Raj Sharma', online: 0, status: 'upcoming', videoUrl: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4' }
   );
 
   // 6. Seed Doubts
