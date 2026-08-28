@@ -1443,6 +1443,17 @@ PAGES['student_material'] = function() {
     { name:'Wave Optics — Visual Guide',           sub:'Physics',   type:'ppt', size:'8.1 MB', date:'Feb 25', fac:'Dr. Priya Mehta', bookmarked:false },
   ];
 
+  materials = materials.map(function(m) {
+    var copy = Object.assign({}, m);
+    copy.fac = copy.fac || 'Dr. Priya Mehta';
+    var t = (copy.type || 'pdf').toLowerCase();
+    if (t !== 'pdf' && t !== 'ppt' && t !== 'doc') {
+      t = 'pdf';
+    }
+    copy.type = t;
+    return copy;
+  });
+
   var typeIcons = { pdf:'📕', ppt:'📊', doc:'📘' };
   var typeColors = { pdf:'rgba(255,45,107,.1)', ppt:'rgba(255,107,53,.1)', doc:'rgba(0,198,255,.1)' };
   var typeBorders = { pdf:'rgba(255,45,107,.2)', ppt:'rgba(255,107,53,.2)', doc:'rgba(0,198,255,.2)' };
@@ -8705,7 +8716,12 @@ window.rejectContent = rejectContent;
 window.replyNotif = replyNotif;
 window.resolveNotif = resolveNotif;
 window.saveGeneralSettings = saveGeneralSettings;
-window.sendLiveChat = sendLiveChat;
+window.sendLiveChat = function() {
+  var input = document.getElementById('live-chat-input');
+  if (!input || !input.value.trim()) return;
+  toast('Message sent: ' + input.value.substring(0, 30), '💬');
+  input.value = '';
+};
 window.testIntegration = testIntegration;
 window.toggleIntegration = toggleIntegration;
 window.toggleSetting = toggleSetting;
