@@ -1400,19 +1400,20 @@ PAGES['student_live'] = function() {
   // Live class banner card
   var liveBox = '';
   if (activeClass) {
-    var isLiveNow = ongoing.length > 0;
+    var isLiveNow = ongoing.length > 0 || activeClass.status === 'live';
+    var classTopicEscaped = (activeClass.topic || 'Live Session').replace(/'/g,"\\'");
     liveBox = '<div class="enhanced-card border-glow" style="margin-bottom:20px;padding:0;overflow:hidden">'
       + '<div style="position:relative;aspect-ratio:21/9;background:linear-gradient(135deg,rgba(10,12,28,.95),rgba(20,22,50,.95),rgba(108,71,255,.1));display:flex;align-items:center;justify-content:center;min-height:220px">'
       + '<div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:8px">'
-      + (isLiveNow ? '<span class="live-badge" style="font-size:12px;padding:5px 14px"><div class="live-dot"></div>LIVE NOW</span>' : '<span class="badge badge-purple" style="font-size:12px;padding:5px 14px">📅 Next Live Class</span>')
+      + (isLiveNow ? '<span class="live-badge" style="font-size:12px;padding:5px 14px"><div class="live-dot"></div>LIVE NOW</span>' : '<span class="badge badge-purple" style="font-size:12px;padding:5px 14px">📅 Scheduled Class</span>')
       + '<span style="background:rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;color:rgba(255,255,255,.8)">👥 '+(activeClass.online||142)+' registered</span></div>'
       + '<div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px"><span style="background:rgba(255,45,107,.15);border:1px solid rgba(255,45,107,.3);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#ff2d6b">🔴 HD Stream</span></div>'
       + '<div style="text-align:center;padding:0 20px"><div style="font-size:48px;margin-bottom:10px">⚛️</div>'
-      + '<div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">' + (activeClass.sub || 'Physics') + ' — ' + (activeClass.topic || 'Class') + '</div>'
+      + '<div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">' + (activeClass.sub ? activeClass.sub + ' — ' : '') + activeClass.topic + '</div>'
       + '<div style="color:var(--muted);font-size:13px;margin-bottom:12px">' + (activeClass.fac || 'Faculty') + ' &nbsp;•&nbsp; ' + (activeClass.time ? (activeClass.date + ' at ' + activeClass.time) : 'Active Session') + '</div>'
       + badges
       + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'
-      + '<button class="btn btn-red glow-join" onclick="openLiveClassModal()" style="font-weight:800;padding:12px 28px;font-size:15px;border-radius:12px">🎥 ' + (isLiveNow ? 'Join Live Class' : 'Enter Classroom') + '</button>'
+      + '<button class="btn btn-red glow-join" onclick="openLiveClassModal({ topic:\'' + classTopicEscaped + '\', fac:\'' + (activeClass.fac||'Faculty').replace(/'/g,"\\'") + '\', sub:\'' + (activeClass.sub||'Physics') + '\', batch:\'' + (activeClass.batch||'JEE Advanced').replace(/'/g,"\\'") + '\' })" style="font-weight:800;padding:12px 28px;font-size:15px;border-radius:12px">🎥 ' + (isLiveNow ? 'Join Live Class' : 'Enter Classroom') + '</button>'
       + raiseHandBtn
       + '</div></div>'
       + '</div></div>';
@@ -1423,22 +1424,26 @@ PAGES['student_live'] = function() {
       + '<div style="font-size:13px;margin-top:4px">Scheduled live sessions by your faculty will be broadcast here in real time.</div></div>';
   }
 
-  var upHtml = upcoming.length > 0 ? upcoming.map(function(c) {
-    return '<div class="sched-item" onclick="toast(\'Reminder set for ' + c.topic.replace(/'/g,"\\'") + '!\',\'🔔\')">'  
-      + '<div class="sched-time"><div class="st">' + c.time + '</div><div class="sd">' + c.date + '</div></div>'
-      + '<div class="sched-body"><div class="sched-title">' + c.sub + ': ' + c.topic + '</div>'
-      + '<div class="sched-meta">' + c.fac + ' • ' + c.n + ' enrolled</div></div>'
-      + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Reminder set for ' + c.topic.replace(/'/g,"\\'") + '!\',\'🔔\')">🔔</button></div>';
+  var upHtml = dbLive.length > 0 ? dbLive.map(function(c) {
+    var isLive = c.status === 'live' || c.status === 'ongoing';
+    var topicEscaped = (c.topic || 'Lecture').replace(/'/g,"\\'");
+    return '<div class="sched-item" style="cursor:pointer" onclick="openLiveClassModal({ topic:\'' + topicEscaped + '\', fac:\'' + (c.fac||'Faculty').replace(/'/g,"\\'") + '\', sub:\'' + (c.sub||'Physics') + '\', batch:\'' + (c.batch||'JEE Advanced').replace(/'/g,"\\'") + '\' })">'  
+      + '<div class="sched-time"><div class="st" style="' + (isLive ? 'color:var(--admin);font-weight:900' : '') + '">' + (isLive ? 'LIVE' : (c.time || '12:00 PM')) + '</div><div class="sd">' + (c.date || 'Today') + '</div></div>'
+      + '<div class="sched-body"><div class="sched-title">' + (c.sub ? c.sub + ': ' : '') + c.topic + '</div>'
+      + '<div class="sched-meta">' + (c.fac || 'Faculty') + ' • ' + (c.online || 120) + ' enrolled <span class="badge ' + (isLive ? 'badge-red' : 'badge-purple') + '" style="margin-left:6px">' + (isLive ? '🔴 LIVE NOW' : 'Scheduled') + '</span></div></div>'
+      + '<div style="display:flex;gap:6px">'
+      + '<button class="btn btn-sm ' + (isLive ? 'btn-red glow-join' : 'btn-solid') + '" onclick="event.stopPropagation();openLiveClassModal({ topic:\'' + topicEscaped + '\', fac:\'' + (c.fac||'Faculty').replace(/'/g,"\\'") + '\', sub:\'' + (c.sub||'Physics') + '\', batch:\'' + (c.batch||'JEE Advanced').replace(/'/g,"\\'") + '\' })">🎥 ' + (isLive ? 'Join Now' : 'Enter') + '</button>'
+      + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Reminder set for ' + topicEscaped + '!\',\'🔔\')">🔔</button></div></div>';
   }).join('') : '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No upcoming classes scheduled yet.</div>';
 
   var recHtml = recorded.length > 0 ? ('<div class="tbl-wrap"><table><thead><tr><th>Lecture</th><th>Subject</th><th>Duration</th><th>Views</th><th>Action</th></tr></thead><tbody>'
     + recorded.map(function(r) {
-      return '<tr onclick="openLiveClassModal()"><td style="font-weight:600">'+r.title+'</td><td><span class="badge badge-purple">'+r.sub+'</span></td><td>'+r.dur+'</td><td>👁 '+r.views+'</td><td><button class="btn btn-sm btn-teal" onclick="event.stopPropagation();openLiveClassModal()">▶ Watch</button></td></tr>';
+      return '<tr onclick="openLiveClassModal({ topic:\'' + r.title.replace(/'/g,"\\'") + '\' })"><td style="font-weight:600">'+r.title+'</td><td><span class="badge badge-purple">'+r.sub+'</span></td><td>'+r.dur+'</td><td>👁 '+r.views+'</td><td><button class="btn btn-sm btn-teal" onclick="event.stopPropagation();openLiveClassModal({ topic:\'' + r.title.replace(/'/g,"\\'") + '\' })">▶ Watch</button></td></tr>';
     }).join('') + '</tbody></table></div>') : '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No recorded lectures published yet.</div>';
 
   return liveBox
     + '<div class="grid-2">'
-    + '<div class="card"><div class="card-header"><div class="card-title">📅 Upcoming Classes</div></div>' + upHtml + '</div>'
+    + '<div class="card"><div class="card-header"><div class="card-title">📅 Live & Scheduled Classes</div></div>' + upHtml + '</div>'
     + '<div class="card"><div class="card-header"><div class="card-title">📼 Recorded Lectures</div></div>' + recHtml + '</div>'
     + '</div>';
 };
@@ -2796,24 +2801,9 @@ PAGES['faculty_content'] = function() {
 };
 
 PAGES['faculty_live'] = function() {
-  var defaultUpcoming = [
-    { t:'11:00 AM', batch:'JEE Adv B', topic:'Magnetic Effects',  n:98 },
-    { t:'02:00 PM', batch:'NEET Batch', topic:'Cell Biology',     n:72 },
-    { t:'09:00 AM', batch:'JEE Adv A',  topic:'Modern Physics',   n:142, tomorrow:true },
-    { t:'11:00 AM', batch:'Crash',      topic:'Revision Mechanics',n:56, tomorrow:true },
-  ];
-
   var dbLive = (window.LMS_LIVE_CLASSES && window.LMS_LIVE_CLASSES.length > 0) ? window.LMS_LIVE_CLASSES : [];
-  var upcoming = dbLive.length > 0 ? dbLive.map(function(c) {
-    return {
-      t: c.time || '11:00 AM',
-      date: c.date || 'Today',
-      batch: c.batch || 'JEE Advanced Batch A',
-      topic: c.topic || 'Physics Lecture',
-      n: c.online || 147,
-      tomorrow: (c.date && c.date.toLowerCase().indexOf('tmrw') >= 0) || (c.date && c.date.toLowerCase().indexOf('tomorrow') >= 0)
-    };
-  }) : defaultUpcoming;
+  var ongoing = dbLive.filter(function(c){ return c.status === 'live' || c.status === 'ongoing'; });
+  var activeClass = ongoing[0] || (dbLive.length > 0 ? dbLive[0] : null);
 
   var s = window.liveClassState;
   var unanswered = s.questions.filter(function(q){return !q.answered;}).length;
@@ -2822,38 +2812,87 @@ PAGES['faculty_live'] = function() {
 
   // Activity badges for the live card with instant interactive click handlers
   var actBadges = '';
-  if (unanswered > 0) actBadges += '<span style="background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#c084fc;cursor:pointer" onclick="openFacultyClassModal(\'Physics — Electrostatics: Gauss Law\',\'JEE Advanced Batch A\',\'09:00\',\'live\',\'qa\')">💬 ' + unanswered + ' Questions</span> ';
-  if (hands > 0) actBadges += '<span style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#fbbf24;cursor:pointer" onclick="openFacultyClassModal(\'Physics — Electrostatics: Gauss Law\',\'JEE Advanced Batch A\',\'09:00\',\'live\',\'hands\')">✋ ' + hands + ' Hands Raised</span> ';
-  if (pollActive) actBadges += '<span style="background:rgba(108,71,255,.15);border:1px solid rgba(108,71,255,.4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#a78bff;cursor:pointer" onclick="openFacultyClassModal(\'Physics — Electrostatics: Gauss Law\',\'JEE Advanced Batch A\',\'09:00\',\'live\',\'poll\')">📊 Poll Active</span>';
+  if (unanswered > 0) actBadges += '<span style="background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#c084fc;cursor:pointer" onclick="openFacultyClassModal(\'' + (activeClass ? activeClass.topic : 'Lecture').replace(/'/g,"\\'") + '\',\'JEE Advanced Batch A\',\'09:00\',\'live\',\'qa\')">💬 ' + unanswered + ' Questions</span> ';
+  if (hands > 0) actBadges += '<span style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#fbbf24;cursor:pointer" onclick="openFacultyClassModal(\'' + (activeClass ? activeClass.topic : 'Lecture').replace(/'/g,"\\'") + '\',\'JEE Advanced Batch A\',\'09:00\',\'live\',\'hands\')">✋ ' + hands + ' Hands Raised</span> ';
+  if (pollActive) actBadges += '<span style="background:rgba(108,71,255,.15);border:1px solid rgba(108,71,255,.4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#a78bff;cursor:pointer" onclick="openFacultyClassModal(\'' + (activeClass ? activeClass.topic : 'Lecture').replace(/'/g,"\\'") + '\',\'JEE Advanced Batch A\',\'09:00\',\'live\',\'poll\')">📊 Poll Active</span>';
 
-  var liveCard = '<div class="enhanced-card" style="border-color:rgba(255,45,107,.3);background:rgba(255,45,107,.03);margin-bottom:16px">'
-    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">'
-    + '<div style="flex:1">'
-    + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
-    + '<div class="live-badge" style="font-size:12px"><div class="live-dot"></div>LIVE NOW</div>'
-    + '<span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">👥 147 students</span>'
-    + '</div>'
-    + '<div style="font-family:Syne,sans-serif;font-size:16px;font-weight:700;margin-bottom:4px">Physics — Electrostatics: Gauss Law</div>'
-    + '<div style="color:var(--muted);font-size:13px;margin-bottom:10px">JEE Advanced Batch A • Started 23 min ago</div>'
-    + (actBadges ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' + actBadges + '</div>' : '')
-    + '</div>'
-    + '<div style="display:flex;flex-direction:column;gap:7px;flex-shrink:0">'
-    + '<button class="btn btn-red" style="font-weight:800" onclick="openFacultyClassModal(\'Physics — Electrostatics: Gauss Law\',\'JEE Advanced Batch A\',\'09:00\',\'live\',\'chat\')">🎛️ Open Control Panel</button>'
-    + '<button class="btn btn-sm btn-purple" onclick="window.openLiveClassAttendanceModal(\'Physics — Electrostatics: Gauss Law\',\'JEE Advanced Batch A\')">✅ Auto Attendance</button>'
-    + '<button class="btn btn-sm btn-teal" onclick="openDigitalBlackboard()">🎨 Whiteboard</button>'
-    + '</div></div></div>';
+  var liveCard = '';
+  if (activeClass) {
+    var isLive = activeClass.status === 'live' || activeClass.status === 'ongoing';
+    liveCard = '<div class="enhanced-card" style="border-color:rgba(255,45,107,.3);background:rgba(255,45,107,.03);margin-bottom:16px">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">'
+      + '<div style="flex:1;min-width:260px">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+      + (isLive ? '<div class="live-badge" style="font-size:12px"><div class="live-dot"></div>LIVE NOW</div>' : '<span class="badge badge-yellow" style="font-size:11px">⏳ Scheduled Ready</span>')
+      + '<span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">👥 ' + (activeClass.online || 147) + ' students</span>'
+      + '</div>'
+      + '<div style="font-family:Syne,sans-serif;font-size:16px;font-weight:700;margin-bottom:4px">' + (activeClass.sub ? activeClass.sub + ' — ' : '') + activeClass.topic + '</div>'
+      + '<div style="color:var(--muted);font-size:13px;margin-bottom:10px">' + (activeClass.batch || 'JEE Advanced Batch A') + ' • ' + (activeClass.time || '12:00 PM') + ' (' + (activeClass.date || 'Today') + ')</div>'
+      + (actBadges ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' + actBadges + '</div>' : '')
+      + '</div>'
+      + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">'
+      + '<button class="btn ' + (isLive ? 'btn-red' : 'btn-green') + '" style="font-weight:800;padding:10px 18px" onclick="window.startFacultyLiveClass(\'' + (activeClass._id||'') + '\',\'' + activeClass.topic.replace(/'/g,"\\'") + '\',\'' + (activeClass.batch||'JEE Advanced').replace(/'/g,"\\'") + '\',\'' + (activeClass.time||'12:00 PM') + '\')">🎥 ' + (isLive ? '🎛️ Control Panel' : '🚀 Go Live Now') + '</button>'
+      + '<button class="btn btn-sm btn-purple" onclick="window.openLiveClassAttendanceModal(\'' + activeClass.topic.replace(/'/g,"\\'") + '\',\'' + (activeClass.batch||'JEE Advanced').replace(/'/g,"\\'") + '\')">✅ Auto Attendance</button>'
+      + '<button class="btn btn-sm btn-teal" onclick="openDigitalBlackboard()">🎨 Whiteboard</button>'
+      + (isLive ? '<button class="btn btn-sm btn-red" onclick="window.endFacultyLiveClass(\'' + (activeClass._id||'') + '\')">🛑 End Stream</button>' : '')
+      + '</div></div></div>';
+  }
 
-  var upHtml = '<div class="card"><div class="card-header"><div class="card-title">📅 Scheduled Classes</div>'
-    + '<button class="btn btn-teal" onclick="openScheduleClassModal()">➕ Schedule</button></div>'
-    + upcoming.map(function(c) {
-        return '<div class="sched-item" onclick="openFacultyClassModal(\'' + c.topic + '\',\'' + c.batch + '\',\'' + c.t + '\',\'upcoming\')">'
-          + '<div class="sched-time"><div class="st">' + c.t + '</div><div class="sd">' + (c.tomorrow?'Tmrw':'Today') + '</div></div>'
-          + '<div class="sched-body"><div class="sched-title">' + c.batch + ': ' + c.topic + '</div><div class="sched-meta">' + c.n + ' students enrolled</div></div>'
-          + '<div style="display:flex;gap:5px">'
-          + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Editing ' + c.topic + '...\',\'✏️\')">✏️</button>'
-          + '<button class="btn btn-sm btn-teal" onclick="event.stopPropagation();toast(\'Students in ' + c.batch + ' notified! 🔔\',\'🔔\')">🔔</button></div></div>';
-      }).join('') + '</div>';
+  var upHtml = '<div class="card"><div class="card-header"><div class="card-title">📅 Live & Scheduled Classes</div>'
+    + '<button class="btn btn-teal" onclick="openScheduleClassModal()">➕ Schedule Class</button></div>'
+    + (dbLive.length > 0 ? dbLive.map(function(c) {
+        var isLive = c.status === 'live' || c.status === 'ongoing';
+        return '<div class="sched-item" style="cursor:pointer" onclick="window.startFacultyLiveClass(\'' + (c._id||'') + '\',\'' + c.topic.replace(/'/g,"\\'") + '\',\'' + (c.batch||'JEE Advanced').replace(/'/g,"\\'") + '\',\'' + (c.time||'12:00 PM') + '\')">'
+          + '<div class="sched-time"><div class="st" style="' + (isLive ? 'color:var(--admin);font-weight:900' : '') + '">' + (isLive ? 'LIVE' : (c.time || '12:00 PM')) + '</div><div class="sd">' + (c.date || 'Today') + '</div></div>'
+          + '<div class="sched-body"><div class="sched-title">' + (c.sub ? c.sub + ': ' : '') + c.topic + '</div>'
+          + '<div class="sched-meta">' + (c.batch || 'JEE Advanced') + ' • ' + (c.online || 120) + ' registered <span class="badge ' + (isLive ? 'badge-red' : 'badge-green') + '" style="margin-left:6px">' + (isLive ? '🔴 LIVE' : 'Scheduled') + '</span></div></div>'
+          + '<div style="display:flex;gap:6px;align-items:center">'
+          + '<button class="btn btn-sm ' + (isLive ? 'btn-red' : 'btn-solid') + '" onclick="event.stopPropagation();window.startFacultyLiveClass(\'' + (c._id||'') + '\',\'' + c.topic.replace(/'/g,"\\'") + '\',\'' + (c.batch||'JEE Advanced').replace(/'/g,"\\'") + '\',\'' + (c.time||'12:00 PM') + '\')">🎥 ' + (isLive ? 'Studio' : 'Start Class') + '</button>'
+          + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();window.openLiveClassAttendanceModal(\'' + c.topic.replace(/'/g,"\\'") + '\',\'' + (c.batch||'JEE Advanced').replace(/'/g,"\\'") + '\')">✅ Roster</button>'
+          + '<button class="btn btn-sm btn-red" onclick="event.stopPropagation();window.deleteLiveClass(\'' + (c._id||'') + '\')">🗑️</button>'
+          + '</div></div>';
+      }).join('') : '<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px"><div style="font-size:32px;margin-bottom:8px">📅</div>No scheduled classes yet. Click "➕ Schedule Class" to create one.</div>')
+    + '</div>';
+
   return liveCard + upHtml;
+};
+
+window.startFacultyLiveClass = async function(id, topic, batch, time) {
+  if (id && id !== 'undefined') {
+    try {
+      await api('/api/live/' + id + '/start', { method: 'PUT' });
+      await syncLMSData();
+    } catch(e) {
+      console.warn('Start live class API error:', e);
+    }
+  }
+  openFacultyClassModal(topic || 'Live Session', batch || 'JEE Advanced Batch A', time || '12:00 PM', 'live', 'chat');
+};
+
+window.endFacultyLiveClass = async function(id) {
+  if (id && id !== 'undefined') {
+    try {
+      await api('/api/live/' + id + '/end', { method: 'PUT' });
+      toast('Live stream ended successfully ✅', '🛑');
+      await syncLMSData();
+      if (G.page) loadPage(G.page);
+    } catch(e) {
+      toast('Error ending stream: ' + e.message, '❌');
+    }
+  }
+};
+
+window.deleteLiveClass = async function(id) {
+  if (!id || id === 'undefined') return;
+  if (!confirm('Are you sure you want to remove this scheduled class?')) return;
+  try {
+    await api('/api/live/' + id, { method: 'DELETE' });
+    toast('Scheduled class removed ✅', '🗑️');
+    await syncLMSData();
+    if (G.page) loadPage(G.page);
+  } catch(e) {
+    toast('Delete failed: ' + e.message, '❌');
+  }
 };
 
 window.openLiveClassAttendanceModal = async function(topic, batch) {
@@ -2914,28 +2953,34 @@ window.openLiveClassAttendanceModal = async function(topic, batch) {
 
 function openScheduleClassModal() {
   var batches = ['JEE Advanced Batch A', 'JEE Advanced Batch B', 'NEET Batch 2025', 'JEE Mains Crash Course', 'All Batches'];
+  var now = new Date();
+  var hh = String(now.getHours()).padStart(2, '0');
+  var mm = String(now.getMinutes()).padStart(2, '0');
+  var curTime = hh + ':' + mm;
+
   var body = '<div style="display:flex;flex-direction:column;gap:12px">'
     + '<div class="inp-group"><label>Subject & Topic Title</label><input type="text" id="sched-topic" class="inp-field" placeholder="e.g. Physics — Optics: Snell\'s Law" value="Physics — Current Electricity: Kirchhoff\'s Laws"></div>'
     + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    + '<div class="inp-group"><label>Date</label><input type="date" id="sched-date" class="inp-field" value="' + new Date().toISOString().slice(0,10) + '"></div>'
-    + '<div class="inp-group"><label>Time</label><input type="time" id="sched-time" class="inp-field" value="14:00"></div>'
+    + '<div class="inp-group"><label>Date</label><input type="date" id="sched-date" class="inp-field" value="' + now.toISOString().slice(0,10) + '"></div>'
+    + '<div class="inp-group"><label>Time</label><input type="time" id="sched-time" class="inp-field" value="' + curTime + '"></div>'
     + '</div>'
     + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     + '<div class="inp-group"><label>Duration</label><select id="sched-dur" class="inp-field"><option>60 min</option><option>90 min</option><option>120 min</option></select></div>'
-    + '<div class="inp-group"><label>Platform</label><select id="sched-platform" class="inp-field"><option>In-app Live Studio</option><option>Zoom Meeting</option><option>Google Meet</option></select></div>'
+    + '<div class="inp-group"><label>Go Live Immediately?</label><select id="sched-status" class="inp-field"><option value="live">🔴 Yes, Go Live Now</option><option value="upcoming">⏳ Scheduled for later</option></select></div>'
     + '</div>'
     + '<div class="inp-group"><label>Assign Batch</label><select id="sched-batch" class="inp-field">'
     + batches.map(function(b){ return '<option>' + b + '</option>'; }).join('')
     + '</select></div>'
     + '</div>';
 
-  openDetail('📅 Schedule New Class', body, '<button class="btn btn-solid" onclick="window.submitScheduleClass()">✅ Publish & Schedule Class</button>');
+  openDetail('📅 Schedule New Class', body, '<button class="btn btn-solid" onclick="window.submitScheduleClass()">✅ Publish & Start Class</button>');
 }
 
 window.submitScheduleClass = async function() {
   var topic = (document.getElementById('sched-topic') ? document.getElementById('sched-topic').value : '').trim();
   var date = (document.getElementById('sched-date') ? document.getElementById('sched-date').value : '');
   var time = (document.getElementById('sched-time') ? document.getElementById('sched-time').value : '');
+  var status = (document.getElementById('sched-status') ? document.getElementById('sched-status').value : 'live');
   var batch = (document.getElementById('sched-batch') ? document.getElementById('sched-batch').value : 'JEE Advanced Batch A');
 
   if (!topic) {
@@ -2943,21 +2988,36 @@ window.submitScheduleClass = async function() {
     return;
   }
 
+  // Format friendly 12-hour time if input was HH:MM
+  var formattedTime = time;
+  if (time && time.indexOf(':') > -1) {
+    var parts = time.split(':');
+    var h = parseInt(parts[0]);
+    var m = parts[1];
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    formattedTime = h + ':' + m + ' ' + ampm;
+  }
+
   try {
-    await api('/api/live', {
+    var created = await api('/api/live', {
       method: 'POST',
       body: JSON.stringify({
         topic: topic,
-        date: date || 'Today',
-        time: time || '02:00 PM',
+        date: date ? new Date(date).toLocaleDateString('en-US', { month:'short', day:'numeric' }) : 'Today',
+        time: formattedTime || '12:00 PM',
         sub: 'Physics',
-        batch: batch
+        batch: batch,
+        status: status
       })
     });
-    toast('Class scheduled and students notified! 📅', '✅');
+    toast(status === 'live' ? 'Class is LIVE now! Students notified 🔴' : 'Class scheduled! 📅', '✅');
     closeModal('modal-detail');
     await syncLMSData();
     loadPage(G.page);
+    if (status === 'live' && created && created._id) {
+      window.startFacultyLiveClass(created._id, topic, batch, formattedTime);
+    }
   } catch(err) {
     toast('Failed to schedule class: ' + err.message, '❌');
   }

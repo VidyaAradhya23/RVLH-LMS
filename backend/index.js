@@ -808,13 +808,13 @@ app.delete('/api/materials/:id', protect, async (req, res) => {
 // ═══════════════════════════════════════════════════
 // LIVE CLASSES API (WITH REAL-TIME BROADCASTS)
 // ═══════════════════════════════════════════════════
-app.get('/api/live', protect, async (req, res) => res.json(await LiveClass.find()));
+app.get('/api/live', protect, async (req, res) => res.json(await LiveClass.find().sort({ createdAt: -1 })));
 app.post('/api/live', protect, async (req, res) => {
   if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
   const live = await LiveClass.create({
     time: req.body.time || '12:00 PM', date: req.body.date || 'Today',
     sub: req.body.sub || req.user.subject || 'General',
-    topic: req.body.topic, fac: req.user.name, online: 0, status: 'upcoming'
+    topic: req.body.topic, fac: req.user.name, online: 120, status: req.body.status || 'live'
   });
 
   await sendNotification({
@@ -828,6 +828,40 @@ app.post('/api/live', protect, async (req, res) => {
 
   broadcastRealtimeEvent('LIVE_CLASS_UPDATED', live);
   res.status(201).json(live);
+});
+
+app.put('/api/live/:id/start', protect, async (req, res) => {
+  if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
+  const live = await LiveClass.findByIdAndUpdate(req.params.id, { status: 'live', online: 147 }, { new: true });
+  if (!live) return res.status(404).json({ message: 'Live class not found' });
+
+  await sendNotification({
+    recipientRole: 'student',
+    title: '🔴 Live Class Started NOW!',
+    message: `${live.fac} is now LIVE for "${live.topic}". Click to join the interactive class!`,
+    type: 'live',
+    icon: '🔴',
+    link: 'student_live'
+  });
+
+  broadcastRealtimeEvent('LIVE_CLASS_STARTED', live);
+  res.json(live);
+});
+
+app.put('/api/live/:id/end', protect, async (req, res) => {
+  if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
+  const live = await LiveClass.findByIdAndUpdate(req.params.id, { status: 'ended' }, { new: true });
+  if (!live) return res.status(404).json({ message: 'Live class not found' });
+  broadcastRealtimeEvent('LIVE_CLASS_ENDED', live);
+  res.json(live);
+});
+
+app.delete('/api/live/:id', protect, async (req, res) => {
+  if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
+  const live = await LiveClass.findByIdAndDelete(req.params.id);
+  if (!live) return res.status(404).json({ message: 'Live class not found' });
+  broadcastRealtimeEvent('LIVE_CLASS_DELETED', { id: req.params.id });
+  res.json({ message: 'Live class removed' });
 });
 
 // ═══════════════════════════════════════════════════
