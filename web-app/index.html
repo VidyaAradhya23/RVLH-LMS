@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,6 +6,17 @@
     <title>RV Learning Hub - LMS Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css">
+    <script>
+      try {
+        if (localStorage.getItem('lms_token')) {
+          document.documentElement.classList.add('has-token');
+        }
+      } catch(e) {}
+    </script>
+    <style>
+      html.has-token #login-screen { display: none !important; }
+      html.has-token #app-shell { display: block !important; }
+    </style>
 </head>
 <body>
     <!-- ═══════ LOGIN SCREEN ═══════ -->

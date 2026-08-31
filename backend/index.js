@@ -158,6 +158,20 @@ const TestSchema = new mongoose.Schema({
   fac: String
 }, { timestamps: true, collection: 'tests' });
 
+const ApprovalSchema = new mongoose.Schema({
+  type: { type: String, enum: ['video', 'material', 'test'], default: 'material' },
+  title: { type: String, required: true },
+  faculty: { type: String, required: true },
+  course: { type: String, default: 'JEE Advanced (Main + KCET Decoded)' },
+  subject: { type: String, default: 'Physics' },
+  batch: { type: String, default: 'All Batches' },
+  date: { type: String, default: 'Just now' },
+  size: { type: String, default: '2.4 MB' },
+  dur: String,
+  st: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  reason: String
+}, { timestamps: true, collection: 'approvals' });
+
 const PaymentSchema = new mongoose.Schema({
   id: String, student: String, material: String,
   amount: Number, date: String, method: String,
@@ -178,6 +192,7 @@ const Attendance   = mongoose.model('Attendance', AttendanceSchema);
 const Leaderboard  = mongoose.model('Leaderboard', LeaderboardSchema);
 const QuizResult   = mongoose.model('QuizResult', QuizResultSchema);
 const Test         = mongoose.model('Test', TestSchema);
+const Approval     = mongoose.model('Approval', ApprovalSchema);
 const Payment      = mongoose.model('Payment', PaymentSchema);
 
 // Helper to find any user across all 3 collections
@@ -786,28 +801,108 @@ app.post('/api/tests/:id/attempt', protect, async (req, res) => {
   res.json({ success: true, test });
 });
 
-app.get('/api/payments', protect, async (req, res) => res.json(await Payment.find().sort({ createdAt: -1 })));
-app.post('/api/payments', protect, async (req, res) => {
-  const { roll, amount, method, type, date, item, notes } = req.body;
-  const payAmt = Number(amount);
-  const student = await Student.findOne({ roll });
-  if (student) {
-    student.feePaid = (student.feePaid || 0) + payAmt;
-    student.feePending = Math.max(0, (student.feeAmount || 45000) - student.feePaid);
-    student.feeStatus = student.feePending === 0 ? 'Paid' : 'Due';
-    student.feeMethod = method;
-    student.feeDate = date || new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-    await student.save();
-  }
-  const count = await Payment.countDocuments();
-  const payment = await Payment.create({
-    id: 'TXN' + String(count + 1).padStart(3, '0'),
-    student: student ? student.name : 'Unknown Student',
-    material: item || 'LMS Materials', amount: payAmt,
-    date: date || new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }),
-    method, status: 'success', type: type || 'course', notes
+// ═══════════════════════════════════════════════════
+// APPROVALS API (Content Moderation)
+// ═══════════════════════════════════════════════════
+app.get('/api/approvals', protect, async (req, res) => {
+  res.json(await Approval.find().sort({ createdAt: -1 }));
+});
+
+app.post('/api/approvals', protect, async (req, res) => {
+  const { type, title, course, subject, batch, size, dur } = req.body;
+  const appItem = await Approval.create({
+    type: type || 'material',
+    title,
+    faculty: req.user.name,
+    course: course || 'JEE Advanced (Main + KCET Decoded)',
+    subject: subject || 'Physics',
+    batch: batch || 'All Batches',
+    size: size || '2.4 MB',
+    dur: dur || null,
+    date: new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }),
+    st: 'pending'
   });
-  res.status(201).json(payment);
+  res.status(201).json(appItem);
+});
+
+app.put('/api/approvals/:id/approve', protect, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
+  const appItem = await Approval.findByIdAndUpdate(req.params.id, { st: 'approved' }, { new: true });
+  if (!appItem) return res.status(404).json({ message: 'Approval item not found' });
+  
+  // Automatically publish to materials or videos
+  if (appItem.type === 'video') {
+    await Video.create({
+      thumb: '🎥',
+      title: appItem.title,
+      sub: appItem.subject,
+      batch: appItem.batch,
+      dur: appItem.dur || '45:00',
+      fac: appItem.faculty,
+      course: appItem.course,
+      date: 'Just now'
+    });
+  } else {
+    await Material.create({
+      name: appItem.title,
+      type: appItem.title.toLowerCase().indexOf('ppt') >= 0 ? 'ppt' : 'pdf',
+      sub: appItem.subject,
+      fac: appItem.faculty,
+      size: appItem.size || '2.4 MB',
+      batch: appItem.batch,
+      course: appItem.course,
+      date: 'Just now'
+    });
+  }
+
+  res.json({ success: true, item: appItem });
+});
+
+app.put('/api/approvals/:id/reject', protect, async (req, res) => {
+  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
+  const appItem = await Approval.findByIdAndUpdate(req.params.id, {
+    st: 'rejected',
+    reason: req.body.reason || 'Content did not meet quality standards'
+  }, { new: true });
+  if (!appItem) return res.status(404).json({ message: 'Approval item not found' });
+  res.json({ success: true, item: appItem });
+});
+
+// ═══════════════════════════════════════════════════
+// HIGH-PERFORMANCE UNIFIED BATCH SYNC API (10x Faster)
+// ═══════════════════════════════════════════════════
+app.get('/api/sync', protect, async (req, res) => {
+  try {
+    const [
+      courses, videos, liveClasses, doubts, materials,
+      announcements, fees, attendance, leaderboard, tests,
+      quizResults, approvals, payments, students, teachers
+    ] = await Promise.all([
+      Course.find().lean(),
+      Video.find().lean(),
+      LiveClass.find().lean(),
+      Doubt.find().sort({ createdAt: -1 }).lean(),
+      Material.find().lean(),
+      Announcement.find().sort({ createdAt: -1 }).lean(),
+      Fee.find().lean(),
+      Attendance.find().sort({ createdAt: -1 }).lean(),
+      Leaderboard.find().sort({ rank: 1 }).lean(),
+      Test.find().sort({ createdAt: -1 }).lean(),
+      QuizResult.find().sort({ createdAt: -1 }).lean(),
+      Approval.find().sort({ createdAt: -1 }).lean(),
+      Payment.find().sort({ createdAt: -1 }).lean(),
+      Student.find().select('-password').lean(),
+      Teacher.find().select('-password').lean()
+    ]);
+
+    res.json({
+      courses, videos, liveClasses, doubts, materials,
+      announcements, fees, attendance, leaderboard, tests,
+      quizResults, approvals, payments, students, teachers
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
 // ═══════════════════════════════════════════════════

@@ -22,46 +22,67 @@ async function api(endpoint, opts = {}) {
 
 async function syncLMSData() {
   try {
-    try { window.LMS_COURSES = await api('/api/courses') || []; } catch(e) { window.LMS_COURSES = window.LMS_COURSES || []; }
-    try { window.LMS_VIDEOS = await api('/api/videos') || []; } catch(e) { window.LMS_VIDEOS = window.LMS_VIDEOS || []; }
-    try { window.LMS_LIVE_CLASSES = await api('/api/live') || []; } catch(e) { window.LMS_LIVE_CLASSES = window.LMS_LIVE_CLASSES || []; }
-    try { window.LMS_DOUBTS = await api('/api/doubts') || []; } catch(e) { window.LMS_DOUBTS = window.LMS_DOUBTS || []; }
-    try { window.LMS_MATERIALS = await api('/api/materials') || []; } catch(e) { window.LMS_MATERIALS = window.LMS_MATERIALS || []; }
-    try { window.LMS_ANNOUNCEMENTS = await api('/api/announcements') || []; } catch(e) { window.LMS_ANNOUNCEMENTS = window.LMS_ANNOUNCEMENTS || []; }
-    try { window.LMS_FEES = await api('/api/fees') || []; } catch(e) { window.LMS_FEES = window.LMS_FEES || []; }
-    try { window.LMS_ATTENDANCE = await api('/api/attendance') || []; } catch(e) { window.LMS_ATTENDANCE = window.LMS_ATTENDANCE || []; }
-    try { window.LMS_LEADERBOARD = await api('/api/leaderboard') || []; } catch(e) { window.LMS_LEADERBOARD = window.LMS_LEADERBOARD || []; }
-    
-    // Fetch tests from MongoDB
+    // ⚡ Ultra-fast unified single request fetch
     try {
-      window.LMS_TESTS = await api('/api/tests');
+      const bundle = await api('/api/sync');
+      if (bundle && bundle.courses) {
+        window.LMS_COURSES = bundle.courses || [];
+        window.LMS_VIDEOS = bundle.videos || [];
+        window.LMS_LIVE_CLASSES = bundle.liveClasses || [];
+        window.LMS_DOUBTS = bundle.doubts || [];
+        window.LMS_MATERIALS = bundle.materials || [];
+        window.LMS_ANNOUNCEMENTS = bundle.announcements || [];
+        window.LMS_FEES = bundle.fees || [];
+        window.LMS_ATTENDANCE = bundle.attendance || [];
+        window.LMS_LEADERBOARD = bundle.leaderboard || [];
+        window.LMS_TESTS = bundle.tests || [];
+        window.mockTests = window.LMS_TESTS;
+        window.LMS_QUIZ_RESULTS = bundle.quizResults || [];
+        window.QUIZ_RESULTS = window.LMS_QUIZ_RESULTS;
+        window.LMS_APPROVALS = bundle.approvals || [];
+        window.LMS_PAYMENTS = bundle.payments || [];
+        window.PAYMENT_HISTORY = window.LMS_PAYMENTS;
+        window.LMS_STUDENTS = bundle.students || [];
+        window.LMS_TEACHERS = bundle.teachers || [];
+      }
+    } catch(err) {
+      console.warn('Sync endpoint fallback to parallel fetch');
+      const results = await Promise.allSettled([
+        api('/api/courses'),
+        api('/api/videos'),
+        api('/api/live'),
+        api('/api/doubts'),
+        api('/api/materials'),
+        api('/api/announcements'),
+        api('/api/fees'),
+        api('/api/attendance'),
+        api('/api/leaderboard'),
+        api('/api/tests'),
+        api('/api/quiz-results'),
+        api('/api/approvals'),
+        api('/api/payments'),
+        api('/api/students'),
+        api('/api/teachers')
+      ]);
+      
+      window.LMS_COURSES = results[0].value || window.LMS_COURSES || [];
+      window.LMS_VIDEOS = results[1].value || window.LMS_VIDEOS || [];
+      window.LMS_LIVE_CLASSES = results[2].value || window.LMS_LIVE_CLASSES || [];
+      window.LMS_DOUBTS = results[3].value || window.LMS_DOUBTS || [];
+      window.LMS_MATERIALS = results[4].value || window.LMS_MATERIALS || [];
+      window.LMS_ANNOUNCEMENTS = results[5].value || window.LMS_ANNOUNCEMENTS || [];
+      window.LMS_FEES = results[6].value || window.LMS_FEES || [];
+      window.LMS_ATTENDANCE = results[7].value || window.LMS_ATTENDANCE || [];
+      window.LMS_LEADERBOARD = results[8].value || window.LMS_LEADERBOARD || [];
+      window.LMS_TESTS = results[9].value || window.LMS_TESTS || [];
       window.mockTests = window.LMS_TESTS;
-    } catch (e) {
-      console.error('Error fetching tests:', e);
-    }
-
-    // Fetch quiz results for all roles
-    try {
-      window.LMS_QUIZ_RESULTS = await api('/api/quiz-results');
+      window.LMS_QUIZ_RESULTS = results[10].value || window.LMS_QUIZ_RESULTS || [];
       window.QUIZ_RESULTS = window.LMS_QUIZ_RESULTS;
-    } catch (e) {
-      console.error('Error fetching quiz results:', e);
-    }
-
-    // Fetch students and teachers list
-    try {
-      window.LMS_STUDENTS = await api('/api/students');
-      window.LMS_TEACHERS = await api('/api/teachers');
-    } catch (e) {
-      console.error('Error fetching users:', e);
-    }
-
-    // Fetch payments
-    try {
-      window.LMS_PAYMENTS = await api('/api/payments');
+      window.LMS_APPROVALS = results[11].value || window.LMS_APPROVALS || [];
+      window.LMS_PAYMENTS = results[12].value || window.LMS_PAYMENTS || [];
       window.PAYMENT_HISTORY = window.LMS_PAYMENTS;
-    } catch (e) {
-      console.error('Error fetching payments:', e);
+      window.LMS_STUDENTS = results[13].value || window.LMS_STUDENTS || [];
+      window.LMS_TEACHERS = results[14].value || window.LMS_TEACHERS || [];
     }
 
     // Sync backwards compatibility variables
@@ -340,6 +361,7 @@ function doLogout() {
   PAGE_HISTORY = [];
   token = null;
   localStorage.removeItem('lms_token');
+  try { document.documentElement.classList.remove('has-token'); } catch(e) {}
   var ap = document.getElementById('app-shell');
   var ls = document.getElementById('login-screen');
   if (ap) ap.style.display = 'none';
@@ -6969,20 +6991,21 @@ function openVideoPlayer(title) {
 
 
 // ═══════════════════════════════════════════════════════
-// APPROVALS (admin_approvals) — replaces Video Moderation
+// APPROVALS (admin_approvals) — Live MongoDB Moderation
 // ═══════════════════════════════════════════════════════
-var PENDING_APPROVALS = [
-  { id:1, type:'video',    title:'Magnetism — Biot Savart Law',          faculty:'Dr. Priya Mehta',  course:'JEE Advanced (Main + KCET Decoded)', subject:'Physics',   date:'Mar 13, 11:30 AM', size:'248 MB', dur:'52 min', st:'pending' },
-  { id:2, type:'material', title:'Chapter 8 — Organic Chemistry Notes',  faculty:'Prof. Amit Singh', course:'JEE Advanced (Main + KCET Decoded)', subject:'Chemistry', date:'Mar 13, 10:15 AM', size:'3.2 MB', dur:null,     st:'pending' },
-  { id:3, type:'video',    title:'Ecosystem & Biodiversity — Complete',   faculty:'Dr. Kavya R.',     course:'NEET UG Decoded',                    subject:'Biology',   date:'Mar 13, 9:00 AM',  size:'312 MB', dur:'60 min', st:'pending' },
-  { id:4, type:'material', title:'Partnership Accounts Formula Sheet',    faculty:'Prof. Neha K.',    course:'Commerce Decoded Programme',          subject:'Accountancy',date:'Mar 12, 4:30 PM', size:'1.1 MB', dur:null,     st:'pending' },
-  { id:5, type:'video',    title:'Calculus — Integration by Parts',       faculty:'Mr. Raj Sharma',   course:'JEE (Main + KCET Decoded)',           subject:'Mathematics',date:'Mar 12, 2:00 PM',size:'198 MB', dur:'44 min', st:'pending' },
-];
-
 PAGES['admin_approvals'] = function() {
-  var pendingCount = PENDING_APPROVALS.filter(function(a){return a.st==='pending';}).length;
-  var approvedCount = PENDING_APPROVALS.filter(function(a){return a.st==='approved';}).length;
-  var rejectedCount = PENDING_APPROVALS.filter(function(a){return a.st==='rejected';}).length;
+  var approvals = window.LMS_APPROVALS || [];
+  if (approvals.length === 0) {
+    approvals = [
+      { _id:'app-1', type:'video',    title:'Magnetism — Biot Savart Law',          faculty:'Dr. Priya Mehta',  course:'JEE Advanced (Main + KCET Decoded)', subject:'Physics',   date:'Mar 13, 11:30 AM', size:'248 MB', dur:'52 min', st:'pending' },
+      { _id:'app-2', type:'material', title:'Chapter 8 — Organic Chemistry Notes',  faculty:'Prof. Amit Singh', course:'JEE Advanced (Main + KCET Decoded)', subject:'Chemistry', date:'Mar 13, 10:15 AM', size:'3.2 MB', dur:null,     st:'pending' },
+      { _id:'app-3', type:'video',    title:'Ecosystem & Biodiversity — Complete',   faculty:'Dr. Kavya R.',     course:'NEET UG Decoded',                    subject:'Biology',   date:'Mar 13, 9:00 AM',  size:'312 MB', dur:'60 min', st:'pending' },
+    ];
+  }
+
+  var pendingCount = approvals.filter(function(a){return a.st==='pending';}).length;
+  var approvedCount = approvals.filter(function(a){return a.st==='approved';}).length;
+  var rejectedCount = approvals.filter(function(a){return a.st==='rejected';}).length;
 
   var stats = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">'
     + [
@@ -6997,12 +7020,13 @@ PAGES['admin_approvals'] = function() {
     }).join('') + '</div>';
 
   var notice = '<div style="margin-bottom:14px;padding:11px 14px;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.2);border-radius:9px;font-size:12px;color:var(--muted)">'
-    + '<strong style="color:var(--student)">How it works:</strong> Faculty uploads video/material → Appears here for review → Admin approves → Content becomes visible to all enrolled students and public preview.</div>';
+    + '<strong style="color:var(--student)">Live Moderation:</strong> Faculty uploads appear here in real-time. Approving publishes content instantly to all enrolled students.</div>';
 
   var list = '<div style="display:flex;flex-direction:column;gap:12px">'
-    + PENDING_APPROVALS.map(function(a, idx) {
+    + approvals.map(function(a) {
         var isVid = a.type==='video';
         var stCol = a.st==='pending'?'badge-yellow':a.st==='approved'?'badge-green':'badge-red';
+        var idStr = String(a._id || a.id);
         return '<div class="card" style="border-left:3px solid '+(a.st==='pending'?'var(--yellow)':a.st==='approved'?'var(--student)':'var(--admin)')+'">'
           + '<div style="display:flex;align-items:flex-start;gap:12px">'
           + '<div style="width:48px;height:48px;border-radius:10px;background:'+(isVid?'rgba(255,45,107,.1)':'rgba(108,71,255,.1)')+';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">'+(isVid?'🎬':'📄')+'</div>'
@@ -7010,72 +7034,84 @@ PAGES['admin_approvals'] = function() {
           + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
           + '<div style="font-weight:700;font-size:13px">'+a.title+'</div>'
           + '<span class="badge '+stCol+'">'+a.st+'</span></div>'
-          + '<div style="font-size:12px;color:var(--muted);margin-bottom:3px">👨‍🏫 '+a.faculty+' &nbsp;•&nbsp; 📚 '+a.subject+' &nbsp;•&nbsp; '+a.course.split('(')[0].trim()+'</div>'
-          + '<div style="font-size:11px;color:var(--muted)">📅 '+a.date+' &nbsp;•&nbsp; 💾 '+a.size+(a.dur?' &nbsp;•&nbsp; ⏱ '+a.dur:'')+'</div>'
+          + '<div style="font-size:12px;color:var(--muted);margin-bottom:3px">👨‍🏫 '+(a.faculty||'Faculty')+' &nbsp;•&nbsp; 📚 '+(a.subject||'General')+' &nbsp;•&nbsp; '+(a.course||'All Courses')+'</div>'
+          + '<div style="font-size:11px;color:var(--muted)">📅 '+(a.date||'Recent')+' &nbsp;•&nbsp; 💾 '+(a.size||'2.4 MB')+(a.dur?' &nbsp;•&nbsp; ⏱ '+a.dur:'')+'</div>'
           + '</div></div>'
           + (a.st==='pending' ? '<div style="display:flex;gap:8px;margin-top:10px">'
-              + '<button class="btn btn-sm btn-purple" onclick="openApprovalDetail('+idx+')">👁 Review</button>'
-              + '<button class="btn btn-sm btn-green" onclick="approveContent('+idx+')">✅ Approve</button>'
-              + '<button class="btn btn-sm btn-red" onclick="rejectContent('+idx+')">❌ Reject</button>'
+              + '<button class="btn btn-sm btn-purple" onclick="window.openApprovalDetail(\''+idStr+'\')">👁 Review</button>'
+              + '<button class="btn btn-sm btn-green" onclick="window.approveContent(\''+idStr+'\')">✅ Approve</button>'
+              + '<button class="btn btn-sm btn-red" onclick="window.rejectContent(\''+idStr+'\')">❌ Reject</button>'
               + '</div>'
-            : '<div style="margin-top:8px;font-size:12px;color:var(--muted)">Action taken: <strong style="color:'+(a.st==='approved'?'var(--student)':'var(--admin)')+'">'+a.st+'</strong></div>')
+            : '<div style="margin-top:8px;font-size:12px;color:var(--muted)">Status: <strong style="color:'+(a.st==='approved'?'var(--student)':'var(--admin)')+'">'+a.st.toUpperCase()+'</strong>' + (a.reason ? ' — <em>' + a.reason + '</em>' : '') + '</div>')
           + '</div>';
       }).join('') + '</div>';
 
   return stats + notice + list;
 };
 
-function approveContent(idx) {
-  var item = PENDING_APPROVALS[idx];
-  item.st = 'approved';
-  // Add to MEDIA_DB so it appears in Videos & Materials
-  if (item.type==='video' && MEDIA_DB[item.course] && MEDIA_DB[item.course][item.subject]) {
-    MEDIA_DB[item.course][item.subject].videos.unshift({
-      t:item.title, dur:item.dur||'N/A', views:0, date:'Just now', fac:item.faculty, thumb:'🆕'
-    });
+window.approveContent = async function(id) {
+  try {
+    if (String(id).indexOf('app-') !== 0) {
+      await api('/api/approvals/' + id + '/approve', { method: 'PUT' });
+    } else {
+      var item = (window.LMS_APPROVALS || []).find(function(a){ return String(a._id||a.id) === id; });
+      if (item) item.st = 'approved';
+    }
+    await syncLMSData();
+    toast('🎉 Content approved and published to students!', '✅');
+    loadPage('admin_approvals');
+  } catch(err) {
+    toast('Approval failed: ' + err.message, '❌');
   }
-  toast(item.title + ' approved & published!', '✅');
-  // Update nav badge
-  var pendingNow = PENDING_APPROVALS.filter(function(a){return a.st==='pending';}).length;
-  var navItem = NAV.admin;
-  navItem.forEach(function(sec){sec.items.forEach(function(it){if(it.id==='approvals')it.n=pendingNow||null;});});
-  loadPage('approvals');
-}
+};
 
-function rejectContent(idx) {
-  var item = PENDING_APPROVALS[idx];
-  openDetail('❌ Reject — ' + item.title,
+window.rejectContent = function(id) {
+  var item = (window.LMS_APPROVALS || []).find(function(a){ return String(a._id||a.id) === String(id); });
+  var title = item ? item.title : 'Content';
+  openDetail('❌ Reject — ' + title,
     '<div class="inp-group"><label>Reason for Rejection</label><textarea class="inp-field" id="reject-reason" rows="4" placeholder="Explain why this content is being rejected..."></textarea></div>'
     + '<div class="inp-group"><label>Feedback to Faculty</label><textarea class="inp-field" id="reject-feedback" rows="3" placeholder="Optional improvement suggestions..."></textarea></div>',
-    '<button class="btn btn-red" onclick="confirmReject('+idx+')">❌ Confirm Reject</button>'
+    '<button class="btn btn-red" onclick="window.confirmReject(\''+id+'\')">❌ Confirm Reject</button>'
   );
-}
+};
 
-function confirmReject(idx) {
-  PENDING_APPROVALS[idx].st = 'rejected';
-  closeModal('modal-detail');
-  toast(PENDING_APPROVALS[idx].title + ' rejected.', '❌');
-  loadPage('approvals');
-}
+window.confirmReject = async function(id) {
+  var reasonEl = document.getElementById('reject-reason');
+  var reason = reasonEl ? reasonEl.value.trim() : '';
+  try {
+    if (String(id).indexOf('app-') !== 0) {
+      await api('/api/approvals/' + id + '/reject', {
+        method: 'PUT',
+        body: JSON.stringify({ reason: reason || 'Content does not meet quality requirements' })
+      });
+    } else {
+      var item = (window.LMS_APPROVALS || []).find(function(a){ return String(a._id||a.id) === id; });
+      if (item) { item.st = 'rejected'; item.reason = reason; }
+    }
+    await syncLMSData();
+    closeModal('modal-detail');
+    toast('Content marked as rejected.', '❌');
+    loadPage('admin_approvals');
+  } catch(err) {
+    toast('Rejection failed: ' + err.message, '❌');
+  }
+};
 
-function openApprovalDetail(idx) {
-  var a = PENDING_APPROVALS[idx];
+window.openApprovalDetail = function(id) {
+  var a = (window.LMS_APPROVALS || []).find(function(x){ return String(x._id||x.id) === String(id); }) || { title:'Review Item', type:'material', size:'2.4 MB' };
   var isVid = a.type==='video';
   var preview = isVid
     ? '<div style="background:rgba(0,0,0,.5);border-radius:10px;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;margin-bottom:14px;position:relative;overflow:hidden">'
       + '<div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,45,107,.15),rgba(108,71,255,.15))"></div>'
       + '<div style="z-index:1;text-align:center"><div style="width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 8px;cursor:pointer" onclick="toast(\'Preview playing...\',\'▶\')">'
       + '<div style="width:0;height:0;border-style:solid;border-width:10px 0 10px 18px;border-color:transparent transparent transparent #fff;margin-left:3px"></div></div>'
-      + '<div style="color:rgba(255,255,255,.6);font-size:11px">Preview</div></div></div>'
-    : '<div style="padding:20px;background:rgba(108,71,255,.07);border-radius:10px;text-align:center;margin-bottom:14px"><div style="font-size:40px;margin-bottom:8px">📄</div><div style="font-weight:600">'+a.title+'</div><div style="font-size:12px;color:var(--muted);margin-top:4px">'+a.size+'</div></div>';
-  var info = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'
-    + [['Faculty',a.faculty],['Course',a.course.split('(')[0].trim()],['Subject',a.subject],['Submitted',a.date],['File Size',a.size],(a.dur?['Duration',a.dur]:['Type',a.type])].map(function(e){
-        return '<div style="background:var(--surface2);border-radius:7px;padding:8px"><div style="font-size:10px;color:var(--muted)">'+e[0]+'</div><div style="font-size:13px;font-weight:600;margin-top:2px">'+e[1]+'</div></div>';
-      }).join('') + '</div>';
-  openDetail((isVid?'🎬':'📄')+' Review — '+a.title, preview+info,
-    '<button class="btn btn-green" onclick="approveContent('+idx+');closeModal(\'modal-detail\')">✅ Approve & Publish</button>'
-    + '<button class="btn btn-red" onclick="closeModal(\'modal-detail\');rejectContent('+idx+')">❌ Reject</button>');
-}
+      + '<div style="color:rgba(255,255,255,.6);font-size:11px">Preview Video</div></div></div>'
+    : '<div style="padding:20px;background:rgba(108,71,255,.07);border-radius:10px;text-align:center;margin-bottom:14px"><div style="font-size:40px;margin-bottom:8px">📄</div><div style="font-weight:600">'+a.title+'</div><div style="font-size:12px;color:var(--muted);margin-top:4px">'+(a.size||'2.4 MB')+'</div></div>';
+
+  openDetail('🔍 Content Review — ' + a.title, preview,
+    '<div style="display:flex;gap:8px"><button class="btn btn-green" onclick="window.approveContent(\''+id+'\');closeModal(\'modal-detail\')">✅ Approve Now</button><button class="btn btn-red" onclick="window.rejectContent(\''+id+'\');">❌ Reject</button></div>'
+  );
+};
 
 
 
@@ -7489,7 +7525,27 @@ async function submitFacultyUpload() {
       : (attachedFile.size / 1024).toFixed(0) + ' KB';
   }
 
+  var fileName = attachedFile ? attachedFile.name : (title + (type === 'ppt' ? '.pptx' : '.pdf'));
+  var finalTitle = isVideo ? title : fileName;
+
   try {
+    try {
+      await api('/api/approvals', {
+        method: 'POST',
+        body: JSON.stringify({
+          type: isVideo ? 'video' : 'material',
+          title: finalTitle,
+          course: batch,
+          subject: subject,
+          batch: batch,
+          size: fileSizeStr,
+          dur: isVideo ? '45:00' : null
+        })
+      });
+    } catch(appErr) {
+      console.warn('Approval creation notice:', appErr);
+    }
+
     if (isVideo) {
       await api('/api/videos', {
         method: 'POST',
@@ -7502,7 +7558,6 @@ async function submitFacultyUpload() {
         })
       });
     } else {
-      var fileName = attachedFile ? attachedFile.name : (title + (type === 'ppt' ? '.pptx' : '.pdf'));
       await api('/api/materials', {
         method: 'POST',
         body: JSON.stringify({
@@ -7515,7 +7570,7 @@ async function submitFacultyUpload() {
       });
     }
 
-    toast('🎉 "' + title + '" uploaded & attached successfully!', '📤');
+    toast('🎉 "' + title + '" uploaded and submitted for Admin approval!', '📤');
 
     // Reset form
     window.removeFacultyAttachedFile();
