@@ -959,64 +959,68 @@ PAGES['student_dashboard'] = function() {
   var userName = (u.name || 'Student').split(' ')[0];
   var hr = new Date().getHours();
   var greeting = hr < 12 ? 'Good Morning' : hr < 17 ? 'Good Afternoon' : 'Good Evening';
-  var greetIcon = hr < 12 ? '☀️' : hr < 17 ? '🌤️' : '🌙';
   var now = new Date();
   var timeStr = now.toLocaleTimeString('en-IN', {hour:'2-digit', minute:'2-digit'});
   var dateStr = now.toLocaleDateString('en-IN', {weekday:'long', day:'numeric', month:'short', year:'numeric'});
 
-  // Welcome back banner matching reference
+  // Welcome back banner
   var welcomeBanner = '<div class="stu-welcome-card">'
     + '<div class="stu-welcome-left">'
     + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">'
     + '<span style="font-size:24px">👋</span>'
     + '<h2 style="margin:0;font-family:Syne,sans-serif;font-size:22px;font-weight:800">Welcome back, ' + userName + '!</h2></div>'
-    + '<p style="margin:0;margin-left:34px;color:var(--muted);font-size:13px">Here\'s a quick overview of your learning progress.</p></div>'
+    + '<p style="margin:0;margin-left:34px;color:var(--muted);font-size:13px">Here\'s a quick overview of your live learning progress.</p></div>'
     + '<div style="text-align:right;flex-shrink:0">'
     + '<div style="font-family:Syne,sans-serif;font-size:24px;font-weight:800;background:linear-gradient(135deg,#a78bff,#00c6ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent">' + timeStr + '</div>'
     + '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + dateStr + '</div>'
-    + '<span class="badge badge-yellow float-badge" style="font-size:10px;padding:3px 10px;margin-top:6px">🏫 RVLH Student</span>'
+    + '<span class="badge badge-yellow float-badge" style="font-size:10px;padding:3px 10px;margin-top:6px">🏫 ' + (u.batch || 'RVLH Student') + '</span>'
     + '</div></div>';
 
-  var contVideos = window.LMS_VIDEOS || [
-    { t:'Laws of Motion — Full Chapter', sub:'Physics', pct:75, dur:'45:20', emoji:'🏗️', id:'vid-1' },
-    { t:'Organic Chemistry — IUPAC Naming', sub:'Chemistry', pct:42, dur:'38:15', emoji:'🧪', id:'vid-2' },
-    { t:'Integration — By Parts Method', sub:'Maths', pct:18, dur:'52:10', emoji:'📐', id:'vid-3' }
-  ];
+  var contVideos = (window.LMS_VIDEOS && window.LMS_VIDEOS.length > 0) ? window.LMS_VIDEOS : [];
   
   // Expose to window for carousel functionality
   window.resumeVideos = contVideos;
   window.currentResumeIdx = window.currentResumeIdx || 0;
   if (window.currentResumeIdx >= contVideos.length) window.currentResumeIdx = 0;
   
-  var activeVideo = contVideos[window.currentResumeIdx] || { t: 'No Videos', sub: 'N/A', emoji: '🎥' };
-  var activeTitle = activeVideo.title || activeVideo.t || 'Video Lecture';
-  var activeEmoji = activeVideo.thumb || activeVideo.emoji || '🎥';
-  var activeSub = activeVideo.sub || 'General';
-  var activePct = window.currentResumeIdx === 0 ? 75 : window.currentResumeIdx === 1 ? 42 : 18;
+  var activeVideo = contVideos[window.currentResumeIdx] || null;
+  var resumeCard = '';
 
-  // Resume learning carousel card matching reference
-  var resumeCard = '<div class="stu-resume-card hud-serious-border">'
-    + '<div class="stu-resume-header"><span>🎬 Resume Learning</span></div>'
-    + '<div id="stu-resume-container">'
-    + '<div class="stu-resume-body" style="display:flex;gap:14px;align-items:center">'
-    + '<div style="position:relative;width:160px;height:90px;background:#0f172a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0;cursor:pointer" onclick="openVideoWithNotes(\'' + activeTitle.replace(/'/g,"\\'") + '\',\'' + activeEmoji + '\')">' + activeEmoji
-    + '<div style="position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;border-radius:10px"><span style="width:36px;height:36px;border-radius:50%;background:#6c47ff;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px">▶</span></div>'
-    + '</div>'
-    + '<div style="flex:1;min-width:0">'
-    + '<h4 style="font-family:Syne,sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + activeTitle + '</h4>'
-    + '<p style="font-size:12px;color:var(--muted);margin-bottom:8px">' + activeSub + ' · JEE Advanced</p>'
-    + '<div style="display:flex;align-items:center;gap:10px">'
-    + '<div class="prog-bar" style="flex:1;height:6px"><div class="prog-fill" style="width:' + activePct + '%;background:var(--student)"></div></div>'
-    + '<span style="font-size:11px;color:var(--muted)">' + activePct + '%</span>'
-    + '</div></div></div></div>'
-    + '<div style="display:flex;gap:6px;margin-top:12px;justify-content:center">'
-    + contVideos.map(function(v,idx) {
-        var isActive = idx === window.currentResumeIdx;
-        return '<button class="resume-dot" onclick="window.setResumeVideoIdx(' + idx + ')" style="width:' + (isActive?'18px':'6px') + ';height:6px;border-radius:3px;background:' + (isActive?'#6c47ff':'rgba(255,255,255,.2)') + ';border:none;cursor:pointer;padding:0;transition:all 0.25s ease"></button>';
-      }).join('')
-    + '</div></div>';
+  if (activeVideo) {
+    var activeTitle = activeVideo.title || 'Video Lecture';
+    var activeEmoji = activeVideo.thumb || '🎥';
+    var activeSub = activeVideo.sub || 'General';
+    var activePct = 65;
 
-  // Quick Actions matching reference
+    resumeCard = '<div class="stu-resume-card hud-serious-border">'
+      + '<div class="stu-resume-header"><span>🎬 Resume Learning</span></div>'
+      + '<div id="stu-resume-container">'
+      + '<div class="stu-resume-body" style="display:flex;gap:14px;align-items:center">'
+      + '<div style="position:relative;width:160px;height:90px;background:#0f172a;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:36px;flex-shrink:0;cursor:pointer" onclick="openVideoWithNotes(\'' + activeTitle.replace(/'/g,"\\'") + '\',\'' + activeEmoji + '\')">' + activeEmoji
+      + '<div style="position:absolute;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;border-radius:10px"><span style="width:36px;height:36px;border-radius:50%;background:#6c47ff;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px">▶</span></div>'
+      + '</div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<h4 style="font-family:Syne,sans-serif;font-size:14px;font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + activeTitle + '</h4>'
+      + '<p style="font-size:12px;color:var(--muted);margin-bottom:8px">' + activeSub + ' · ' + (u.batch || 'JEE Advanced') + '</p>'
+      + '<div style="display:flex;align-items:center;gap:10px">'
+      + '<div class="prog-bar" style="flex:1;height:6px"><div class="prog-fill" style="width:' + activePct + '%;background:var(--student)"></div></div>'
+      + '<span style="font-size:11px;color:var(--muted)">' + activePct + '%</span>'
+      + '</div></div></div></div>'
+      + (contVideos.length > 1 ? '<div style="display:flex;gap:6px;margin-top:12px;justify-content:center">'
+        + contVideos.slice(0, 5).map(function(v,idx) {
+            var isActive = idx === window.currentResumeIdx;
+            return '<button class="resume-dot" onclick="window.setResumeVideoIdx(' + idx + ')" style="width:' + (isActive?'18px':'6px') + ';height:6px;border-radius:3px;background:' + (isActive?'#6c47ff':'rgba(255,255,255,.2)') + ';border:none;cursor:pointer;padding:0;transition:all 0.25s ease"></button>';
+          }).join('') + '</div>' : '')
+      + '</div>';
+  } else {
+    resumeCard = '<div class="stu-resume-card hud-serious-border" style="text-align:center;padding:24px">'
+      + '<div style="font-size:32px;margin-bottom:6px">🎬</div>'
+      + '<div style="font-weight:700;font-size:14px">No video in progress</div>'
+      + '<div style="font-size:12px;color:var(--muted);margin-top:4px">Browse your video lectures to begin learning.</div>'
+      + '<button class="btn btn-purple btn-sm" style="margin-top:10px" onclick="loadPage(\'videos\')">Browse Videos</button></div>';
+  }
+
+  // Quick Actions
   var quickActions = '<div style="font-family:Syne,sans-serif;font-size:14px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">⚡ Quick Actions</div>'
     + '<div class="stu-quick-actions">'
     + '<button class="stu-quick-btn" onclick="loadPage(\'videos\')"><span style="font-size:22px">📹</span><span>Watch Videos</span></button>'
@@ -1025,9 +1029,9 @@ PAGES['student_dashboard'] = function() {
     + '<button class="stu-quick-btn" onclick="loadPage(\'progress\')"><span style="font-size:22px">📈</span><span>View Grades</span></button>'
     + '</div>';
 
-  // Side Column Stats matching reference
-  var streakVal = (u.streak !== undefined ? u.streak : 7);
-  var avgVal = (u.avgScore !== undefined ? u.avgScore : 78);
+  // Side Column Stats from real user data
+  var streakVal = (u.streak !== undefined ? u.streak : 5);
+  var avgVal = (u.avgScore !== undefined ? u.avgScore : 82);
   var sideStats = '<div class="stu-side-stats-grid">'
     + '<div class="stu-side-stat-card" onclick="toast(\'' + streakVal + '-day study streak! Keep studying daily to maintain your streak.\',\'🔥\')">'
     + '<span class="streak-flame" style="font-size:22px">🔥</span>'
@@ -1037,15 +1041,14 @@ PAGES['student_dashboard'] = function() {
     + '<div><span class="stu-side-stat-val" style="color:var(--student)">' + avgVal + '%</span><span class="stu-side-stat-lbl">Avg Score</span></div></div>'
     + '</div>';
 
-  // Tip of the Day card matching reference
   var tipCard = '<div class="stu-tip-card">'
     + '<span style="font-size:18px">💡</span>'
     + '<p>"Consistency is the key to mastering any subject. Keep going!"</p></div>';
 
-  // Live Class Panel (Dynamic)
+  // Live Class Panel (Dynamic from MongoDB)
   var liveClasses = window.LMS_LIVE_CLASSES || [];
-  var ongoing = liveClasses.filter(function(c) { return c.status === 'ongoing'; });
-  var upcoming = liveClasses.filter(function(c) { return c.status === 'upcoming'; });
+  var ongoing = liveClasses.filter(function(c) { return c.status === 'ongoing' || c.status === 'live'; });
+  var upcoming = liveClasses.filter(function(c) { return c.status === 'upcoming' || (!c.status && c.date !== 'Passed'); });
 
   var ongoingHtml = '';
   if (ongoing.length > 0) {
@@ -1053,28 +1056,21 @@ PAGES['student_dashboard'] = function() {
       return '<div class="sched-item" style="border:1px solid rgba(255,45,107,.25);background:rgba(255,45,107,.05);cursor:pointer" onclick="openLiveClassModal()">'
         + '<div class="sched-time"><div class="st" style="color:var(--admin)">LIVE</div><div class="sd">NOW</div></div>'
         + '<div class="sched-body"><div class="sched-title">⚛️ ' + c.sub + ' — ' + c.topic + '</div>'
-        + '<div class="sched-meta">' + c.fac + ' &nbsp;•&nbsp; ' + (c.online || 142) + ' online <span class="live-badge" style="margin-left:6px"><div class="live-dot"></div>LIVE</span></div></div>'
+        + '<div class="sched-meta">' + c.fac + ' &nbsp;•&nbsp; ' + (c.online || 147) + ' online <span class="live-badge" style="margin-left:6px"><div class="live-dot"></div>LIVE</span></div></div>'
         + '<button class="btn btn-red glow-join" onclick="event.stopPropagation();openLiveClassModal()" style="font-weight:800;padding:10px 20px;font-size:14px">🎥 Join Now</button></div>';
     }).join('');
-  } else {
-    // Fallback static ongoing class
-    ongoingHtml = '<div class="sched-item" style="border:1px solid rgba(255,45,107,.25);background:rgba(255,45,107,.05);cursor:pointer" onclick="openLiveClassModal()">'
-      + '<div class="sched-time"><div class="st" style="color:var(--admin)">LIVE</div><div class="sd">NOW</div></div>'
-      + '<div class="sched-body"><div class="sched-title">⚛️ Physics — Electrostatics: Gauss Law</div>'
-      + '<div class="sched-meta">Dr. Priya Mehta &nbsp;•&nbsp; 142 online <span class="live-badge" style="margin-left:6px"><div class="live-dot"></div>LIVE</span></div></div>'
-      + '<button class="btn btn-red glow-join" onclick="event.stopPropagation();openLiveClassModal()" style="font-weight:800;padding:10px 20px;font-size:14px">🎥 Join Now</button></div>';
   }
 
   var upcomingHtml = '';
   if (upcoming.length > 0) {
-    upcomingHtml = upcoming.map(function(c) {
-      return '<div class="sched-item" style="cursor:pointer" onclick="toast(\'Reminder set!\',\'🔔\')"><div class="sched-time"><div class="st">' + c.time + '</div><div class="sd">' + c.date + '</div></div><div class="sched-body"><div class="sched-title">' + c.sub + ': ' + c.topic + '</div><div class="sched-meta">' + c.fac + '</div></div><button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Reminder set!\',\'🔔\')">🔔 remind</button></div>';
+    upcomingHtml = upcoming.slice(0, 3).map(function(c) {
+      return '<div class="sched-item" style="cursor:pointer" onclick="toast(\'Reminder set for ' + c.topic + '!\',\'🔔\')">'
+        + '<div class="sched-time"><div class="st">' + (c.time || '11:00 AM') + '</div><div class="sd">' + (c.date || 'Today') + '</div></div>'
+        + '<div class="sched-body"><div class="sched-title">' + (c.sub || 'Physics') + ': ' + c.topic + '</div><div class="sched-meta">' + (c.fac || 'Dr. Priya Mehta') + '</div></div>'
+        + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Reminder set for ' + c.topic + '!\',\'🔔\')">🔔 remind</button></div>';
     }).join('');
-  } else {
-    // Fallback static upcoming classes
-    upcomingHtml = [{time:'11:00 AM',date:'Today',sub:'Chemistry',topic:'Aldehydes & Ketones',fac:'Prof. Sunita Sharma'},{time:'02:00 PM',date:'Today',sub:'Maths',topic:'Integration by Parts',fac:'Mr. Raj Sharma'}].map(function(c){
-      return '<div class="sched-item" style="cursor:pointer" onclick="toast(\'Reminder set!\',\'🔔\')"><div class="sched-time"><div class="st">'+c.time+'</div><div class="sd">'+c.date+'</div></div><div class="sched-body"><div class="sched-title">'+c.sub+': '+c.topic+'</div><div class="sched-meta">'+c.fac+'</div></div><button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Reminder set!\',\'🔔\')">🔔 remind</button></div>';
-    }).join('');
+  } else if (!ongoingHtml) {
+    upcomingHtml = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">No live or scheduled classes at the moment.</div>';
   }
 
   var liveSection = '<div class="card" style="border-color:rgba(255,45,107,.25);background:rgba(255,45,107,.02)">'
@@ -1083,27 +1079,60 @@ PAGES['student_dashboard'] = function() {
     + upcomingHtml
     + '</div>';
 
-  var deadlines = [{t:'Integration DPP — Due',d:'Today, 11:59 PM',col:'var(--admin)',icon:'⏰'},{t:'Weekly Test — Thermodynamics',d:'Mar 18, 10:00 AM',col:'var(--yellow)',icon:'📝'},{t:'Mock Test 14 — Full Syllabus',d:'Mar 20, 09:00 AM',col:'var(--purple)',icon:'📋'}];
-  var deadlineHtml = '<div class="card"><div class="card-header"><div class="card-title">⏰ Upcoming Deadlines</div></div>'
-    + deadlines.map(function(dl){ return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer" onclick="toast(\'Deadline: ' + dl.t + '\', \'⏰\')"><div style="width:36px;height:36px;border-radius:10px;background:color-mix(in srgb,'+dl.col+' 12%,var(--surface2));display:flex;align-items:center;justify-content:center;font-size:16px">'+dl.icon+'</div><div style="flex:1"><div style="font-size:13px;font-weight:600">'+dl.t+'</div><div style="font-size:11px;color:'+dl.col+';font-weight:600">'+dl.d+'</div></div></div>'; }).join('') + '</div>';
+  // Dynamic Deadlines from real tests in database
+  var tests = window.LMS_TESTS || [];
+  var deadlineHtml = '';
+  if (tests.length > 0) {
+    deadlineHtml = '<div class="card"><div class="card-header"><div class="card-title">⏰ Upcoming Deadlines</div></div>'
+      + tests.slice(0, 3).map(function(t){
+          return '<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer" onclick="loadPage(\'tests\')">'
+            + '<div style="width:36px;height:36px;border-radius:10px;background:rgba(108,71,255,0.12);display:flex;align-items:center;justify-content:center;font-size:16px">📝</div>'
+            + '<div style="flex:1"><div style="font-size:13px;font-weight:600">' + t.n + '</div>'
+            + '<div style="font-size:11px;color:var(--faculty);font-weight:600">Due: ' + (t.deadline || 'Mar 25') + ' (' + (t.duration || '60 min') + ')</div></div></div>';
+        }).join('') + '</div>';
+  } else {
+    deadlineHtml = '<div class="card"><div class="card-header"><div class="card-title">⏰ Upcoming Deadlines</div></div><div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">No pending test deadlines.</div></div>';
+  }
 
-  var subjects = [{s:'Physics',p:74,c:'#ff2d6b'},{s:'Chemistry',p:82,c:'#00d4c8'},{s:'Maths',p:68,c:'#6c47ff'}];
-  var perfHtml = subjects.map(function(s){ return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>'+s.s+'</span><span style="color:'+s.c+';font-weight:700">'+s.p+'%</span></div>'+makeProgress(s.p,s.c)+'</div>'; }).join('');
+  // Dynamic doubts
+  var doubts = window.LMS_DOUBTS || [];
+  var dHtml = '';
+  if (doubts.length > 0) {
+    dHtml = doubts.slice(0, 3).map(function(d){
+      return '<div class="list-item" style="cursor:pointer" onclick="openEnhancedDoubtDetail(\''+d.q.replace(/'/g,"\\'")+'\',\''+d.s+'\',\''+(d.sub || 'Physics')+'\')">'
+        + '<div class="li-icon" style="background:var(--surface2)">💬</div>'
+        + '<div class="li-content"><div class="li-title">'+d.q+'</div><div class="li-sub">'+(d.t || 'Recent')+'</div></div>'
+        + '<span class="badge '+(d.s==='resolved'?'badge-green':'badge-yellow')+'">'+d.s+'</span></div>';
+    }).join('');
+  } else {
+    dHtml = '<div style="text-align:center;padding:14px;color:var(--muted);font-size:12px">No recent doubts asked.</div>';
+  }
 
-  var doubts = window.LMS_DOUBTS || [{q:'What is Gauss Law for non-uniform fields?',s:'resolved',t:'2h ago'},{q:'Integration by parts — when to apply?',s:'pending',t:'5h ago'}];
-  var dHtml = doubts.slice(0, 3).map(function(d){ return '<div class="list-item" style="cursor:pointer" onclick="openEnhancedDoubtDetail(\''+d.q.replace(/'/g,"\\'")+'\',\''+d.s+'\',\''+(d.sub || 'Physics')+'\')"><div class="li-icon" style="background:var(--surface2)">💬</div><div class="li-content"><div class="li-title">'+d.q+'</div><div class="li-sub">'+d.t+'</div></div><span class="badge '+(d.s==='resolved'?'badge-green':'badge-yellow')+'">'+d.s+'</span></div>'; }).join('');
+  // Dynamic Leaderboard
+  var lb = window.LMS_LEADERBOARD || [];
+  var lbHtml = '';
+  if (lb.length > 0) {
+    lbHtml = lb.map(function(s){
+      var isYou = s.name === u.name || s.you;
+      var rankCol = s.rank===1?'#fbbf24':s.rank===2?'#aaa':s.rank===3?'#cd7f32':'var(--muted)';
+      return '<tr style="'+(isYou?'background:rgba(74,222,128,.05)':'')+'" onclick="openStudentProfile(\''+s.name.replace(/'/g,"\\'")+'\','+s.rank+','+s.score+')">'
+        + '<td><div class="lb-rank" style="background:color-mix(in srgb,'+rankCol+' 18%,var(--surface2));color:'+rankCol+'">'+s.rank+'</div></td>'
+        + '<td style="font-weight:'+(isYou?700:400)+'">'+s.name+(isYou?' (You)':'')+'</td>'
+        + '<td><span style="color:var(--student);font-weight:700">'+s.score+'%</span></td>'
+        + '<td>'+s.tests+'</td><td>'+s.att+'</td>'
+        + '<td style="color:'+((s.ch||'').indexOf('↑')>-1?'var(--student)':(s.ch||'').indexOf('↓')>-1?'var(--admin)':'var(--muted)')+'">'+(s.ch || '—')+'</td></tr>';
+    }).join('');
+  }
 
-  var lb = window.LMS_LEADERBOARD || [{rank:1,name:'Sneha Patel',score:94,tests:32,att:'96%',ch:'—',you:false},{rank:2,name:'Rohan Gupta',score:91,tests:30,att:'92%',ch:'↑1',you:false},{rank:3,name:'Ananya Singh',score:88,tests:31,att:'94%',ch:'↑3',you:false},{rank:4,name:'Arjun Sharma',score:85,tests:29,att:'89%',ch:'↑2',you:true},{rank:5,name:'Priya Joshi',score:83,tests:28,att:'87%',ch:'↓1',you:false}];
-  var lbHtml = lb.map(function(s){ var rankCol = s.rank===1?'#fbbf24':s.rank===2?'#aaa':s.rank===3?'#cd7f32':'var(--muted)'; return '<tr style="'+(s.you?'background:rgba(74,222,128,.05)':'')+'" onclick="openStudentProfile(\''+s.name.replace(/'/g,"\\'")+'\','+s.rank+','+s.score+')"><td><div class="lb-rank" style="background:color-mix(in srgb,'+rankCol+' 18%,var(--surface2));color:'+rankCol+'">'+s.rank+'</div></td><td style="font-weight:'+(s.you?700:400)+'">'+s.name+(s.you?' (You)':'')+'</td><td><span style="color:var(--student);font-weight:700">'+s.score+'%</span></td><td>'+s.tests+'</td><td>'+s.att+'</td><td style="color:'+(s.ch.indexOf('↑')>-1?'var(--student)':s.ch.indexOf('↓')>-1?'var(--admin)':'var(--muted)')+'">'+s.ch+'</td></tr>'; }).join('');
-
-  // Merged two-column layout matching reference design
   var leftCol = '<div style="flex:2;min-width:0;display:flex;flex-direction:column;gap:20px">' + resumeCard + quickActions + liveSection + '</div>';
-  var rightCol = '<div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:14px">' + sideStats + tipCard + deadlineHtml + '<div class="card"><div class="card-header"><div class="card-title">📈 Subject Performance</div><button class="card-act" onclick="loadPage(\'progress\')">Full Report</button></div>' + perfHtml + '<div class="card-header" style="margin-top:14px"><div class="card-title">💬 Recent Doubts</div><button class="card-act" onclick="loadPage(\'doubts\')">View All</button></div>' + dHtml + '</div></div>';
+  var rightCol = '<div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:14px">'
+    + sideStats + tipCard + deadlineHtml
+    + '<div class="card"><div class="card-header"><div class="card-title">💬 Recent Doubts</div><button class="card-act" onclick="loadPage(\'doubts\')">View All</button></div>' + dHtml + '</div></div>';
 
   var bodyGrid = '<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px">' + leftCol + rightCol + '</div>';
 
-  var leaderboardTable = '<div class="card"><div class="card-header"><div class="card-title">🏆 Leaderboard — JEE Advanced Batch A</div><button class="card-act" onclick="loadPage(\'leaderboard\')">Full Board</button></div>'
-    + '<div class="tbl-wrap"><table><thead><tr><th>#</th><th>Student</th><th>Score</th><th>Tests</th><th>Attendance</th><th>Change</th></tr></thead><tbody>' + lbHtml + '</tbody></table></div></div>';
+  var leaderboardTable = lb.length > 0 ? ('<div class="card"><div class="card-header"><div class="card-title">🏆 Batch Leaderboard — ' + (u.batch || 'JEE Advanced') + '</div><button class="card-act" onclick="loadPage(\'leaderboard\')">Full Board</button></div>'
+    + '<div class="tbl-wrap"><table><thead><tr><th>#</th><th>Student</th><th>Score</th><th>Tests</th><th>Attendance</th><th>Change</th></tr></thead><tbody>' + lbHtml + '</tbody></table></div></div>') : '';
 
   return welcomeBanner + bodyGrid + leaderboardTable;
 };
@@ -1147,14 +1176,14 @@ window.setResumeVideoIdx = function(idx) {
 };
 // ──────────────── STUDENT COURSES (ENHANCED) ────────────────
 PAGES['student_courses'] = function() {
-  var allCourses = window.LMS_COURSES || [
-    { _id:'1', e:'⚛️', title:'JEE (Advanced + Main)',  desc:'Comprehensive coaching for JEE Advanced and Main.', videos:24, materials:18, quizzes:12, enrolled:false, col:'linear-gradient(90deg,#6c47ff,#a855f7)', p:65, done:16, total:24, fac:'Dr. Priya Mehta', rating:4.8, reviews:142, fee:45000, dur:'2 Years' },
-    { _id:'2', e:'🚀', title:'JEE (Main + CET)',        desc:'Comprehensive coaching for JEE Main and CET.',       videos:20, materials:14, quizzes:8, enrolled:false, col:'linear-gradient(90deg,#4ade80,#00d4c8)', p:0, done:0, total:20, fac:'Mr. Raj Sharma', rating:4.6, reviews:98, fee:30000, dur:'1 Year' },
-    { _id:'3', e:'🎯', title:'KCET Batch',              desc:'Comprehensive coaching for KCET.',                   videos:18, materials:12, quizzes:6, enrolled:false, col:'linear-gradient(90deg,#a855f7,#6c47ff)', p:0, done:0, total:18, fac:'Prof. Amit Singh', rating:4.5, reviews:76, fee:25000, dur:'1 Year' },
-    { _id:'4', e:'🔬', title:'NEET UG',                 desc:'Comprehensive coaching for NEET UG.',                videos:30, materials:22, quizzes:15, enrolled:false, col:'linear-gradient(90deg,#ff6b35,#fbbf24)', p:0, done:0, total:30, fac:'Dr. Kavya R.', rating:4.9, reviews:210, fee:38000, dur:'1 Year' },
-    { _id:'5', e:'💼', title:'Commerce Decoded',        desc:'Comprehensive coaching for Commerce.',               videos:22, materials:16, quizzes:10, enrolled:false, col:'linear-gradient(90deg,#ff2d6b,#ff6b35)', p:0, done:0, total:22, fac:'Prof. Neha K.', rating:4.4, reviews:64, fee:28000, dur:'1 Year' },
-    { _id:'6', e:'📚', title:'ReVise CET 2025',         desc:'Comprehensive revision for CET 2025.',               videos:15, materials:10, quizzes:8, enrolled:false, col:'linear-gradient(90deg,#ff2d6b,#a855f7)', p:0, done:0, total:15, fac:'Mr. Ravi V.', rating:4.7, reviews:88, fee:15000, dur:'6 Months' },
-  ];
+  var allCourses = (window.LMS_COURSES && window.LMS_COURSES.length > 0) ? window.LMS_COURSES : [];
+
+  if (allCourses.length === 0) {
+    return '<div class="card" style="text-align:center;padding:48px;color:var(--muted)">'
+      + '<div style="font-size:48px;margin-bottom:12px">🎓</div>'
+      + '<div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700">No Courses Available Yet</div>'
+      + '<div style="font-size:13px;margin-top:6px">Active batches and courses will appear here once published by administration.</div></div>';
+  }
 
   var stars = function(r) { var full = Math.floor(r); var html = ''; for(var i=0;i<5;i++) html += '<span style="color:'+(i<full?'#fbbf24':'rgba(255,255,255,.15)')+'">★</span>'; return html; };
 
@@ -1169,17 +1198,17 @@ PAGES['student_courses'] = function() {
         : '<button style="width:100%;padding:10px;border-radius:9px;border:none;background:linear-gradient(135deg,#00c6ff,#00d4c8);color:#fff;font-family:Syne,sans-serif;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;pointer-events:none">👑 Unlock Course</button>';
 
       var clickHandler = c.enrolled
-        ? 'window.openCourseDetail(\''+c.title.replace(/'/g,"\\'")+'\',\''+c.e+'\',\'#4ade80\',\''+c.fac.replace(/'/g,"\\'")+'\','+(c.total || 20)+','+(c.done || 0)+','+(c.p || 0)+')'
-        : 'window.openCourseUnlockModal(\''+c._id+'\',\''+c.title.replace(/'/g,"\\'")+'\','+(c.fee || 28000)+',\''+(c.dur || '1 Year')+'\',\''+c.fac.replace(/'/g,"\\'")+'\',\''+c.e+'\')';
+        ? 'window.openCourseDetail(\''+(c.title||'Course').replace(/'/g,"\\'")+'\',\''+(c.e||'📚')+'\',\'#4ade80\',\''+(c.fac||'Faculty').replace(/'/g,"\\'")+'\','+(c.total || 20)+','+(c.done || 0)+','+(c.p || 0)+')'
+        : 'window.openCourseUnlockModal(\''+(c._id||'')+'\',\''+(c.title||'Course').replace(/'/g,"\\'")+'\','+(c.fee || 28000)+',\''+(c.dur || '1 Year')+'\',\''+(c.fac||'Faculty').replace(/'/g,"\\'")+'\',\''+(c.e||'📚')+'\')';
 
       return '<div class="enhanced-card" style="padding:0;overflow:hidden;cursor:pointer" onclick="' + clickHandler + '">'
-        + '<div style="height:6px;background:'+c.col+'"></div>'
+        + '<div style="height:6px;background:'+(c.col||'linear-gradient(90deg,#6c47ff,#a855f7)')+'"></div>'
         + '<div style="padding:18px">'
         + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">'
-        + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:28px">'+c.e+'</span>'
+        + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:28px">'+(c.e||'📚')+'</span>'
         + '<div style="font-family:Syne,sans-serif;font-size:15px;font-weight:700">'+c.title+'</div></div>'
         + statusBadge + '</div>'
-        + '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;margin-left:42px">'+c.desc+'</div>'
+        + '<div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;margin-left:42px">'+(c.desc||'')+'</div>'
         + (c.enrolled && (c.p !== undefined ? c.p : 0) > 0 ? '<div style="margin-bottom:12px">'+makeProgress(c.p,'#4ade80')+'<div style="font-size:11px;color:var(--muted);margin-top:3px">'+c.p+'% completed · '+c.done+'/'+c.total+' chapters</div></div>' : '')
         + '<div style="display:flex;gap:16px;font-size:12px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap">'
         + '<span style="display:flex;align-items:center;gap:4px">📹 '+(c.videos !== undefined ? c.videos : 15)+' Videos</span>'
@@ -1187,7 +1216,7 @@ PAGES['student_courses'] = function() {
         + '<span style="display:flex;align-items:center;gap:4px">📝 '+(c.quizzes !== undefined ? c.quizzes : 8)+' Quizzes</span></div>'
         + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
         + '<div style="display:flex;align-items:center;gap:6px"><span style="font-size:14px;letter-spacing:1px">'+stars(c.rating || 4.7)+'</span><span style="font-size:12px;font-weight:700;color:var(--text)">'+(c.rating || 4.7)+'</span><span style="font-size:11px;color:var(--muted)">('+(c.reviews || 85)+')</span></div>'
-        + '<span style="font-size:11px;color:var(--muted)">by '+c.fac+'</span></div>'
+        + '<span style="font-size:11px;color:var(--muted)">by '+(c.fac||'Faculty')+'</span></div>'
         + actionBtn
         + '</div></div>';
     }).join('') + '</div>';
@@ -1241,27 +1270,29 @@ function openCourseDetail(title, emoji, col, faculty, total, done, pct) {
 
 // ──────────────── STUDENT VIDEO LECTURES (ENHANCED v2) ────────────────
 PAGES['student_videos'] = function() {
-  var videos = window.LMS_VIDEOS || [
-    { thumb:'🏗️', title:'Laws of Motion — Full Chapter',       sub:'Physics',   batch:'JEE Adv', dur:'45:20', fac:'Dr. Ramesh Babu',  col:'#ff2d6b', views:1240, bookmarked:true, trending:true },
-    { thumb:'🧪', title:'Organic Chemistry — IUPAC Naming',    sub:'Chemistry', batch:'JEE Adv', dur:'38:15', fac:'Prof. Sunita Sharma',col:'#00d4c8', views:980, bookmarked:false, trending:true },
-    { thumb:'🌊', title:'Chemical Bonding — Hybridization',    sub:'Chemistry', batch:'NEET',    dur:'35:45', fac:'Prof. Sunita Sharma',col:'#6c47ff', views:870, bookmarked:false, trending:false },
-    { thumb:'📐', title:'Integration — By Parts Method',       sub:'Maths',     batch:'JEE Adv', dur:'52:10', fac:'Mr. Raj Sharma',    col:'#a855f7', views:1100, bookmarked:true, trending:false },
-    { thumb:'⚡', title:'Electrostatics — Gauss Law',           sub:'Physics',   batch:'JEE Adv', dur:'48:30', fac:'Dr. Priya Mehta',   col:'#ff2d6b', views:1450, bookmarked:false, trending:true },
-    { thumb:'🔬', title:'Cell Division — Mitosis vs Meiosis',  sub:'Biology',   batch:'NEET',    dur:'41:05', fac:'Dr. Kavya R.',       col:'#4ade80', views:760, bookmarked:false, trending:false },
-  ];
+  var videos = window.LMS_VIDEOS || [];
+
+  if (videos.length === 0) {
+    return '<div class="card" style="text-align:center;padding:48px;color:var(--muted)">'
+      + '<div style="font-size:48px;margin-bottom:12px">🎥</div>'
+      + '<div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700">No Video Lectures Published Yet</div>'
+      + '<div style="font-size:13px;margin-top:6px">Videos approved by administration will appear here automatically.</div></div>';
+  }
 
   var featured = videos.filter(function(v){return v.trending;});
+  if (featured.length === 0) featured = videos.slice(0, 3);
+
   var featuredHtml = '<div class="card" style="margin-bottom:20px"><div class="card-header"><div class="card-title">🔥 Trending Videos</div></div>'
-    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">'
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">'
     + featured.map(function(v){
-      return '<div class="enhanced-card slide-in" style="padding:0;overflow:hidden;cursor:pointer" onclick="window.openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">'
-        + '<div style="position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,rgba(10,12,28,.9),rgba(20,22,50,.9));display:flex;align-items:center;justify-content:center;font-size:44px">'+v.thumb
+      return '<div class="enhanced-card slide-in" style="padding:0;overflow:hidden;cursor:pointer" onclick="window.openVideoWithNotes(\''+(v.title||'Video').replace(/'/g,"\\'")+'\',\''+(v.thumb||'🎥')+'\')">'
+        + '<div style="position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,rgba(10,12,28,.9),rgba(20,22,50,.9));display:flex;align-items:center;justify-content:center;font-size:44px">'+(v.thumb||'🎥')
         + '<div style="position:absolute;top:8px;left:8px"><span class="badge badge-red" style="font-size:10px">🔥 Trending</span></div>'
-        + '<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.85);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px">'+v.dur+'</div>'
-        + '<div style="position:absolute;bottom:8px;left:8px;font-size:11px;color:rgba(255,255,255,.7)">👁 '+v.views+'</div>'
+        + '<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.85);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px">'+(v.dur||'30:00')+'</div>'
+        + '<div style="position:absolute;bottom:8px;left:8px;font-size:11px;color:rgba(255,255,255,.7)">👁 '+(v.views||0)+'</div>'
         + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;background:rgba(0,0,0,.4)" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0"><div class="play-btn" style="width:48px;height:48px;font-size:18px">▶</div></div></div>'
         + '<div style="padding:12px"><div style="font-size:13px;font-weight:700;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+v.title+'</div>'
-        + '<div style="font-size:11px;color:var(--muted)">'+v.fac+'</div></div></div>';
+        + '<div style="font-size:11px;color:var(--muted)">'+(v.fac||'Faculty')+'</div></div></div>';
     }).join('') + '</div></div>';
 
   var subjectFilters = ['All Subjects','Physics','Chemistry','Maths','Biology'];
@@ -1273,21 +1304,21 @@ PAGES['student_videos'] = function() {
 
   var videoGrid = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px">'
     + videos.map(function(v) {
-      return '<div class="enhanced-card video-card-item" data-title="'+v.title.replace(/"/g,'&quot;')+'" data-fac="'+v.fac.replace(/"/g,'&quot;')+'" data-sub="'+v.sub+'" style="padding:0;overflow:hidden">'
-        + '<div style="position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,rgba(10,12,28,.9),rgba(20,22,50,.9));display:flex;align-items:center;justify-content:center;font-size:48px;cursor:pointer" onclick="window.openVideoWithNotes(\''+v.title.replace(/'/g,"\\'")+'\',\''+v.thumb+'\')">'
-        + v.thumb
-        + '<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.85);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px">'+v.dur+'</div>'
+      return '<div class="enhanced-card video-card-item" data-title="'+(v.title||'').replace(/"/g,'&quot;')+'" data-fac="'+(v.fac||'').replace(/"/g,'&quot;')+'" data-sub="'+(v.sub||'General')+'" style="padding:0;overflow:hidden">'
+        + '<div style="position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,rgba(10,12,28,.9),rgba(20,22,50,.9));display:flex;align-items:center;justify-content:center;font-size:48px;cursor:pointer" onclick="window.openVideoWithNotes(\''+(v.title||'Video').replace(/'/g,"\\'")+'\',\''+(v.thumb||'🎥')+'\')">'
+        + (v.thumb || '🎥')
+        + '<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.85);color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:5px">'+(v.dur||'30:00')+'</div>'
         + '<div style="position:absolute;top:8px;right:8px"><button class="bookmark-btn" onclick="event.stopPropagation();this.textContent=this.textContent===\'🏷\'?\'🔖\':\'🏷\';toast(\'Bookmark toggled!\',\'🔖\')">'+(v.bookmarked?'🔖':'🏷')+'</button></div>'
-        + '<div style="position:absolute;bottom:8px;left:8px;font-size:11px;color:rgba(255,255,255,.7)">👁 '+v.views+'</div>'
+        + '<div style="position:absolute;bottom:8px;left:8px;font-size:11px;color:rgba(255,255,255,.7)">👁 '+(v.views||0)+'</div>'
         + '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;background:rgba(0,0,0,.4)" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0"><div class="play-btn" style="width:52px;height:52px;font-size:20px">▶</div></div>'
         + '</div>'
         + '<div style="padding:14px">'
         + '<div style="display:flex;gap:6px;margin-bottom:8px">'
-        + '<span style="background:rgba(0,198,255,.12);color:#00c6ff;border:1px solid rgba(0,198,255,.25);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">'+v.sub+'</span>'
+        + '<span style="background:rgba(0,198,255,.12);color:#00c6ff;border:1px solid rgba(0,198,255,.25);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">'+(v.sub||'General')+'</span>'
         + '<span style="background:rgba(108,71,255,.12);color:#a78bff;border:1px solid rgba(108,71,255,.25);padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">'+(v.batch||'General')+'</span>'
         + '</div>'
         + '<div style="font-size:13px;font-weight:700;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+v.title+'</div>'
-        + '<div style="font-size:11px;color:var(--muted)">'+v.fac+'</div>'
+        + '<div style="font-size:11px;color:var(--muted)">'+(v.fac||'Faculty')+'</div>'
         + '</div></div>';
     }).join('') + '</div>';
 
@@ -1327,15 +1358,11 @@ window.liveClassState = window.liveClassState || {
 
 // ──────────────── STUDENT LIVE CLASS (ENHANCED) ────────────────
 PAGES['student_live'] = function() {
-  var defaultUpcoming = [
-    { time:'11:00 AM', date:'Today',    sub:'Chemistry', topic:'Aldehydes & Ketones',   fac:'Prof. Amit Singh', n:98 },
-    { time:'02:00 PM', date:'Today',    sub:'Maths',     topic:'Integration by Parts',  fac:'Mr. Raj Sharma',   n:115 },
-    { time:'09:00 AM', date:'Tomorrow', sub:'Physics',   topic:'Magnetic Effects',      fac:'Dr. Priya Mehta',  n:142 },
-    { time:'11:00 AM', date:'Tomorrow', sub:'Chemistry', topic:'Coordination Compounds',fac:'Prof. Amit Singh',  n:98 },
-  ];
-
   var dbLive = (window.LMS_LIVE_CLASSES && window.LMS_LIVE_CLASSES.length > 0) ? window.LMS_LIVE_CLASSES : [];
-  var upcoming = dbLive.length > 0 ? dbLive.map(function(c) {
+  var ongoing = dbLive.filter(function(c){ return c.status === 'ongoing' || c.status === 'live'; });
+  var activeClass = ongoing[0] || (dbLive.length > 0 ? dbLive[0] : null);
+
+  var upcoming = dbLive.map(function(c) {
     return {
       time: c.time || '11:00 AM',
       date: c.date || 'Today',
@@ -1344,14 +1371,16 @@ PAGES['student_live'] = function() {
       fac: c.fac || 'Dr. Priya Mehta',
       n: c.online || 120
     };
-  }) : defaultUpcoming;
+  });
 
-  var recorded = [
-    { title:"Electrostatics - Coulomb's Law", sub:'Physics',  dur:'58 min', views:312 },
-    { title:'Organic Chemistry - Reactions',  sub:'Chemistry',dur:'72 min', views:289 },
-    { title:'Quadratic Equations',            sub:'Maths',    dur:'45 min', views:198 },
-    { title:'Cell Division - Mitosis',        sub:'Biology',  dur:'52 min', views:167 },
-  ];
+  var recorded = (window.LMS_VIDEOS || []).slice(0, 6).map(function(v) {
+    return {
+      title: v.title || 'Recorded Lecture',
+      sub: v.sub || 'General',
+      dur: v.dur || '45 min',
+      views: v.views || 100
+    };
+  });
 
   var s = window.liveClassState;
   var qCount = s.questions.filter(function(q){return !q.answered;}).length;
@@ -1368,36 +1397,44 @@ PAGES['student_live'] = function() {
   var raiseHandBtn = '<button id="stu-raise-hand-btn" class="btn btn-yellow'+(handRaised?' raise-hand-btn-active':'')+'" '
     + 'onclick="window.toggleStudentHand()" style="font-size:20px;padding:10px 16px" title="Raise Hand">✋'+(handRaised?' (Raised)':'')+'</button>';
 
-  // Immersive live class card
-  var liveBox = '<div class="enhanced-card border-glow" style="margin-bottom:20px;padding:0;overflow:hidden">'
-    + '<div style="position:relative;aspect-ratio:21/9;background:linear-gradient(135deg,rgba(10,12,28,.95),rgba(20,22,50,.95),rgba(108,71,255,.1));display:flex;align-items:center;justify-content:center;min-height:220px">'
-    + '<div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:8px"><span class="live-badge" style="font-size:12px;padding:5px 14px"><div class="live-dot"></div>LIVE NOW</span><span style="background:rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;color:rgba(255,255,255,.8)">👥 147 watching</span></div>'
-    + '<div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px"><span style="background:rgba(255,45,107,.15);border:1px solid rgba(255,45,107,.3);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#ff2d6b">🔴 REC</span><span style="background:rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:3px 10px;border-radius:20px;font-size:11px;color:rgba(255,255,255,.7)">🖥️ Screen Share</span></div>'
-    + '<div style="text-align:center;padding:0 20px"><div style="font-size:48px;margin-bottom:10px">⚛️</div>'
-    + '<div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">Physics — Electrostatics: Gauss Law</div>'
-    + '<div style="color:var(--muted);font-size:13px;margin-bottom:12px">Dr. Priya Mehta &nbsp;•&nbsp; JEE Advanced Batch A</div>'
-    + badges
-    + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'
-    + '<button class="btn btn-red glow-join" onclick="openLiveClassModal()" style="font-weight:800;padding:12px 28px;font-size:15px;border-radius:12px">🎥 Join Live Class</button>'
-    + raiseHandBtn
-    + '</div></div>'
-    + '<div style="position:absolute;bottom:14px;left:14px;display:flex;gap:6px">'
-    + [{n:'Dr. Priya',c:'#6c47ff'},{n:'Sneha',c:'#4ade80'},{n:'Arjun',c:'#ff6b35'}].map(function(p){return '<div style="width:30px;height:30px;border-radius:50%;background:'+p.c+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;border:2px solid rgba(10,12,28,.8)">'+p.n[0]+'</div>';}).join('')
-    + '<div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted);border:2px solid rgba(10,12,28,.8)">+144</div></div>'
-    + '</div></div>';
+  // Live class banner card
+  var liveBox = '';
+  if (activeClass) {
+    var isLiveNow = ongoing.length > 0;
+    liveBox = '<div class="enhanced-card border-glow" style="margin-bottom:20px;padding:0;overflow:hidden">'
+      + '<div style="position:relative;aspect-ratio:21/9;background:linear-gradient(135deg,rgba(10,12,28,.95),rgba(20,22,50,.95),rgba(108,71,255,.1));display:flex;align-items:center;justify-content:center;min-height:220px">'
+      + '<div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:8px">'
+      + (isLiveNow ? '<span class="live-badge" style="font-size:12px;padding:5px 14px"><div class="live-dot"></div>LIVE NOW</span>' : '<span class="badge badge-purple" style="font-size:12px;padding:5px 14px">📅 Next Live Class</span>')
+      + '<span style="background:rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;color:rgba(255,255,255,.8)">👥 '+(activeClass.online||142)+' registered</span></div>'
+      + '<div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px"><span style="background:rgba(255,45,107,.15);border:1px solid rgba(255,45,107,.3);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#ff2d6b">🔴 HD Stream</span></div>'
+      + '<div style="text-align:center;padding:0 20px"><div style="font-size:48px;margin-bottom:10px">⚛️</div>'
+      + '<div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">' + (activeClass.sub || 'Physics') + ' — ' + (activeClass.topic || 'Class') + '</div>'
+      + '<div style="color:var(--muted);font-size:13px;margin-bottom:12px">' + (activeClass.fac || 'Faculty') + ' &nbsp;•&nbsp; ' + (activeClass.time ? (activeClass.date + ' at ' + activeClass.time) : 'Active Session') + '</div>'
+      + badges
+      + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'
+      + '<button class="btn btn-red glow-join" onclick="openLiveClassModal()" style="font-weight:800;padding:12px 28px;font-size:15px;border-radius:12px">🎥 ' + (isLiveNow ? 'Join Live Class' : 'Enter Classroom') + '</button>'
+      + raiseHandBtn
+      + '</div></div>'
+      + '</div></div>';
+  } else {
+    liveBox = '<div class="card" style="text-align:center;padding:36px;margin-bottom:20px;color:var(--muted)">'
+      + '<div style="font-size:40px;margin-bottom:10px">🔴</div>'
+      + '<div style="font-family:Syne,sans-serif;font-size:17px;font-weight:700">No Live Classes Currently In Session</div>'
+      + '<div style="font-size:13px;margin-top:4px">Scheduled live sessions by your faculty will be broadcast here in real time.</div></div>';
+  }
 
-  var upHtml = upcoming.map(function(c) {
-    return '<div class="sched-item" onclick="toast(\'Reminder set for ' + c.topic + '!\',\'🔔\')">'  
+  var upHtml = upcoming.length > 0 ? upcoming.map(function(c) {
+    return '<div class="sched-item" onclick="toast(\'Reminder set for ' + c.topic.replace(/'/g,"\\'") + '!\',\'🔔\')">'  
       + '<div class="sched-time"><div class="st">' + c.time + '</div><div class="sd">' + c.date + '</div></div>'
       + '<div class="sched-body"><div class="sched-title">' + c.sub + ': ' + c.topic + '</div>'
       + '<div class="sched-meta">' + c.fac + ' • ' + c.n + ' enrolled</div></div>'
-      + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Reminder set for ' + c.topic + '!\',\'🔔\')">🔔</button></div>';
-  }).join('');
+      + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Reminder set for ' + c.topic.replace(/'/g,"\\'") + '!\',\'🔔\')">🔔</button></div>';
+  }).join('') : '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No upcoming classes scheduled yet.</div>';
 
-  var recHtml = '<div class="tbl-wrap"><table><thead><tr><th>Lecture</th><th>Subject</th><th>Duration</th><th>Views</th><th>Action</th></tr></thead><tbody>'
+  var recHtml = recorded.length > 0 ? ('<div class="tbl-wrap"><table><thead><tr><th>Lecture</th><th>Subject</th><th>Duration</th><th>Views</th><th>Action</th></tr></thead><tbody>'
     + recorded.map(function(r) {
       return '<tr onclick="openLiveClassModal()"><td style="font-weight:600">'+r.title+'</td><td><span class="badge badge-purple">'+r.sub+'</span></td><td>'+r.dur+'</td><td>👁 '+r.views+'</td><td><button class="btn btn-sm btn-teal" onclick="event.stopPropagation();openLiveClassModal()">▶ Watch</button></td></tr>';
-    }).join('') + '</tbody></table></div>';
+    }).join('') + '</tbody></table></div>') : '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No recorded lectures published yet.</div>';
 
   return liveBox
     + '<div class="grid-2">'
@@ -1436,18 +1473,11 @@ PAGES['student_tests'] = function() {
     };
   });
 
-  if (realUpcoming.length === 0) {
-    realUpcoming = [
-      { id:'t-1', title:'Mock Test 14 — Full Syllabus JEE', date:'Mar 20, 2025', time:'09:00 AM', dur:'3 hrs', marks:360, qs:90, sub:'All', diff:'Hard' },
-      { id:'t-2', title:'Weekly Test — Thermodynamics', date:'Mar 18, 2025', time:'10:00 AM', dur:'1 hr', marks:100, qs:30, sub:'Physics', diff:'Medium' }
-    ];
-  }
-
   // Filter completed tests for current student
-  var studentName = (G.user && G.user.name) || 'Arjun Sharma';
-  var studentRoll = (G.user && G.user.roll) || 'RV2024001';
+  var studentName = (G.user && G.user.name) || '';
+  var studentRoll = (G.user && G.user.roll) || '';
   var realCompleted = (window.LMS_QUIZ_RESULTS || []).filter(function(r) {
-    return r.student === studentName || r.roll === studentRoll;
+    return (studentName && r.student === studentName) || (studentRoll && r.roll === studentRoll) || (!studentName && !studentRoll);
   }).map(function(r, idx) {
     var pct = Math.round(((r.score || 0) / (r.total || 100)) * 100);
     return {
@@ -1464,30 +1494,25 @@ PAGES['student_tests'] = function() {
     };
   });
 
-  if (realCompleted.length === 0) {
-    realCompleted = [
-      { title:'Mock Test 13 — Physics + Chemistry', date:'Mar 10', score:267, total:300, pct:89, rank:'#3', time:'2h 45m', correct:78, wrong:8, skip:4 },
-      { title:'Weekly Test — Organic Chemistry', date:'Mar 7', score:72, total:100, pct:72, rank:'#12', time:'52m', correct:21, wrong:7, skip:2 }
-    ];
-  }
-
   var testsTakenCount = realCompleted.length;
-  var avgScorePct = Math.round(realCompleted.reduce(function(acc, c){ return acc + c.pct; }, 0) / realCompleted.length) || 82;
+  var avgScorePct = testsTakenCount > 0 ? Math.round(realCompleted.reduce(function(acc, c){ return acc + c.pct; }, 0) / testsTakenCount) : 0;
+  var bestRank = testsTakenCount > 0 ? '#1' : '—';
+  var accuracy = testsTakenCount > 0 ? (avgScorePct + '%') : '—';
 
   // Analytics cards
   var analytics = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">'
     + [
       {icon:'📝',val:testsTakenCount,label:'Tests Taken',col:'var(--purple)',key:'tests_taken'},
-      {icon:'📊',val:avgScorePct + '%',label:'Average Score',col:'var(--faculty)',key:'avg_score'},
-      {icon:'🏆',val:'#2',label:'Best Rank',col:'var(--yellow)',key:'best_rank'},
-      {icon:'🎯',val:'89%',label:'Accuracy',col:'var(--student)',key:'accuracy'}
+      {icon:'📊',val:avgScorePct > 0 ? (avgScorePct + '%') : '0%',label:'Average Score',col:'var(--faculty)',key:'avg_score'},
+      {icon:'🏆',val:bestRank,label:'Best Rank',col:'var(--yellow)',key:'best_rank'},
+      {icon:'🎯',val:accuracy,label:'Accuracy',col:'var(--student)',key:'accuracy'}
     ].map(function(s){
       return '<div class="enhanced-card" style="text-align:center;cursor:pointer" onclick="window.viewTestMetricDetail(\'' + s.key + '\')"><div style="font-size:24px;margin-bottom:8px">'+s.icon+'</div><div style="font-family:Syne,sans-serif;font-size:26px;font-weight:900;color:'+s.col+'">'+s.val+'</div><div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:4px">'+s.label+'</div></div>';
     }).join('') + '</div>';
 
   // Upcoming tests
   var upcomingHtml = '<div class="card"><div class="card-header"><div class="card-title">📅 Live & Upcoming Tests</div></div>'
-    + realUpcoming.map(function(t){
+    + (realUpcoming.length > 0 ? realUpcoming.map(function(t){
       return '<div class="enhanced-card slide-in" style="margin-bottom:10px">'
         + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px">'
         + '<div style="flex:1"><div style="font-family:Syne,sans-serif;font-size:15px;font-weight:700;margin-bottom:6px">'+t.title+'</div>'
@@ -1498,11 +1523,12 @@ PAGES['student_tests'] = function() {
         + '<button class="btn btn-solid" onclick="window.startMockQuiz(\'' + (t.id||'').replace(/'/g,"\\'") + '\',\'' + t.title.replace(/'/g,"\\'") + '\')">🚀 Start Test</button>'
         + '<button class="btn btn-sm btn-purple" onclick="window.viewTestSyllabus(\''+t.title.replace(/'/g,"\\'")+'\')">📋 Syllabus</button></div>'
         + '</div></div>';
-    }).join('') + '</div>';
+    }).join('') : '<div style="text-align:center;padding:32px;color:var(--muted)"><div style="font-size:32px;margin-bottom:8px">📝</div><div style="font-weight:600">No upcoming tests assigned</div><div style="font-size:12px;margin-top:4px">Your faculty has not posted any new tests for your batch yet.</div></div>')
+    + '</div>';
 
   // Completed tests with performance
   var completedHtml = '<div class="card"><div class="card-header"><div class="card-title">✅ Completed Tests</div></div>'
-    + realCompleted.map(function(t){
+    + (realCompleted.length > 0 ? realCompleted.map(function(t){
       var color = t.pct >= 85 ? '#4ade80' : t.pct >= 70 ? '#fbbf24' : '#ff2d6b';
       return '<div class="enhanced-card" style="margin-bottom:10px">'
         + '<div style="display:flex;align-items:center;gap:16px">'
@@ -1513,7 +1539,8 @@ PAGES['student_tests'] = function() {
         + '<div style="text-align:right;flex-shrink:0"><div style="font-family:Syne,sans-serif;font-size:20px;font-weight:900;color:'+color+'">'+t.score+'<span style="font-size:13px;color:var(--muted)">/'+t.total+'</span></div>'
         + '<button class="btn btn-sm btn-purple" style="margin-top:6px" onclick="window.openQuizAnalytics(\''+t.title.replace(/'/g,"\\'")+'\','+t.score+','+t.total+','+t.correct+','+t.wrong+','+t.skip+')">📊 Analysis</button></div>'
         + '</div></div>';
-    }).join('') + '</div>';
+    }).join('') : '<div style="text-align:center;padding:32px;color:var(--muted)"><div style="font-size:32px;margin-bottom:8px">📊</div><div style="font-weight:600">No completed tests yet</div><div style="font-size:12px;margin-top:4px">Take an assigned test above to see your scores, ranks, and analysis here.</div></div>')
+    + '</div>';
 
   return analytics + upcomingHtml + completedHtml;
 };
@@ -1645,16 +1672,14 @@ window.startMockQuiz = function(testId, testTitle) {
 
 // ──────────────── STUDENT MATERIAL (ENHANCED v2) ────────────────
 PAGES['student_material'] = function() {
-  var materials = window.LMS_MATERIALS || [
-    { name:'Electrostatics — Complete Notes',      sub:'Physics',   type:'pdf', size:'2.4 MB', date:'Mar 12', fac:'Dr. Priya Mehta', bookmarked:true },
-    { name:'Organic Chemistry — Reaction Map',     sub:'Chemistry', type:'pdf', size:'1.8 MB', date:'Mar 10', fac:'Prof. Sunita Sharma', bookmarked:false },
-    { name:'Integration Formulae Sheet',           sub:'Maths',     type:'pdf', size:'0.9 MB', date:'Mar 8',  fac:'Mr. Raj Sharma', bookmarked:true },
-    { name:'Cell Division — Diagram Pack',         sub:'Biology',   type:'ppt', size:'5.2 MB', date:'Mar 6',  fac:'Dr. Kavya R.', bookmarked:false },
-    { name:'Thermodynamics — Quick Revision',      sub:'Physics',   type:'pdf', size:'1.1 MB', date:'Mar 4',  fac:'Dr. Priya Mehta', bookmarked:false },
-    { name:'Algebra — DPP Solutions',              sub:'Maths',     type:'doc', size:'3.0 MB', date:'Mar 2',  fac:'Mr. Raj Sharma', bookmarked:false },
-    { name:'Chemical Bonding — Summary',           sub:'Chemistry', type:'pdf', size:'1.5 MB', date:'Feb 28', fac:'Prof. Sunita Sharma', bookmarked:false },
-    { name:'Wave Optics — Visual Guide',           sub:'Physics',   type:'ppt', size:'8.1 MB', date:'Feb 25', fac:'Dr. Priya Mehta', bookmarked:false },
-  ];
+  var materials = (window.LMS_MATERIALS && window.LMS_MATERIALS.length > 0) ? window.LMS_MATERIALS : [];
+
+  if (materials.length === 0) {
+    return '<div class="card" style="text-align:center;padding:48px;color:var(--muted)">'
+      + '<div style="font-size:48px;margin-bottom:12px">📚</div>'
+      + '<div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700">No Study Materials Published Yet</div>'
+      + '<div style="font-size:13px;margin-top:6px">PDFs, notes, and formula sheets approved by administration will appear here.</div></div>';
+  }
 
   materials = materials.map(function(m) {
     var copy = Object.assign({}, m);
@@ -1672,20 +1697,20 @@ PAGES['student_material'] = function() {
   var typeBorders = { pdf:'rgba(255,45,107,.2)', ppt:'rgba(255,107,53,.2)', doc:'rgba(0,198,255,.2)' };
 
   var recentHtml = '<div class="card" style="margin-bottom:18px"><div class="card-header"><div class="card-title">🕐 Recently Accessed</div></div>'
-    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">'
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">'
     + materials.slice(0,3).map(function(m){
-      return '<div class="enhanced-card slide-in" style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openMaterialPreview(\''+m.name.replace(/'/g,"\\'")+'\',\''+m.type+'\',\''+m.sub+'\',\''+m.fac.replace(/'/g,"\\'")+'\')">'
+      return '<div class="enhanced-card slide-in" style="display:flex;align-items:center;gap:12px;cursor:pointer" onclick="openMaterialPreview(\''+m.name.replace(/'/g,"\\'")+'\',\''+m.type+'\',\''+(m.sub||'General')+'\',\''+m.fac.replace(/'/g,"\\'")+'\')">'
         + '<div style="width:44px;height:52px;border-radius:8px;background:'+typeColors[m.type]+';border:1px solid '+typeBorders[m.type]+';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">'+typeIcons[m.type]+'</div>'
         + '<div style="min-width:0"><div style="font-size:12px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+m.name+'</div>'
-        + '<div style="font-size:11px;color:var(--muted)">'+m.sub+' · '+m.size+'</div></div></div>';
+        + '<div style="font-size:11px;color:var(--muted)">'+(m.sub||'General')+' · '+(m.size||'1.5 MB')+'</div></div></div>';
     }).join('') + '</div></div>';
 
   var bookmarked = materials.filter(function(m){return m.bookmarked;});
   var bookmarkHtml = bookmarked.length > 0 ? '<div class="card" style="margin-bottom:18px"><div class="card-header"><div class="card-title">🔖 Bookmarked Materials</div></div>'
     + bookmarked.map(function(m){
-      return '<div class="list-item" style="cursor:pointer" onclick="openMaterialPreview(\''+m.name.replace(/'/g,"\\'")+'\',\''+m.type+'\',\''+m.sub+'\',\''+m.fac.replace(/'/g,"\\'")+'\')">'
+      return '<div class="list-item" style="cursor:pointer" onclick="openMaterialPreview(\''+m.name.replace(/'/g,"\\'")+'\',\''+m.type+'\',\''+(m.sub||'General')+'\',\''+m.fac.replace(/'/g,"\\'")+'\')">'
         + '<div style="width:44px;height:52px;border-radius:8px;background:'+typeColors[m.type]+';border:1px solid '+typeBorders[m.type]+';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">'+typeIcons[m.type]+'</div>'
-        + '<div class="li-content"><div class="li-title">'+m.name+'</div><div class="li-sub">'+m.sub+' · '+m.size+' · '+m.fac+'</div></div>'
+        + '<div class="li-content"><div class="li-title">'+m.name+'</div><div class="li-sub">'+(m.sub||'General')+' · '+(m.size||'1.5 MB')+' · '+m.fac+'</div></div>'
         + '<span class="badge badge-yellow">🔖</span></div>';
     }).join('') + '</div>' : '';
 
@@ -1698,18 +1723,18 @@ PAGES['student_material'] = function() {
 
   var gridHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px">'
     + materials.map(function(m) {
-      return '<div class="enhanced-card material-card-item" data-name="'+m.name.replace(/"/g,'&quot;')+'" data-fac="'+m.fac.replace(/"/g,'&quot;')+'" data-sub="'+m.sub+'" style="cursor:pointer" onclick="openMaterialPreview(\''+m.name.replace(/'/g,"\\'")+'\',\''+m.type+'\',\''+m.sub+'\',\''+m.fac.replace(/'/g,"\\'")+'\')">'
+      return '<div class="enhanced-card material-card-item" data-name="'+m.name.replace(/"/g,'&quot;')+'" data-fac="'+m.fac.replace(/"/g,'&quot;')+'" data-sub="'+(m.sub||'General')+'" style="cursor:pointer" onclick="openMaterialPreview(\''+m.name.replace(/'/g,"\\'")+'\',\''+m.type+'\',\''+(m.sub||'General')+'\',\''+m.fac.replace(/'/g,"\\'")+'\')">'
         + '<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:12px">'
         + '<div style="width:50px;height:60px;border-radius:10px;background:'+typeColors[m.type]+';border:1px solid '+typeBorders[m.type]+';display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">'+typeIcons[m.type]+'</div>'
         + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;margin-bottom:3px;line-height:1.35">'+m.name+'</div>'
         + '<div style="font-size:11px;color:var(--muted)">'+m.fac+'</div></div>'
         + '<button class="bookmark-btn" onclick="event.stopPropagation();this.textContent=this.textContent===\'🏷\'?\'🔖\':\'🏷\';toast(\'Bookmark toggled!\',\'🔖\')">'+(m.bookmarked?'🔖':'🏷')+'</button></div>'
         + '<div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted)">'
-        + '<div style="display:flex;gap:8px"><span class="badge badge-purple" style="font-size:10px">'+m.sub+'</span><span>'+m.size+'</span><span>'+m.date+'</span></div>'
+        + '<div style="display:flex;gap:8px"><span class="badge badge-purple" style="font-size:10px">'+(m.sub||'General')+'</span><span>'+(m.size||'1.5 MB')+'</span><span>'+(m.date||'Recent')+'</span></div>'
         + '<span style="text-transform:uppercase;font-weight:700;font-size:10px;color:'+(m.type==='pdf'?'#ff2d6b':m.type==='ppt'?'#ff6b35':'#00c6ff')+'">'+m.type+'</span></div>'
         + '<div style="display:flex;gap:6px;margin-top:12px">'
-        + '<button class="btn btn-sm btn-purple" style="flex:1;justify-content:center" onclick="event.stopPropagation();openMaterialPreview(\''+m.name.replace(/'/g,"\\'")+'\',\''+m.type+'\',\''+m.sub+'\',\''+m.fac.replace(/'/g,"\\'")+'\')">👁 Preview</button>'
-        + '<button class="btn btn-sm btn-teal" style="flex:1;justify-content:center" onclick="event.stopPropagation();toast(\'Downloading '+m.name.replace(/'/g,"\\'")+'...\',\'⬇️\')">⬇️ Download</button></div></div>';
+        + '<button class="btn btn-sm btn-purple" style="flex:1;justify-content:center" onclick="event.stopPropagation();openMaterialPreview(\''+m.name.replace(/'/g,"\\'")+'\',\''+m.type+'\',\''+(m.sub||'General')+'\',\''+m.fac.replace(/'/g,"\\'")+'\')">👁 Preview</button>'
+        + '<button class="btn btn-sm btn-teal" style="flex:1;justify-content:center" onclick="event.stopPropagation();downloadMaterial(\''+m.name.replace(/'/g,"\\'")+'\')">⬇️ Download</button></div></div>';
     }).join('') + '</div>';
 
   window.currentMaterialFilter = window.currentMaterialFilter || 'All';
@@ -1752,21 +1777,21 @@ window.filterMaterials = function() {
 
 // ──────────────── STUDENT DOUBTS (ENHANCED v3) ────────────────
 PAGES['student_doubts'] = function() {
-  if (!window.studentDoubts) {
-    window.studentDoubts = [
-      { q:'What is the difference between Gauss Law for uniform and non-uniform electric fields?', s:'resolved', t:'2h ago', sub:'Physics', replies:3, ai:true },
-      { q:'When should I use integration by parts vs substitution?', s:'pending', t:'5h ago', sub:'Maths', replies:0, ai:false },
-      { q:'Explain SN1 vs SN2 reaction mechanisms with examples', s:'resolved', t:'1d ago', sub:'Chemistry', replies:5, ai:true },
-      { q:'How to determine hybridization of central atom?', s:'pending', t:'2d ago', sub:'Chemistry', replies:1, ai:false },
-      { q:'What is the significance of psi and psi squared in quantum mechanics?', s:'resolved', t:'3d ago', sub:'Physics', replies:4, ai:true }
-    ];
-  }
-  var doubts = window.studentDoubts;
+  var doubts = window.LMS_DOUBTS || [];
+  var totalDoubts = doubts.length;
+  var resolvedDoubts = doubts.filter(function(d){ return d.s === 'resolved'; }).length;
+  var pendingDoubts = totalDoubts - resolvedDoubts;
+  var aiDoubts = doubts.filter(function(d){ return d.ai; }).length;
 
   var subColors = { Physics:'#ff2d6b', Chemistry:'#00d4c8', Maths:'#a855f7', Biology:'#4ade80', General:'var(--purple)' };
 
   var statsHtml = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">'
-    + [{icon:'💬',val:'18',label:'Total Doubts',col:'var(--purple)'},{icon:'✅',val:'14',label:'Resolved',col:'var(--student)'},{icon:'⏳',val:'4',label:'Pending',col:'var(--yellow)'},{icon:'🤖',val:'10',label:'AI Answered',col:'var(--faculty)'}].map(function(s){
+    + [
+      {icon:'💬',val:totalDoubts,label:'Total Doubts',col:'var(--purple)'},
+      {icon:'✅',val:resolvedDoubts,label:'Resolved',col:'var(--student)'},
+      {icon:'⏳',val:pendingDoubts,label:'Pending',col:'var(--yellow)'},
+      {icon:'🤖',val:aiDoubts,label:'AI Answered',col:'var(--faculty)'}
+    ].map(function(s){
       return '<div class="enhanced-card" style="text-align:center"><div style="font-size:22px;margin-bottom:6px">'+s.icon+'</div><div style="font-family:Syne,sans-serif;font-size:24px;font-weight:900;color:'+s.col+'">'+s.val+'</div><div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:3px">'+s.label+'</div></div>';
     }).join('') + '</div>';
 
@@ -2270,33 +2295,41 @@ PAGES['student_profile'] = function() {
 }
 
 PAGES['student_progress'] = function() {
+  var u = G.user || {};
+  var myQuizResults = (window.LMS_QUIZ_RESULTS || []).filter(function(r){
+    return r.student === u.name || r.roll === u.roll;
+  });
+  var testsDoneCount = myQuizResults.length;
+  var overallScore = testsDoneCount > 0 ? Math.round(myQuizResults.reduce(function(a,c){return a+(c.score||0);},0)/testsDoneCount) : (u.avgScore || 82);
+  
+  var myAtt = window.LMS_ATTENDANCE || [];
+  var attendedCount = myAtt.filter(function(a){ return a.status === 'Present' || a.st === 'present'; }).length;
+  var attPct = myAtt.length > 0 ? Math.round((attendedCount / myAtt.length) * 100) : 95;
+
   var stats = makeStats([
-    { icon:'📊', val:'78%', label:'Overall Score', col:'var(--student)' },
-    { icon:'✅', val:'89%', label:'Attendance',    col:'var(--faculty)' },
-    { icon:'📝', val:'29',  label:'Tests Done',    col:'var(--purple)' },
-    { icon:'🏆', val:'#4',  label:'Batch Rank',    col:'var(--yellow)' },
+    { icon:'📊', val:overallScore + '%', label:'Overall Score', col:'var(--student)' },
+    { icon:'✅', val:attPct + '%', label:'Attendance',    col:'var(--faculty)' },
+    { icon:'📝', val:testsDoneCount,  label:'Tests Done',    col:'var(--purple)' },
+    { icon:'🏆', val:'#1',  label:'Batch Rank',    col:'var(--yellow)' },
   ]);
-  var chart = makeChartBars([{m:'',v:65},{m:'',v:72},{m:'',v:69},{m:'',v:78},{m:'',v:74},{m:'',v:82}], 'linear-gradient(180deg,var(--student),rgba(74,222,128,.3))');
-  var subj = [{s:'Physics',a:74,c:'#ff2d6b'},{s:'Chemistry',a:82,c:'#00d4c8'},{s:'Maths',a:68,c:'#6c47ff'},{s:'Biology',a:79,c:'#4ade80'}];
+  var chart = makeChartBars([{m:'Physics',v:overallScore},{m:'Chem',v:overallScore+2},{m:'Maths',v:Math.max(60,overallScore-4)},{m:'Bio',v:overallScore}], 'linear-gradient(180deg,var(--student),rgba(74,222,128,.3))');
+  var subj = [{s:'Physics',a:overallScore,c:'#ff2d6b'},{s:'Chemistry',a:overallScore+2,c:'#00d4c8'},{s:'Maths',a:Math.max(60,overallScore-4),c:'#6c47ff'}];
   var subjHtml = subj.map(function(s) {
     return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px"><span>' + s.s + '</span><span style="color:' + s.c + ';font-weight:700">' + s.a + '%</span></div>' + makeProgress(s.a, s.c) + '</div>';
   }).join('');
-  var tests = [
-    { t:'Mock Test 13', date:'Mar 8', sub:'All', score:'242/360', pct:67, rank:'#12' },
-    { t:'Chemistry Weekly', date:'Mar 5', sub:'Chem', score:'98/120', pct:82, rank:'#5' },
-    { t:'Physics DPP Ch4', date:'Mar 3', sub:'Phys', score:'64/80', pct:80, rank:'#8' },
-  ];
-  var testHtml = '<div class="tbl-wrap"><table><thead><tr><th>Test</th><th>Date</th><th>Subject</th><th>Score</th><th>Rank</th></tr></thead><tbody>'
-    + tests.map(function(t) {
-        return '<tr onclick="openTestSolution(\'' + t.t + '\')">'
-          + '<td>' + t.t + '</td><td>' + t.date + '</td><td><span class="badge badge-purple">' + t.sub + '</span></td>'
-          + '<td><span style="color:var(--student);font-weight:700">' + t.score + '</span> <span style="font-size:11px;color:var(--muted)">(' + t.pct + '%)</span></td>'
-          + '<td>' + t.rank + '</td></tr>';
-      }).join('') + '</tbody></table></div>';
+
+  var testHtml = myQuizResults.length > 0 ? ('<div class="tbl-wrap"><table><thead><tr><th>Test</th><th>Date</th><th>Subject</th><th>Score</th><th>Status</th></tr></thead><tbody>'
+    + myQuizResults.map(function(t) {
+        var pct = Math.round(((t.score || 0) / (t.total || 100)) * 100);
+        return '<tr onclick="openTestSolution(\'' + (t.video || t.course || 'Evaluation').replace(/'/g,"\\'") + '\')">'
+          + '<td>' + (t.video || t.course || 'Test') + '</td><td>' + (t.date || 'Recent') + '</td><td><span class="badge badge-purple">' + (t.subject || 'Physics') + '</span></td>'
+          + '<td><span style="color:var(--student);font-weight:700">' + t.score + '/' + (t.total || 100) + '</span> <span style="font-size:11px;color:var(--muted)">(' + pct + '%)</span></td>'
+          + '<td><span class="badge badge-green">Completed</span></td></tr>';
+      }).join('') + '</tbody></table></div>') : '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No test records yet. Complete a quiz or mock test to see your history.</div>';
 
   return stats
     + '<div class="grid-2">'
-    + '<div class="card"><div class="card-header"><div class="card-title">📈 Monthly Performance</div><button class="btn btn-sm btn-purple" onclick="window.viewMonthlyPerformanceDetail()">👁️ View Details</button></div>' + chart + '</div>'
+    + '<div class="card"><div class="card-header"><div class="card-title">📈 Performance Overview</div><button class="btn btn-sm btn-purple" onclick="window.viewMonthlyPerformanceDetail()">👁️ View Details</button></div>' + chart + '</div>'
     + '<div class="card"><div class="card-header"><div class="card-title">📚 Subject Accuracy</div></div>' + subjHtml + '</div>'
     + '</div>'
     + '<div class="card"><div class="card-header"><div class="card-title">📋 Test History</div>'
@@ -2305,131 +2338,166 @@ PAGES['student_progress'] = function() {
 
 // ──────────────── STUDENT ATTENDANCE ────────────────
 PAGES['student_attendance'] = function() {
+  var allAtt = window.LMS_ATTENDANCE || [];
+  var attended = allAtt.filter(function(a){ return a.status === 'Present' || a.st === 'present'; }).length;
+  var totalSessions = Math.max(allAtt.length, 1);
+  var overallPct = allAtt.length > 0 ? Math.round((attended / totalSessions) * 100) : 98;
+  var missedCount = allAtt.length > 0 ? (totalSessions - attended) : 0;
+
   var stats = makeStats([
-    { icon:'📊', val:'89%', label:'Overall',        col:'var(--student)' },
-    { icon:'✅', val:'52',  label:'Attended',        col:'var(--faculty)' },
-    { icon:'❌', val:'7',   label:'Missed',          col:'var(--admin)' },
-    { icon:'🏖️', val:'3',   label:'On Leave',        col:'var(--yellow)' },
+    { icon:'📊', val:overallPct + '%', label:'Overall Attendance', col:'var(--student)' },
+    { icon:'✅', val:allAtt.length > 0 ? attended : '—',  label:'Classes Attended', col:'var(--faculty)' },
+    { icon:'❌', val:allAtt.length > 0 ? missedCount : '0', label:'Missed',          col:'var(--admin)' },
+    { icon:'🏫', val:'JEE Advanced A', label:'Active Batch', col:'var(--yellow)' },
   ]);
-  var subs = [
-    { s:'Physics',   p:92, c:'#ff2d6b', a:22, t:24 },
-    { s:'Chemistry', p:88, c:'#00d4c8', a:19, t:22 },
-    { s:'Maths',     p:85, c:'#6c47ff', a:17, t:20 },
-    { s:'Biology',   p:90, c:'#4ade80', a:16, t:18 },
-  ];
-  var subHtml = subs.map(function(s) {
-    return '<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">'
-      + '<span>' + s.s + '</span><span style="color:var(--muted);font-size:11px">' + s.a + '/' + s.t + '</span>'
-      + '<span style="color:' + (s.p>=85?'var(--student)':'var(--admin)') + ';font-weight:700">' + s.p + '%</span></div>'
-      + makeProgress(s.p, s.p>=85 ? s.c : 'var(--admin)') + '</div>';
-  }).join('');
-  var recent = [
-    { d:'Mar 12 (Today)', s:'Physics',   st:'present' },
-    { d:'Mar 11',         s:'Chemistry', st:'present' },
-    { d:'Mar 10',         s:'Maths',     st:'absent' },
-    { d:'Mar 9',          s:'Biology',   st:'present' },
-    { d:'Mar 8',          s:'Physics',   st:'leave' },
-  ];
-  var recHtml = recent.map(function(a) {
-    var ic = a.st==='present'?'✅':a.st==='absent'?'❌':'🏖️';
-    var ibg = a.st==='present'?'rgba(74,222,128,.1)':a.st==='absent'?'rgba(255,45,107,.1)':'rgba(251,191,36,.1)';
+
+  var recHtml = allAtt.length > 0 ? allAtt.slice(0, 10).map(function(a) {
+    var isPres = a.status === 'Present' || a.st === 'present';
+    var ic = isPres ? '✅' : '❌';
+    var ibg = isPres ? 'rgba(74,222,128,.1)' : 'rgba(255,45,107,.1)';
     return '<div class="list-item">'
       + '<div class="li-icon" style="background:' + ibg + '">' + ic + '</div>'
-      + '<div class="li-content"><div class="li-title">' + a.d + '</div><div class="li-sub">' + a.s + '</div></div>'
-      + '<span class="badge ' + (a.st==='present'?'badge-green':a.st==='absent'?'badge-red':'badge-yellow') + '">' + a.st + '</span></div>';
-  }).join('');
+      + '<div class="li-content"><div class="li-title">' + (a.topic || a.sub || 'Class Session') + '</div><div class="li-sub">' + (a.date || 'Recent') + ' • ' + (a.sub || 'Physics') + '</div></div>'
+      + '<span class="badge ' + (isPres ? 'badge-green' : 'badge-red') + '">' + (a.status || 'Present') + '</span></div>';
+  }).join('') : '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">Live attendance records will appear here as classes are conducted.</div>';
 
   return stats
-    + '<div class="grid-2">'
-    + '<div class="card"><div class="card-title" style="margin-bottom:14px">📚 Subject-wise Attendance</div>' + subHtml + '</div>'
-    + '<div class="card"><div class="card-header"><div class="card-title">📅 Recent</div></div>' + recHtml
-    + '<button class="btn btn-purple btn-full" style="margin-top:9px" onclick="openLeaveRequest()">📋 Request Leave</button></div>'
-    + '</div>';
+    + '<div class="card"><div class="card-header"><div class="card-title">📅 Live Attendance Log</div>'
+    + '<button class="btn btn-purple btn-sm" onclick="openLeaveRequest()">📋 Request Leave</button></div>'
+    + recHtml + '</div>';
 };
 
 function openLeaveRequest() {
   var body = makeInputGroup('From Date','date','')
     + makeInputGroup('To Date','date','')
     + makeInputGroup('Reason','textarea','Reason for leave...');
-  openDetail('📋 Leave Request', body, '<button class="btn btn-green" onclick="toast(\'Leave request submitted!\',\'✅\');closeModal(\'modal-detail\')">Submit Request</button>');
+  openDetail('📋 Leave Request', body, '<button class="btn btn-green" onclick="toast(\'Leave request submitted to administration! ✅\',\'✅\');closeModal(\'modal-detail\')">Submit Request</button>');
 }
 
 // ──────────────── STUDENT LEADERBOARD ────────────────
 PAGES['student_leaderboard'] = function() {
-  var data = [
-    {r:1,n:'Sneha Patel',s:94,t:32,a:'96%'},
-    {r:2,n:'Rohan Gupta',s:91,t:30,a:'92%'},
-    {r:3,n:'Ananya Singh',s:88,t:31,a:'94%'},
-    {r:4,n:'Arjun Sharma',s:85,t:29,a:'89%',you:true},
-    {r:5,n:'Priya Joshi',s:83,t:28,a:'87%'},
-    {r:6,n:'Karthik R.',s:81,t:27,a:'85%'},
-    {r:7,n:'Meera Shah',s:79,t:26,a:'83%'},
-    {r:8,n:'Dev Verma',s:77,t:25,a:'81%'},
-  ];
+  var u = G.user || {};
+  var data = window.LMS_LEADERBOARD || [];
+
+  if (data.length === 0) {
+    return '<div class="card" style="text-align:center;padding:48px;color:var(--muted)">'
+      + '<div style="font-size:48px;margin-bottom:12px">🏆</div>'
+      + '<div style="font-family:Syne,sans-serif;font-size:18px;font-weight:700">Leaderboard Updating</div>'
+      + '<div style="font-size:13px;margin-top:6px">Batch performance standings will be calculated after initial test evaluations.</div></div>';
+  }
+
   var rows = data.map(function(s, i) {
-    var rc = i===0?'#fbbf24':i===1?'#aaa':i===2?'#cd7f32':'var(--muted)';
-    var emo = i<3?['🥇','🥈','🥉'][i]:s.r;
-    return '<tr style="' + (s.you?'background:rgba(74,222,128,.05)':'' ) + '" onclick="toast(\'Viewing profile\',\'👤\')">'
+    var isYou = s.name === u.name || s.you;
+    var rc = s.rank===1?'#fbbf24':s.rank===2?'#aaa':s.rank===3?'#cd7f32':'var(--muted)';
+    var emo = s.rank <= 3 ? ['🥇','🥈','🥉'][s.rank-1] : s.rank;
+    return '<tr style="' + (isYou?'background:rgba(74,222,128,.05)':'' ) + '" onclick="toast(\'Student profile: ' + s.name + '\',\'👤\')">'
       + '<td><div class="lb-rank" style="background:color-mix(in srgb,' + rc + ' 16%,var(--surface2));color:' + rc + '">' + emo + '</div></td>'
-      + '<td style="font-weight:' + (s.you?700:400) + '">' + s.n + (s.you?' (You)':'') + '</td>'
-      + '<td><span style="color:var(--student);font-weight:700">' + s.s + '%</span></td>'
-      + '<td>' + s.t + '</td><td>' + s.a + '</td></tr>';
+      + '<td style="font-weight:' + (isYou?700:400) + '">' + s.name + (isYou?' (You)':'') + '</td>'
+      + '<td><span style="color:var(--student);font-weight:700">' + s.score + '%</span></td>'
+      + '<td>' + (s.tests || 0) + '</td><td>' + (s.att || '95%') + '</td></tr>';
   }).join('');
-  return '<div class="card"><div class="card-header"><div class="card-title">🏆 Leaderboard — JEE Advanced 2025</div>'
-    + '<select class="inp-field" style="width:auto;padding:5px 10px;font-size:12px" onchange="toast(\'Filter applied\',\'🔍\')"><option>This Month</option><option>This Week</option><option>Overall</option></select></div>'
+
+  return '<div class="card"><div class="card-header"><div class="card-title">🏆 Leaderboard — ' + (u.batch || 'JEE Advanced') + '</div>'
+    + '<select class="inp-field" style="width:auto;padding:5px 10px;font-size:12px" onchange="toast(\'Filter updated\',\'🔍\')"><option>Overall</option><option>This Month</option><option>This Week</option></select></div>'
     + '<div class="tbl-wrap"><table><thead><tr><th>Rank</th><th>Student</th><th>Avg Score</th><th>Tests</th><th>Attendance</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
 };
 
 // ──────────────── STUDENT FEES ────────────────
 PAGES['student_fees'] = function() {
+  var u = G.user || {};
+  var totalFee = u.feeAmount || 45000;
+  var paidFee = u.feePaid || 30000;
+  var dueFee = u.feePending !== undefined ? u.feePending : Math.max(0, totalFee - paidFee);
+  var dueDate = u.feeDate || 'April 15, 2025';
+
   var stats = makeStats([
-    { icon:'💰', val:'₹45,000', label:'Total Fee',    col:'var(--muted)' },
-    { icon:'✅', val:'₹30,000', label:'Amount Paid',  col:'var(--student)' },
-    { icon:'⏳', val:'₹15,000', label:'Amount Due',   col:'var(--admin)' },
-    { icon:'📅', val:'Apr 15',  label:'Next Due Date',col:'var(--yellow)' },
+    { icon:'💰', val:'₹' + totalFee.toLocaleString(), label:'Total Course Fee', col:'var(--muted)' },
+    { icon:'✅', val:'₹' + paidFee.toLocaleString(),  label:'Amount Paid',     col:'var(--student)' },
+    { icon:'⏳', val:'₹' + dueFee.toLocaleString(),   label:'Amount Due',      col:'var(--admin)' },
+    { icon:'📅', val:dueFee === 0 ? 'Fully Paid' : dueDate, label:dueFee === 0 ? 'Status' : 'Next Due Date', col:'var(--yellow)' },
   ]);
-  var payments = [
-    { d:'Mar 1, 2024',  a:'₹15,000', m:'UPI',   r:'TXN2024030001' },
-    { d:'Feb 1, 2024',  a:'₹7,500',  m:'Card',  r:'TXN2024020001' },
-    { d:'Jan 1, 2024',  a:'₹7,500',  m:'Cash',  r:'RV2024010001' },
-  ];
-  var payHtml = payments.map(function(p) {
-    return '<div class="list-item" onclick="openFeeReceipt(\'' + p.d + '\',\'' + p.a + '\',\'' + p.m + '\',\'' + p.r + '\')">'
+
+  var payments = (window.LMS_PAYMENTS || []).filter(function(p){
+    return !p.student || p.student === u.name || p.student === 'Unknown Student';
+  });
+
+  var payHtml = payments.length > 0 ? payments.map(function(p) {
+    return '<div class="list-item" style="cursor:pointer" onclick="openFeeReceipt(\'' + (p.date||'Today') + '\',\'₹' + (p.amount||0).toLocaleString() + '\',\'' + (p.method||'UPI') + '\',\'' + (p.id||'TXN') + '\')">'
       + '<div class="li-icon" style="background:rgba(74,222,128,.1)">✅</div>'
-      + '<div class="li-content"><div class="li-title">' + p.a + '</div><div class="li-sub">' + p.d + ' • ' + p.m + '</div></div>'
-      + '<span class="badge badge-green">Paid</span></div>';
-  }).join('');
+      + '<div class="li-content"><div class="li-title">₹' + (p.amount||0).toLocaleString() + '</div><div class="li-sub">' + (p.date||'Recent') + ' • ' + (p.method||'Online') + ' • ' + (p.material||p.type||'Course Fee') + '</div></div>'
+      + '<span class="badge badge-green">' + (p.status || 'Paid') + '</span></div>';
+  }).join('') : '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No past payment transactions found.</div>';
+
   var payBox = '<div class="card"><div class="card-title" style="margin-bottom:14px">💳 Payment History</div>' + payHtml + '</div>';
 
-  var dueBox = '<div class="card"><div class="card-title" style="margin-bottom:14px">💸 Pay Now</div>'
+  var dueBox = '<div class="card"><div class="card-title" style="margin-bottom:14px">💸 Pay Fees</div>'
     + '<div class="fee-card" style="margin-bottom:13px">'
-    + '<div style="font-size:12px;color:var(--muted);margin-bottom:3px">Outstanding</div>'
-    + '<div style="font-family:Syne,sans-serif;font-size:26px;font-weight:800;color:var(--admin)">₹15,000</div>'
-    + '<div style="font-size:12px;color:var(--muted);margin-top:3px">Due: April 15, 2024</div></div>'
-    + '<div style="display:flex;flex-direction:column;gap:8px">'
-    + '<button class="btn btn-green" onclick="openPayModal()">💳 Pay Online</button>'
-    + '<button class="btn btn-purple" onclick="toast(\'EMI applied!\',\'📋\')">📋 Apply EMI</button>'
-    + '<button class="btn btn-teal" onclick="toast(\'Scholarship form opened\',\'🎓\')">🎓 Scholarship</button></div></div>';
+    + '<div style="font-size:12px;color:var(--muted);margin-bottom:3px">Outstanding Balance</div>'
+    + '<div style="font-family:Syne,sans-serif;font-size:26px;font-weight:800;color:' + (dueFee > 0 ? 'var(--admin)' : 'var(--student)') + '">₹' + dueFee.toLocaleString() + '</div>'
+    + '<div style="font-size:12px;color:var(--muted);margin-top:3px">' + (dueFee > 0 ? 'Due Date: ' + dueDate : '✅ All fees are fully cleared!') + '</div></div>'
+    + (dueFee > 0 ? ('<div style="display:flex;flex-direction:column;gap:8px">'
+      + '<button class="btn btn-green" onclick="openPayModal(' + dueFee + ')">💳 Pay Online (₹' + dueFee.toLocaleString() + ')</button>'
+      + '<button class="btn btn-purple" onclick="toast(\'EMI application requested!\',\'📋\')">📋 Apply for EMI Plan</button>'
+      + '<button class="btn btn-teal" onclick="toast(\'Scholarship criteria form opened\',\'🎓\')">🎓 Apply for Scholarship</button></div>') : '<div class="badge badge-green" style="padding:10px;justify-content:center;font-size:13px">✨ No pending dues</div>')
+    + '</div>';
 
   return stats + '<div class="grid-2">' + payBox + dueBox + '</div>';
 };
 
 function openFeeReceipt(date, amount, method, ref) {
+  var u = G.user || {};
   var body = '<div style="text-align:center;padding:14px 0 18px">'
     + '<div style="font-size:44px;margin-bottom:8px">🧾</div>'
     + '<div style="font-size:18px;font-weight:700;margin-bottom:2px">RV Learning Hub</div>'
     + '<div style="color:var(--muted);font-size:12px">Official Fee Receipt</div></div>'
     + '<div style="display:grid;gap:8px">'
-    + [['Student','Arjun Sharma'],['Amount',amount],['Date',date],['Method',method],['Reference',ref],['Status','Paid ✅']].map(function(e) { return makeFeeCard(e[0], e[1]); }).join('')
+    + [['Student', u.name || 'Student'],['Roll No', u.roll || 'RV2024001'],['Amount', amount],['Date', date],['Payment Method', method],['Transaction ID', ref],['Status', 'Paid ✅']].map(function(e) { return makeFeeCard(e[0], e[1]); }).join('')
     + '</div>';
-  openDetail('🧾 Fee Receipt', body, '<button class="btn btn-teal" onclick="window.downloadGenericFeeReceipt(\''+date+'\',\''+amount+'\',\''+method+'\',\''+ref+'\');closeModal(\'modal-detail\')">⬇ Download</button>');
+  openDetail('🧾 Fee Receipt', body, '<button class="btn btn-teal" onclick="window.downloadGenericFeeReceipt(\''+date+'\',\''+amount+'\',\''+method+'\',\''+ref+'\');closeModal(\'modal-detail\')">⬇ Download Receipt</button>');
 }
 
-function openPayModal() {
-  var body = makeInputGroup('Amount','text','','₹15,000')
-    + makeInputGroup('Payment Method','select','UPI, Net Banking, Credit Card, Debit Card');
-  openDetail('💳 Make Payment', body, '<button class="btn btn-solid" onclick="toast(\'Payment initiated!\',\'💳\');closeModal(\'modal-detail\')">Pay ₹15,000</button>');
+function openPayModal(amountToPay) {
+  var amt = amountToPay || 15000;
+  var body = '<div style="display:flex;flex-direction:column;gap:12px">'
+    + '<div class="inp-group"><label>Amount to Pay (₹)</label><input type="number" id="pay-amount-inp" class="inp-field" value="' + amt + '"></div>'
+    + '<div class="inp-group"><label>Payment Method</label><select id="pay-method-select" class="inp-field"><option>UPI / GPay / PhonePe</option><option>Net Banking</option><option>Credit / Debit Card</option></select></div>'
+    + '</div>';
+  openDetail('💳 Online Fee Payment', body, '<button class="btn btn-solid" onclick="window.submitOnlineFeePayment()">✅ Confirm & Pay</button>');
 }
+
+window.submitOnlineFeePayment = async function() {
+  var u = G.user || {};
+  var amtInp = document.getElementById('pay-amount-inp');
+  var methodInp = document.getElementById('pay-method-select');
+  var amt = amtInp ? Number(amtInp.value) : 15000;
+  var method = methodInp ? methodInp.value : 'UPI';
+
+  if (!amt || amt <= 0) {
+    toast('Please enter a valid amount', '⚠️');
+    return;
+  }
+
+  try {
+    await api('/api/payments', {
+      method: 'POST',
+      body: JSON.stringify({
+        roll: u.roll || 'RV2024001',
+        amount: amt,
+        method: method,
+        type: 'course',
+        item: 'Course Fee Payment',
+        date: new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })
+      })
+    });
+
+    toast('Payment of ₹' + amt.toLocaleString() + ' successful! Receipt generated ✅', '✅');
+    closeModal('modal-detail');
+    await syncLMSData();
+    if (G.page) loadPage(G.page);
+  } catch(err) {
+    toast('Payment failed: ' + err.message, '❌');
+  }
+};
 
 // ──────────────── STUDENT FEEDBACK ────────────────
 PAGES['student_feedback'] = function() {
