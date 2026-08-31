@@ -2510,16 +2510,17 @@ PAGES['faculty_dashboard'] = function() {
     + '<div class="card"><div class="card-header"><div class="card-title">📊 Batch Overview</div><button class="card-act" onclick="loadPage(\'analytics\')">Full Analytics</button></div>' + bHtml + '</div>';
 };
 
-function openFacultyClassModal(topic, batch, time, status) {
+function openFacultyClassModal(topic, batch, time, status, initialTab) {
   var isLive = status === 'live';
+  var startTab = initialTab || 'chat';
 
   if (!isLive) {
     // Simple upcoming class modal
     var body = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:15px">'
       + makeFeeCard('Batch', batch) + makeFeeCard('Time', time) + '</div>'
       + '<div style="display:flex;gap:8px">'
-      + '<button class="btn btn-teal" onclick="toast(\'Class started! 📡\',\'📡\');closeModal(\'modal-detail\');">▶ Start Class</button>'
-      + '<button class="btn btn-purple" onclick="toast(\'Students notified! 🔔\',\'🔔\')">🔔 Notify Students</button>'
+      + '<button class="btn btn-teal" onclick="toast(\'Class started! 📡\',\'📡\');closeModal(\'modal-detail\');openFacultyClassModal(\'' + topic.replace(/'/g,"\\'") + '\',\'' + batch.replace(/'/g,"\\'") + '\',\'' + time + '\',\'live\',\'chat\');">▶ Start Class</button>'
+      + '<button class="btn btn-purple" onclick="toast(\'Students in ' + batch + ' notified! 🔔\',\'🔔\')">🔔 Notify Students</button>'
       + '<button class="btn btn-yellow" onclick="openScheduleClassModal()">📅 Reschedule</button>'
       + '</div>';
     openDetail('📅 ' + topic + ' — ' + batch, body, '');
@@ -2533,10 +2534,10 @@ function openFacultyClassModal(topic, batch, time, status) {
 
   var controlsBar = '<div style="display:flex;gap:7px;flex-wrap:wrap;padding:12px 0 14px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:12px">'
     + '<div class="live-badge" style="font-size:11px;padding:4px 12px"><div class="live-dot"></div>CLASS LIVE</div>'
-    + '<span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:var(--text)">👥 142 students</span>'
-    + '<button class="btn btn-sm btn-purple" onclick="toast(\'Attendance recorded ✅\',\'✅\')">✅ Auto Attendance</button>'
+    + '<span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:var(--text)">👥 147 students</span>'
+    + '<button class="btn btn-sm btn-purple" onclick="window.openLiveClassAttendanceModal(\'' + topic.replace(/'/g,"\\'") + '\',\'' + batch.replace(/'/g,"\\'") + '\')">✅ Auto Attendance</button>'
     + '<button class="btn btn-sm btn-teal" onclick="openDigitalBlackboard()">🎨 Whiteboard</button>'
-    + '<button class="btn btn-sm btn-red" style="margin-left:auto" onclick="toast(\'Class ended\',\'⏹\');closeModal(\'modal-detail\')">⏹ End Class</button>'
+    + '<button class="btn btn-sm btn-red" style="margin-left:auto" onclick="toast(\'Live class ended\',\'⏹\');closeModal(\'modal-detail\')">⏹ End Class</button>'
     + '</div>';
 
   var facTabs = [
@@ -2545,16 +2546,19 @@ function openFacultyClassModal(topic, batch, time, status) {
     {id:'hands', icon:'✋', label:'Hands'},
     {id:'poll',  icon:'📊', label:'Poll'}
   ];
-  var sidePanel = lcBuildSidePanel('fac', facTabs, 'chat', '360px');
+  var sidePanel = lcBuildSidePanel('fac', facTabs, startTab, '360px');
 
   var body = controlsBar + sidePanel;
 
   openDetail('🎛️ Live Control — ' + topic, body,
-    '<button class="btn btn-red" onclick="toast(\'Class ended\',\'⏹\');closeModal(\'modal-detail\')" >⏹ End Class</button>'
+    '<button class="btn btn-red" onclick="toast(\'Live class ended\',\'⏹\');closeModal(\'modal-detail\')">⏹ End Class</button>'
   );
 
   setTimeout(function() {
-    window.lcRenderChat('fac');
+    if (startTab === 'qa') window.lcRenderQA('fac');
+    else if (startTab === 'hands') window.lcRenderHands('fac');
+    else if (startTab === 'poll') window.lcRenderPoll('fac');
+    else window.lcRenderChat('fac');
   }, 60);
 }
 
@@ -2723,26 +2727,26 @@ PAGES['faculty_live'] = function() {
   var hands = s.raisedHands.filter(function(h){return !h.called;}).length;
   var pollActive = s.activePoll && s.activePoll.active;
 
-  // Activity badges for the live card
+  // Activity badges for the live card with instant interactive click handlers
   var actBadges = '';
-  if (unanswered > 0) actBadges += '<span style="background:rgba(168,85,247,.12);border:1px solid rgba(168,85,247,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:#a855f7">🙋 '+unanswered+' Questions</span> ';
-  if (hands > 0) actBadges += '<span style="background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:#fbbf24">✋ '+hands+' Hands Raised</span> ';
-  if (pollActive) actBadges += '<span style="background:rgba(108,71,255,.12);border:1px solid rgba(108,71,255,.3);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;color:#a78bff">📊 Poll Active</span>';
+  if (unanswered > 0) actBadges += '<span style="background:rgba(168,85,247,.15);border:1px solid rgba(168,85,247,.4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#c084fc;cursor:pointer" onclick="openFacultyClassModal(\'Physics — Electrostatics: Gauss Law\',\'JEE Advanced Batch A\',\'09:00\',\'live\',\'qa\')">💬 ' + unanswered + ' Questions</span> ';
+  if (hands > 0) actBadges += '<span style="background:rgba(251,191,36,.15);border:1px solid rgba(251,191,36,.4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#fbbf24;cursor:pointer" onclick="openFacultyClassModal(\'Physics — Electrostatics: Gauss Law\',\'JEE Advanced Batch A\',\'09:00\',\'live\',\'hands\')">✋ ' + hands + ' Hands Raised</span> ';
+  if (pollActive) actBadges += '<span style="background:rgba(108,71,255,.15);border:1px solid rgba(108,71,255,.4);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:700;color:#a78bff;cursor:pointer" onclick="openFacultyClassModal(\'Physics — Electrostatics: Gauss Law\',\'JEE Advanced Batch A\',\'09:00\',\'live\',\'poll\')">📊 Poll Active</span>';
 
   var liveCard = '<div class="enhanced-card" style="border-color:rgba(255,45,107,.3);background:rgba(255,45,107,.03);margin-bottom:16px">'
     + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">'
     + '<div style="flex:1">'
     + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
     + '<div class="live-badge" style="font-size:12px"><div class="live-dot"></div>LIVE NOW</div>'
-    + '<span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">👥 142 students</span>'
+    + '<span style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">👥 147 students</span>'
     + '</div>'
     + '<div style="font-family:Syne,sans-serif;font-size:16px;font-weight:700;margin-bottom:4px">Physics — Electrostatics: Gauss Law</div>'
     + '<div style="color:var(--muted);font-size:13px;margin-bottom:10px">JEE Advanced Batch A • Started 23 min ago</div>'
     + (actBadges ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">' + actBadges + '</div>' : '')
     + '</div>'
     + '<div style="display:flex;flex-direction:column;gap:7px;flex-shrink:0">'
-    + '<button class="btn btn-red" style="font-weight:800" onclick="openFacultyClassModal(\'Electrostatics\',\'JEE Adv A\',\'09:00\',\'live\')">🎛️ Open Control Panel</button>'
-    + '<button class="btn btn-sm btn-purple" onclick="toast(\'Attendance auto-recorded ✅\',\'✅\')">✅ Auto Attendance</button>'
+    + '<button class="btn btn-red" style="font-weight:800" onclick="openFacultyClassModal(\'Physics — Electrostatics: Gauss Law\',\'JEE Advanced Batch A\',\'09:00\',\'live\',\'chat\')">🎛️ Open Control Panel</button>'
+    + '<button class="btn btn-sm btn-purple" onclick="window.openLiveClassAttendanceModal(\'Physics — Electrostatics: Gauss Law\',\'JEE Advanced Batch A\')">✅ Auto Attendance</button>'
     + '<button class="btn btn-sm btn-teal" onclick="openDigitalBlackboard()">🎨 Whiteboard</button>'
     + '</div></div></div>';
 
@@ -2753,24 +2757,118 @@ PAGES['faculty_live'] = function() {
           + '<div class="sched-time"><div class="st">' + c.t + '</div><div class="sd">' + (c.tomorrow?'Tmrw':'Today') + '</div></div>'
           + '<div class="sched-body"><div class="sched-title">' + c.batch + ': ' + c.topic + '</div><div class="sched-meta">' + c.n + ' students enrolled</div></div>'
           + '<div style="display:flex;gap:5px">'
-          + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Editing class...\',\'✏️\')">✏️</button>'
-          + '<button class="btn btn-sm btn-teal" onclick="event.stopPropagation();toast(\'Students notified! 🔔\',\'🔔\')">🔔</button></div></div>';
+          + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Editing ' + c.topic + '...\',\'✏️\')">✏️</button>'
+          + '<button class="btn btn-sm btn-teal" onclick="event.stopPropagation();toast(\'Students in ' + c.batch + ' notified! 🔔\',\'🔔\')">🔔</button></div></div>';
       }).join('') + '</div>';
   return liveCard + upHtml;
 };
 
-function openScheduleClassModal() {
-  var body = makeInputGroup('Subject & Topic','text','e.g. Physics — Optics: Snell\'s Law')
-    + '<div class="inp-row">'
-    + makeInputGroup('Date','date','')
-    + makeInputGroup('Time','time','')
-    + '</div><div class="inp-row">'
-    + makeInputGroup('Duration','select','60 min, 90 min, 120 min')
-    + makeInputGroup('Platform','select','In-app Live, Zoom, Google Meet')
+window.openLiveClassAttendanceModal = async function(topic, batch) {
+  var bName = batch || 'JEE Advanced Batch A';
+  var tName = topic || 'Physics — Electrostatics: Gauss Law';
+
+  try {
+    await api('/api/attendance', {
+      method: 'POST',
+      body: JSON.stringify({
+        date: new Date().toISOString().slice(0, 10),
+        status: 'Present',
+        sub: 'Physics',
+        topic: tName,
+        batch: bName
+      })
+    });
+  } catch(e) {}
+
+  var students = [
+    { name: 'Arjun Sharma', roll: 'RV2024001', time: '09:01 AM', present: true },
+    { name: 'Sneha Patel', roll: 'RV2024002', time: '09:02 AM', present: true },
+    { name: 'Rohan Gupta', roll: 'RV2024003', time: '09:04 AM', present: true },
+    { name: 'Kavya Reddy', roll: 'RV2024004', time: '09:05 AM', present: true },
+    { name: 'Aditya Kumar', roll: 'RV2024005', time: '09:07 AM', present: true },
+    { name: 'Pooja Iyer', roll: 'RV2024006', time: '09:08 AM', present: true },
+    { name: 'Vikas Rao', roll: 'RV2024007', time: '09:10 AM', present: true },
+    { name: 'Meera Nair', roll: 'RV2024008', time: '09:12 AM', present: true },
+    { name: 'Kiran Desai', roll: 'RV2024009', time: '--:--', present: false },
+    { name: 'Sanjay Varma', roll: 'RV2024010', time: '09:14 AM', present: true }
+  ];
+
+  var html = '<div style="display:flex;flex-direction:column;gap:12px">'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">'
+    + '<div class="stat-card" style="padding:10px;background:var(--surface2)"><div style="font-size:11px;color:var(--muted)">Enrolled</div><div style="font-size:18px;font-weight:700">150</div></div>'
+    + '<div class="stat-card" style="padding:10px;background:var(--surface2)"><div style="font-size:11px;color:var(--muted)">Present Live</div><div style="font-size:18px;font-weight:700;color:var(--student)">147</div></div>'
+    + '<div class="stat-card" style="padding:10px;background:var(--surface2)"><div style="font-size:11px;color:var(--muted)">Attendance Rate</div><div style="font-size:18px;font-weight:700;color:var(--admin)">98.0%</div></div>'
     + '</div>'
-    + makeInputGroup('Assign Batch','select','JEE Advanced A, JEE Advanced B, NEET Batch, All Batches');
-  openDetail('📅 Schedule New Class', body, '<button class="btn btn-solid" onclick="toast(\'Class scheduled!\',\'📅\');closeModal(\'modal-detail\')">✅ Schedule Class</button>');
+    + '<div style="font-size:13px;font-weight:700;margin-top:6px;display:flex;justify-content:space-between;align-items:center">'
+    + '<span>📋 Live Student Roster (' + bName + ')</span>'
+    + '<button class="btn btn-sm btn-purple" onclick="downloadMaterial(\'Attendance_' + bName.replace(/\s+/g,'_') + '\')">⬇ Export CSV</button>'
+    + '</div>'
+    + '<div class="tbl-wrap" style="max-height:260px;overflow-y:auto">'
+    + '<table><thead><tr><th>Student</th><th>Roll No</th><th>Join Time</th><th>Status</th><th>Action</th></tr></thead><tbody>'
+    + students.map(function(st, idx) {
+        return '<tr>'
+          + '<td><strong>' + st.name + '</strong></td>'
+          + '<td>' + st.roll + '</td>'
+          + '<td style="color:var(--muted)">' + st.time + '</td>'
+          + '<td><span id="att-status-' + idx + '" class="badge ' + (st.present ? 'badge-teal' : 'badge-red') + '">' + (st.present ? 'Present' : 'Absent') + '</span></td>'
+          + '<td><button class="btn btn-sm btn-purple" onclick="var el=document.getElementById(\'att-status-' + idx + '\');if(el.textContent===\'Present\'){el.textContent=\'Absent\';el.className=\'badge badge-red\';}else{el.textContent=\'Present\';el.className=\'badge badge-teal\';}">Toggle</button></td>'
+          + '</tr>';
+      }).join('')
+    + '</tbody></table></div></div>';
+
+  openDetail('✅ Auto Attendance — ' + tName, html, '<button class="btn btn-solid" onclick="toast(\'Attendance roster synced to database! ✅\',\'✅\');closeModal(\'modal-detail\')">💾 Save & Sync Attendance</button>');
+};
+
+function openScheduleClassModal() {
+  var batches = ['JEE Advanced Batch A', 'JEE Advanced Batch B', 'NEET Batch 2025', 'JEE Mains Crash Course', 'All Batches'];
+  var body = '<div style="display:flex;flex-direction:column;gap:12px">'
+    + '<div class="inp-group"><label>Subject & Topic Title</label><input type="text" id="sched-topic" class="inp-field" placeholder="e.g. Physics — Optics: Snell\'s Law" value="Physics — Current Electricity: Kirchhoff\'s Laws"></div>'
+    + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="inp-group"><label>Date</label><input type="date" id="sched-date" class="inp-field" value="' + new Date().toISOString().slice(0,10) + '"></div>'
+    + '<div class="inp-group"><label>Time</label><input type="time" id="sched-time" class="inp-field" value="14:00"></div>'
+    + '</div>'
+    + '<div class="inp-row" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    + '<div class="inp-group"><label>Duration</label><select id="sched-dur" class="inp-field"><option>60 min</option><option>90 min</option><option>120 min</option></select></div>'
+    + '<div class="inp-group"><label>Platform</label><select id="sched-platform" class="inp-field"><option>In-app Live Studio</option><option>Zoom Meeting</option><option>Google Meet</option></select></div>'
+    + '</div>'
+    + '<div class="inp-group"><label>Assign Batch</label><select id="sched-batch" class="inp-field">'
+    + batches.map(function(b){ return '<option>' + b + '</option>'; }).join('')
+    + '</select></div>'
+    + '</div>';
+
+  openDetail('📅 Schedule New Class', body, '<button class="btn btn-solid" onclick="window.submitScheduleClass()">✅ Publish & Schedule Class</button>');
 }
+
+window.submitScheduleClass = async function() {
+  var topic = (document.getElementById('sched-topic') ? document.getElementById('sched-topic').value : '').trim();
+  var date = (document.getElementById('sched-date') ? document.getElementById('sched-date').value : '');
+  var time = (document.getElementById('sched-time') ? document.getElementById('sched-time').value : '');
+  var batch = (document.getElementById('sched-batch') ? document.getElementById('sched-batch').value : 'JEE Advanced Batch A');
+
+  if (!topic) {
+    toast('Please enter a topic title', '⚠️');
+    return;
+  }
+
+  try {
+    await api('/api/live', {
+      method: 'POST',
+      body: JSON.stringify({
+        topic: topic,
+        date: date || 'Today',
+        time: time || '02:00 PM',
+        sub: 'Physics',
+        batch: batch
+      })
+    });
+    toast('Class scheduled and students notified! 📅', '✅');
+    closeModal('modal-detail');
+    await syncLMSData();
+    loadPage(G.page);
+  } catch(err) {
+    toast('Failed to schedule class: ' + err.message, '❌');
+  }
+};
 
 PAGES['faculty_tests'] = function() {
   var tests = window.mockTests || [];
