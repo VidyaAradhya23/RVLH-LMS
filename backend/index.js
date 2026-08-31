@@ -112,7 +112,12 @@ const ChatMessageSchema = new mongoose.Schema({
   message: { type: String, required: true },
   color: { type: String, default: '#4ade80' },
   pinned: { type: Boolean, default: false },
-  reactions: { type: Array, default: [] }
+  reactions: { type: Array, default: [] },
+  type: { type: String, default: 'chat' }, // 'chat' or 'question'
+  answered: { type: Boolean, default: false },
+  answer: { type: String, default: '' },
+  answeredBy: { type: String, default: '' },
+  votes: { type: Number, default: 0 }
 }, { timestamps: true, collection: 'chatmessages' });
 
 
@@ -940,6 +945,47 @@ app.post('/api/live/:id/qa', protect, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+app.put('/api/live/:id/qa/:msgId/answer', protect, async (req, res) => {
+  try {
+    const msg = await ChatMessage.findById(req.params.msgId);
+    if (!msg) return res.status(404).json({ message: 'Question not found' });
+    msg.answered = true;
+    msg.answer = req.body.answer || '';
+    msg.answeredBy = req.user.name || 'Faculty';
+    await msg.save();
+
+    broadcastRealtimeEvent('QA_ANSWERED', {
+      _id: msg._id,
+      liveClassId: req.params.id,
+      answered: true,
+      answer: msg.answer,
+      answeredBy: msg.answeredBy
+    });
+    res.json(msg);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/live/:id/qa/:msgId/vote', protect, async (req, res) => {
+  try {
+    const msg = await ChatMessage.findById(req.params.msgId);
+    if (!msg) return res.status(404).json({ message: 'Question not found' });
+    msg.votes = (msg.votes || 0) + (req.body.delta || 1);
+    await msg.save();
+
+    broadcastRealtimeEvent('QA_VOTED', {
+      _id: msg._id,
+      liveClassId: req.params.id,
+      votes: msg.votes
+    });
+    res.json(msg);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 
 // ═══════════════════════════════════════════════════

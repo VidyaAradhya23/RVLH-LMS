@@ -560,6 +560,40 @@ function setupRealtimeEvents() {
       } catch(err) { console.warn('QA_MESSAGE parse error:', err); }
     });
 
+    // ─── Real-time QA_ANSWERED listener ───
+    _realtimeSource.addEventListener('QA_ANSWERED', function(e) {
+      try {
+        var data = JSON.parse(e.data);
+        var s = window.liveClassState;
+        if (!s) return;
+        var q = s.questions.find(function(x) { return String(x.id) === String(data._id); });
+        if (q) {
+          q.answered = true;
+          q.answer = data.answer;
+          q.answeredBy = data.answeredBy;
+          ['fac', 'stu', 'cmo'].forEach(function(ctx) {
+            if (document.getElementById(ctx + '-panel-qa')) window.lcRenderQA(ctx);
+          });
+        }
+      } catch(err) { console.warn('QA_ANSWERED error:', err); }
+    });
+
+    // ─── Real-time QA_VOTED listener ───
+    _realtimeSource.addEventListener('QA_VOTED', function(e) {
+      try {
+        var data = JSON.parse(e.data);
+        var s = window.liveClassState;
+        if (!s) return;
+        var q = s.questions.find(function(x) { return String(x.id) === String(data._id); });
+        if (q) {
+          q.votes = data.votes;
+          ['fac', 'stu', 'cmo'].forEach(function(ctx) {
+            if (document.getElementById(ctx + '-panel-qa')) window.lcRenderQA(ctx);
+          });
+        }
+      } catch(err) { console.warn('QA_VOTED error:', err); }
+    });
+
     _realtimeSource.onerror = function() {
       // Reconnect after brief pause
       setTimeout(setupRealtimeEvents, 7000);
@@ -3025,11 +3059,13 @@ window.startFacultyLiveClass = async function(id, topic, batch, time) {
   // Store active class ID for chat
   window.liveClassState.activeClassId = (id && id !== 'undefined') ? id : null;
   if (window.liveClassState.activeClassId) {
-    // Load chat history from server for faculty
+    // Load chat and Q&A history from server for faculty
     try {
       var messages = await api('/api/live/' + id + '/chat');
       if (messages && messages.length > 0) {
-        window.liveClassState.chatMessages = messages.map(function(m) {
+        var chatList = messages.filter(function(m) { return m.type !== 'question'; });
+        var qList = messages.filter(function(m) { return m.type === 'question'; });
+        window.liveClassState.chatMessages = chatList.map(function(m) {
           return {
             id: m._id || Date.now(),
             n: m.sender + (m.senderRole === 'faculty' ? ' (Faculty)' : ''),
@@ -3039,6 +3075,20 @@ window.startFacultyLiveClass = async function(id, topic, batch, time) {
             reactions: m.reactions || [],
             pinned: m.pinned || false,
             isFaculty: m.senderRole === 'faculty'
+          };
+        });
+        window.liveClassState.questions = qList.map(function(q) {
+          return {
+            id: q._id || Date.now(),
+            n: q.sender,
+            c: q.color || '#4ade80',
+            q: q.message,
+            t: new Date(q.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+            votes: q.votes || 0,
+            myVote: false,
+            answered: q.answered || false,
+            answer: q.answer || '',
+            answeredBy: q.answeredBy || 'Faculty'
           };
         });
         window.liveClassState.nextMsgId = messages.length + 10;
@@ -8401,6 +8451,13 @@ window.lcUpvote = function(qId, ctx) {
   q.myVote = !q.myVote;
   q.votes += q.myVote ? 1 : -1;
   window.lcRenderQA(ctx);
+
+  if (s.activeClassId) {
+    api('/api/live/' + s.activeClassId + '/qa/' + qId + '/vote', {
+      method: 'PUT',
+      body: JSON.stringify({ delta: q.myVote ? 1 : -1 })
+    }).catch(function(err) { console.warn('lcUpvote api error:', err); });
+  }
 };
 
 window.lcOpenAnswerModal = function(qId) {
@@ -8423,8 +8480,9 @@ window.lcPostAnswer = function(qId) {
   var s = window.liveClassState;
   var q = s.questions.find(function(x){ return String(x.id)===String(qId); });
   if (!q) { toast('Question not found', '⚠️'); return; }
+  var answerText = ta.value.trim();
   q.answered = true;
-  q.answer = ta.value.trim();
+  q.answer = answerText;
   q.answeredBy = (G && G.user ? G.user.name : 'Faculty');
   toast('Answer posted! Students can see it now ✅', '✅');
   closeModal('modal-detail');
@@ -8432,6 +8490,13 @@ window.lcPostAnswer = function(qId) {
   ['fac', 'stu', 'cmo'].forEach(function(ctx) {
     if (document.getElementById(ctx + '-panel-qa')) window.lcRenderQA(ctx);
   });
+
+  if (s.activeClassId) {
+    api('/api/live/' + s.activeClassId + '/qa/' + qId + '/answer', {
+      method: 'PUT',
+      body: JSON.stringify({ answer: answerText })
+    }).catch(function(err) { console.warn('lcPostAnswer api error:', err); });
+  }
 };
 
 window.lcRenderPoll = function(ctx) {
@@ -8717,10 +8782,12 @@ function openLiveClassModal(classData) {
   // Store active class ID and load chat history
   window.liveClassState.activeClassId = resolvedClassId;
   if (resolvedClassId) {
-    // Load chat history from server
+    // Load chat and Q&A history from server
     api('/api/live/' + resolvedClassId + '/chat').then(function(messages) {
       if (messages && messages.length > 0) {
-        window.liveClassState.chatMessages = messages.map(function(m) {
+        var chatList = messages.filter(function(m) { return m.type !== 'question'; });
+        var qList = messages.filter(function(m) { return m.type === 'question'; });
+        window.liveClassState.chatMessages = chatList.map(function(m) {
           return {
             id: m._id || Date.now(),
             n: m.sender + (m.senderRole === 'faculty' ? ' (Faculty)' : ''),
@@ -8732,10 +8799,25 @@ function openLiveClassModal(classData) {
             isFaculty: m.senderRole === 'faculty'
           };
         });
+        window.liveClassState.questions = qList.map(function(q) {
+          return {
+            id: q._id || Date.now(),
+            n: q.sender,
+            c: q.color || '#4ade80',
+            q: q.message,
+            t: new Date(q.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+            votes: q.votes || 0,
+            myVote: false,
+            answered: q.answered || false,
+            answer: q.answer || '',
+            answeredBy: q.answeredBy || 'Faculty'
+          };
+        });
         window.liveClassState.nextMsgId = messages.length + 10;
-        // Re-render chat panels after loading history
+        // Re-render chat and Q&A panels after loading history
         ['stu', 'fac', 'cmo'].forEach(function(ctx) {
           if (document.getElementById(ctx + '-panel-chat')) window.lcRenderChat(ctx);
+          if (document.getElementById(ctx + '-panel-qa')) window.lcRenderQA(ctx);
         });
       }
     }).catch(function(err) { console.warn('Chat history load error:', err); });
