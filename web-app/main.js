@@ -3797,6 +3797,7 @@ var COURSE_DB = [
 ];
 
 PAGES['admin_courses'] = function() {
+  var activeCourseDB = (window.COURSE_DB && window.COURSE_DB.length > 0 ? window.COURSE_DB : COURSE_DB);
   var notice = '<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;padding:12px;background:rgba(108,71,255,.05);border:1px solid rgba(108,71,255,.15);border-radius:10px;align-items:center">'
     + '<div style="font-weight:700;color:var(--purple);font-size:12px;margin-right:8px">Builder Flow:</div>'
     + '<div class="flow-step" onclick="openCreateCourseModal()" style="cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.2);font-size:11px;font-weight:600;transition:all 0.2s" onmouseover="this.style.background=\'var(--purple)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'rgba(108,71,255,.1)\';this.style.color=\'inherit\'">1. Create Course</div>'
@@ -3812,7 +3813,7 @@ PAGES['admin_courses'] = function() {
     + '<div class="flow-step" onclick="triggerFlowStep(\'publish\')" style="cursor:pointer;padding:4px 8px;border-radius:6px;background:rgba(108,71,255,.1);border:1px solid rgba(108,71,255,.2);font-size:11px;font-weight:600;transition:all 0.2s" onmouseover="this.style.background=\'var(--purple)\';this.style.color=\'#fff\'" onmouseout="this.style.background=\'rgba(108,71,255,.1)\';this.style.color=\'inherit\'">6. Activate / Publish</div>'
     + '</div>';
 
-  var grid = '<div class="grid-2">' + COURSE_DB.map(function(cr,idx) {
+  var grid = '<div class="grid-2">' + activeCourseDB.map(function(cr,idx) {
     return '<div class="card" style="border-color:color-mix(in srgb,' + cr.col + ' 22%,var(--border))">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:9px">'
       + '<div style="display:flex;gap:10px;align-items:center">'
@@ -6637,15 +6638,17 @@ PAGES['admin_media'] = function() {
 
   var content = '';
 
+  var activeMediaDB = (window.MEDIA_DB && Object.keys(window.MEDIA_DB).length > 0 ? window.MEDIA_DB : MEDIA_DB);
+
   // ── VIDEOS FLOW ──
   if (mediaState.tab==='videos') {
     if (!mediaState.course) {
       // Show courses
-      var courses = Object.keys(MEDIA_DB);
+      var courses = Object.keys(activeMediaDB);
       content = '<div style="margin-bottom:10px;font-size:12px;color:var(--muted)">Select a course to browse videos by subject</div>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px">' + courses.map(function(cn) {
-        var subjs = Object.keys(MEDIA_DB[cn]);
-        var totalVids = subjs.reduce(function(a,s){return a+MEDIA_DB[cn][s].videos.length;},0);
+        var subjs = Object.keys(activeMediaDB[cn] || {});
+        var totalVids = subjs.reduce(function(a,s){return a+(activeMediaDB[cn][s].videos||[]).length;},0);
         var cols = {'JEE':'#ff2d6b','NEET':'#4ade80','Commerce':'#fbbf24'};
         var col = cols[cn.split(' ')[0]] || '#6c47ff';
         return '<div onclick="window._mediaState.course=\''+cn.replace(/'/g,"\\'")+'\';;loadPage(\'media\')" '
@@ -6664,11 +6667,11 @@ PAGES['admin_media'] = function() {
       }).join('') + '</div>';
     } else if (!mediaState.subject) {
       // Show subjects for selected course
-      var subjs = Object.keys(MEDIA_DB[mediaState.course]);
+      var subjs = Object.keys(activeMediaDB[mediaState.course] || {});
       var courseCol = mediaState.course.includes('JEE')?'#ff2d6b':mediaState.course.includes('NEET')?'#4ade80':'#fbbf24';
       content = '<div style="margin-bottom:10px;font-size:12px;color:var(--muted)">Select a subject to view videos</div>'
         + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px">' + subjs.map(function(sn) {
-        var vids = MEDIA_DB[mediaState.course][sn].videos;
+        var vids = (activeMediaDB[mediaState.course][sn] || {}).videos || [];
         var subIcon = sn==='Physics'?'⚡':sn==='Chemistry'?'🧪':sn==='Mathematics'?'📐':sn==='Biology'?'🔬':sn==='Accountancy'?'📊':sn==='Economics'?'💹':'📚';
         var subCol = sn==='Physics'?'#ff2d6b':sn==='Chemistry'?'#00d4c8':sn==='Mathematics'?'#6c47ff':sn==='Biology'?'#4ade80':sn==='Accountancy'?'#fbbf24':'#ff6b35';
         return '<div onclick="window._mediaState.subject=\''+sn+'\';loadPage(\'media\')" '
@@ -6683,7 +6686,7 @@ PAGES['admin_media'] = function() {
       }).join('') + '</div>';
     } else {
       // Show videos for selected subject
-      var vids = MEDIA_DB[mediaState.course][mediaState.subject].videos;
+      var vids = (activeMediaDB[mediaState.course] && activeMediaDB[mediaState.course][mediaState.subject]) ? activeMediaDB[mediaState.course][mediaState.subject].videos : [];
       content = '<div style="display:flex;flex-direction:column;gap:11px">'
         + vids.map(function(v,i) {
             return '<div class="card" style="display:flex;gap:14px;align-items:flex-start">'
@@ -6721,10 +6724,10 @@ PAGES['admin_media'] = function() {
           }).join('') + '</div>';
     } else if (mediaState.matTab==='Course Materials') {
       if (!mediaState.course) {
-        var courses = Object.keys(MEDIA_DB);
+        var courses = Object.keys(activeMediaDB);
         content = '<div class="grid-2">' + courses.map(function(cn) {
-          var subjs = Object.keys(MEDIA_DB[cn]);
-          var totalMats = subjs.reduce(function(a,s){return a+MEDIA_DB[cn][s].materials.length;},0);
+          var subjs = Object.keys(activeMediaDB[cn] || {});
+          var totalMats = subjs.reduce(function(a,s){return a+(activeMediaDB[cn][s].materials||[]).length;},0);
           var col = cn.includes('JEE')?'#ff2d6b':cn.includes('NEET')?'#4ade80':'#fbbf24';
           return '<div class="card" style="cursor:pointer;border-color:color-mix(in srgb,'+col+' 22%,var(--border))" onclick="window._mediaState.course=\''+cn.replace(/'/g,"\\'")+'\';;loadPage(\'media\')">'
             + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
@@ -6733,16 +6736,16 @@ PAGES['admin_media'] = function() {
             + '<div style="font-size:11px;color:var(--muted)">'+totalMats+' materials across '+subjs.length+' subjects</div></div></div></div>';
         }).join('') + '</div>';
       } else if (!mediaState.subject) {
-        var subjs = Object.keys(MEDIA_DB[mediaState.course]);
+        var subjs = Object.keys(activeMediaDB[mediaState.course] || {});
         content = '<div class="grid-2">' + subjs.map(function(sn) {
-          var mats = MEDIA_DB[mediaState.course][sn].materials;
+          var mats = (activeMediaDB[mediaState.course][sn] || {}).materials || [];
           return '<div class="card" style="cursor:pointer" onclick="window._mediaState.subject=\''+sn+'\';loadPage(\'media\')">'
             + '<div style="display:flex;align-items:center;gap:10px">'
             + '<div style="font-size:32px">'+(sn==='Physics'?'⚡':sn==='Chemistry'?'🧪':sn==='Mathematics'?'📐':sn==='Biology'?'🔬':'📄')+'</div>'
             + '<div><div style="font-weight:700">'+sn+'</div><div style="font-size:12px;color:var(--muted)">'+mats.length+' materials</div></div></div></div>';
         }).join('') + '</div>';
       } else {
-        var mats = MEDIA_DB[mediaState.course][mediaState.subject].materials;
+        var mats = (activeMediaDB[mediaState.course] && activeMediaDB[mediaState.course][mediaState.subject]) ? activeMediaDB[mediaState.course][mediaState.subject].materials : [];
         content = '<div style="margin-bottom:12px;font-size:12px;color:var(--muted)">'+mats.length+' materials available for download</div>'
           + '<div style="display:flex;flex-direction:column;gap:10px">'
           + mats.map(function(m) {
