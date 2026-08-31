@@ -618,6 +618,7 @@ app.delete('/api/auth/users/:id', protect, async (req, res) => {
 // ═══════════════════════════════════════════════════
 // COURSES API
 // ═══════════════════════════════════════════════════
+app.get('/api/courses/public', async (req, res) => res.json(await Course.find({ pub: { $ne: false } }).sort({ createdAt: -1 })));
 app.get('/api/courses', protect, async (req, res) => res.json(await Course.find().sort({ createdAt: -1 })));
 app.post('/api/courses', protect, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });

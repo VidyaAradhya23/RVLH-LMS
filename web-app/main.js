@@ -719,6 +719,20 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
+  // Dynamically populate available courses from MongoDB in signup dropdown
+  fetch('/api/courses/public')
+    .then(function(res) { return res.json(); })
+    .then(function(courses) {
+      var batchSelect = document.getElementById('su-batch');
+      if (batchSelect && Array.isArray(courses) && courses.length > 0) {
+        batchSelect.innerHTML = courses.map(function(c) {
+          var title = c.title || c.n || 'Course';
+          var emoji = c.e || '📚';
+          return '<option value="' + title + '">' + emoji + ' ' + title + '</option>';
+        }).join('');
+      }
+    })
+    .catch(function(e) { /* keep static defaults */ });
 
   // Populate email spans safely
   function setTxt(id, val) { var el=document.getElementById(id); if(el) el.textContent=val; }
