@@ -625,21 +625,23 @@ async function launch() {
   var ls = document.getElementById('login-screen');
   var ap = document.getElementById('app-shell');
   if (!ls || !ap) { alert('Page structure error'); return; }
+  
+  // 1. Immediately switch displays and render layout & dashboard (0ms instant display!)
   ls.style.display = 'none';
   ap.style.display = 'block';
+  initApp();
+  toast('Welcome back, ' + (G.user ? G.user.name : '') + '!', '👋');
+
+  // 2. Perform live database sync in background without blocking UI
   try {
     await syncLMSData();
-    initApp();
+    // Smoothly refresh active page with fresh synced items from MongoDB
+    if (G.page) loadPage(G.page, false);
     updateNotificationBadge();
     setupRealtimeEvents();
   } catch(err) {
-    console.error('initApp error:', err);
-    showErr('App failed to load: ' + err.message);
-    ls.style.display = 'flex';
-    ap.style.display = 'none';
-    return;
+    console.warn('Background sync note:', err);
   }
-  toast('Welcome, ' + G.user.name + '!', '');
 }
 
 function doLogout() {
@@ -794,20 +796,31 @@ function updateBackBtn() {
 }
 
 function initApp() {
-  var r = G.role, u = G.user;
+  var r = G.role || 'student', u = G.user || {};
   var rLabels = { student:'Student Portal', faculty:'Faculty Portal', admin:'Admin Panel' };
   var rStyles = {
     student: 'background:rgba(74,222,128,.15);color:var(--student)',
     faculty: 'background:rgba(0,212,200,.15);color:var(--faculty)',
     admin:   'background:rgba(255,45,107,.15);color:var(--admin)',
   };
-  document.getElementById('sb-role').textContent = rLabels[r];
-  document.getElementById('sb-role').style.cssText = rStyles[r];
-  document.getElementById('sb-avatar').textContent = u.ava;
-  document.getElementById('sb-avatar').style.cssText = rStyles[r];
-  document.getElementById('sb-name').textContent = u.name;
-  document.getElementById('sb-email').textContent = u.email;
-  document.getElementById('app-layout').className = 'app-layout role-' + r;
+  var sbRole = document.getElementById('sb-role');
+  if (sbRole) {
+    sbRole.textContent = rLabels[r] || 'LMS Portal';
+    sbRole.style.cssText = rStyles[r] || '';
+  }
+  var sbAva = document.getElementById('sb-avatar');
+  if (sbAva) {
+    sbAva.textContent = u.ava || (u.name ? u.name.charAt(0).toUpperCase() : 'U');
+    sbAva.style.cssText = rStyles[r] || '';
+  }
+  var sbName = document.getElementById('sb-name');
+  if (sbName) sbName.textContent = u.name || 'User';
+  var sbEmail = document.getElementById('sb-email');
+  if (sbEmail) sbEmail.textContent = u.email || '';
+
+  var appLayout = document.getElementById('app-layout');
+  if (appLayout) appLayout.className = 'app-layout role-' + r;
+
   buildSidebar();
   loadPage('dashboard');
   buildNotifContent();
