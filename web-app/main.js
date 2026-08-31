@@ -1327,12 +1327,25 @@ window.liveClassState = window.liveClassState || {
 
 // ──────────────── STUDENT LIVE CLASS (ENHANCED) ────────────────
 PAGES['student_live'] = function() {
-  var upcoming = [
-    { time:'11:00', date:'Today',    sub:'Chemistry', topic:'Aldehydes & Ketones',   fac:'Prof. Amit Singh', n:98 },
-    { time:'02:00', date:'Today',    sub:'Maths',     topic:'Integration by Parts',  fac:'Mr. Raj Sharma',   n:115 },
-    { time:'09:00', date:'Tomorrow', sub:'Physics',   topic:'Magnetic Effects',      fac:'Dr. Priya Mehta',  n:142 },
-    { time:'11:00', date:'Tomorrow', sub:'Chemistry', topic:'Coordination Compounds',fac:'Prof. Amit Singh',  n:98 },
+  var defaultUpcoming = [
+    { time:'11:00 AM', date:'Today',    sub:'Chemistry', topic:'Aldehydes & Ketones',   fac:'Prof. Amit Singh', n:98 },
+    { time:'02:00 PM', date:'Today',    sub:'Maths',     topic:'Integration by Parts',  fac:'Mr. Raj Sharma',   n:115 },
+    { time:'09:00 AM', date:'Tomorrow', sub:'Physics',   topic:'Magnetic Effects',      fac:'Dr. Priya Mehta',  n:142 },
+    { time:'11:00 AM', date:'Tomorrow', sub:'Chemistry', topic:'Coordination Compounds',fac:'Prof. Amit Singh',  n:98 },
   ];
+
+  var dbLive = (window.LMS_LIVE_CLASSES && window.LMS_LIVE_CLASSES.length > 0) ? window.LMS_LIVE_CLASSES : [];
+  var upcoming = dbLive.length > 0 ? dbLive.map(function(c) {
+    return {
+      time: c.time || '11:00 AM',
+      date: c.date || 'Today',
+      sub: c.sub || 'Physics',
+      topic: c.topic || 'General Lecture',
+      fac: c.fac || 'Dr. Priya Mehta',
+      n: c.online || 120
+    };
+  }) : defaultUpcoming;
+
   var recorded = [
     { title:"Electrostatics - Coulomb's Law", sub:'Physics',  dur:'58 min', views:312 },
     { title:'Organic Chemistry - Reactions',  sub:'Chemistry',dur:'72 min', views:289 },
@@ -1358,7 +1371,7 @@ PAGES['student_live'] = function() {
   // Immersive live class card
   var liveBox = '<div class="enhanced-card border-glow" style="margin-bottom:20px;padding:0;overflow:hidden">'
     + '<div style="position:relative;aspect-ratio:21/9;background:linear-gradient(135deg,rgba(10,12,28,.95),rgba(20,22,50,.95),rgba(108,71,255,.1));display:flex;align-items:center;justify-content:center;min-height:220px">'
-    + '<div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:8px"><span class="live-badge" style="font-size:12px;padding:5px 14px"><div class="live-dot"></div>LIVE NOW</span><span style="background:rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;color:rgba(255,255,255,.8)">👥 142 watching</span></div>'
+    + '<div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:8px"><span class="live-badge" style="font-size:12px;padding:5px 14px"><div class="live-dot"></div>LIVE NOW</span><span style="background:rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;color:rgba(255,255,255,.8)">👥 147 watching</span></div>'
     + '<div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:6px"><span style="background:rgba(255,45,107,.15);border:1px solid rgba(255,45,107,.3);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;color:#ff2d6b">🔴 REC</span><span style="background:rgba(255,255,255,.1);backdrop-filter:blur(8px);padding:3px 10px;border-radius:20px;font-size:11px;color:rgba(255,255,255,.7)">🖥️ Screen Share</span></div>'
     + '<div style="text-align:center;padding:0 20px"><div style="font-size:48px;margin-bottom:10px">⚛️</div>'
     + '<div style="font-family:Syne,sans-serif;font-size:20px;font-weight:800;margin-bottom:4px">Physics — Electrostatics: Gauss Law</div>'
@@ -1370,15 +1383,15 @@ PAGES['student_live'] = function() {
     + '</div></div>'
     + '<div style="position:absolute;bottom:14px;left:14px;display:flex;gap:6px">'
     + [{n:'Dr. Priya',c:'#6c47ff'},{n:'Sneha',c:'#4ade80'},{n:'Arjun',c:'#ff6b35'}].map(function(p){return '<div style="width:30px;height:30px;border-radius:50%;background:'+p.c+';display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;border:2px solid rgba(10,12,28,.8)">'+p.n[0]+'</div>';}).join('')
-    + '<div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted);border:2px solid rgba(10,12,28,.8)">+139</div></div>'
+    + '<div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--muted);border:2px solid rgba(10,12,28,.8)">+144</div></div>'
     + '</div></div>';
 
   var upHtml = upcoming.map(function(c) {
-    return '<div class="sched-item" onclick="toast(\'Reminder set!\',\'🔔\')">'  
+    return '<div class="sched-item" onclick="toast(\'Reminder set for ' + c.topic + '!\',\'🔔\')">'  
       + '<div class="sched-time"><div class="st">' + c.time + '</div><div class="sd">' + c.date + '</div></div>'
       + '<div class="sched-body"><div class="sched-title">' + c.sub + ': ' + c.topic + '</div>'
       + '<div class="sched-meta">' + c.fac + ' • ' + c.n + ' enrolled</div></div>'
-      + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Reminder set!\',\'🔔\')">🔔</button></div>';
+      + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Reminder set for ' + c.topic + '!\',\'🔔\')">🔔</button></div>';
   }).join('');
 
   var recHtml = '<div class="tbl-wrap"><table><thead><tr><th>Lecture</th><th>Subject</th><th>Duration</th><th>Views</th><th>Action</th></tr></thead><tbody>'
@@ -2715,12 +2728,24 @@ PAGES['faculty_content'] = function() {
 };
 
 PAGES['faculty_live'] = function() {
-  var upcoming = [
-    { t:'11:00',batch:'JEE Adv B',topic:'Magnetic Effects',  n:98 },
-    { t:'02:00',batch:'NEET Batch',topic:'Cell Biology',       n:72 },
-    { t:'09:00',batch:'JEE Adv A', topic:'Modern Physics',    n:142,tomorrow:true },
-    { t:'11:00',batch:'Crash',     topic:'Revision Mechanics', n:56, tomorrow:true },
+  var defaultUpcoming = [
+    { t:'11:00 AM', batch:'JEE Adv B', topic:'Magnetic Effects',  n:98 },
+    { t:'02:00 PM', batch:'NEET Batch', topic:'Cell Biology',     n:72 },
+    { t:'09:00 AM', batch:'JEE Adv A',  topic:'Modern Physics',   n:142, tomorrow:true },
+    { t:'11:00 AM', batch:'Crash',      topic:'Revision Mechanics',n:56, tomorrow:true },
   ];
+
+  var dbLive = (window.LMS_LIVE_CLASSES && window.LMS_LIVE_CLASSES.length > 0) ? window.LMS_LIVE_CLASSES : [];
+  var upcoming = dbLive.length > 0 ? dbLive.map(function(c) {
+    return {
+      t: c.time || '11:00 AM',
+      date: c.date || 'Today',
+      batch: c.batch || 'JEE Advanced Batch A',
+      topic: c.topic || 'Physics Lecture',
+      n: c.online || 147,
+      tomorrow: (c.date && c.date.toLowerCase().indexOf('tmrw') >= 0) || (c.date && c.date.toLowerCase().indexOf('tomorrow') >= 0)
+    };
+  }) : defaultUpcoming;
 
   var s = window.liveClassState;
   var unanswered = s.questions.filter(function(q){return !q.answered;}).length;
