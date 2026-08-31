@@ -206,6 +206,24 @@ const PaymentSchema = new mongoose.Schema({
   status: { type: String, default: 'success' }, type: String, notes: String
 }, { timestamps: true, collection: 'payments' });
 
+// Indexes for descending date ordering (newest first)
+StudentSchema.index({ createdAt: -1 });
+TeacherSchema.index({ createdAt: -1 });
+AdminSchema.index({ createdAt: -1 });
+CourseSchema.index({ createdAt: -1 });
+VideoSchema.index({ createdAt: -1 });
+LiveClassSchema.index({ createdAt: -1 });
+ChatMessageSchema.index({ createdAt: -1 });
+DoubtSchema.index({ createdAt: -1 });
+MaterialSchema.index({ createdAt: -1 });
+AnnouncementSchema.index({ createdAt: -1 });
+FeeSchema.index({ createdAt: -1 });
+AttendanceSchema.index({ createdAt: -1 });
+TestSchema.index({ createdAt: -1 });
+ApprovalSchema.index({ createdAt: -1 });
+NotificationSchema.index({ createdAt: -1 });
+PaymentSchema.index({ createdAt: -1 });
+
 const Student      = mongoose.model('Student', StudentSchema);
 const Teacher      = mongoose.model('Teacher', TeacherSchema);
 const Admin        = mongoose.model('Admin', AdminSchema);
