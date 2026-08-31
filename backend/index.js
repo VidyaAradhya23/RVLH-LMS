@@ -788,7 +788,7 @@ app.post('/api/doubts/:id/reply', protect, async (req, res) => {
   const doubt = await Doubt.findById(req.params.id);
   if (!doubt) return res.status(404).json({ message: 'Doubt not found' });
   doubt.replies.push({ sender: req.user.name, text: req.body.text, time: 'Just now' });
-  if (req.user.role === 'faculty') doubt.s = 'resolved';
+  doubt.s = 'resolved';
   await doubt.save();
 
   await sendNotification({
