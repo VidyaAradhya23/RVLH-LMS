@@ -2023,23 +2023,24 @@ PAGES['student_doubts'] = function() {
     + '<div id="doubt-preview-text" style="font-size:12px;color:var(--text);line-height:1.5;white-space:pre-wrap;word-break:break-word"></div>'
     + '</div></div></div>'
 
-    // Image attachment area
-    + '<div id="doubt-attachment-area" style="display:none;margin-bottom:10px;padding:14px;border:2px dashed rgba(108,71,255,.3);border-radius:12px;text-align:center;background:rgba(108,71,255,.03)">'
-    + '<div style="font-size:32px;margin-bottom:8px">📸</div>'
-    + '<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Screenshot/Image attached</div>'
-    + '<button class="btn btn-sm btn-red" onclick="document.getElementById(\'doubt-attachment-area\').style.display=\'none\';toast(\'Attachment removed\',\'🗑️\')">🗑️ Remove</button></div>'
-    
-    // Voice note area
-    + '<div id="doubt-voice-area" style="display:none;margin-bottom:10px;padding:14px;border:1px solid rgba(74,222,128,.25);border-radius:12px;background:rgba(74,222,128,.04)">'
-    + '<div style="display:flex;align-items:center;gap:10px"><span style="font-size:24px">🎤</span>'
-    + '<div style="flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden"><div style="height:100%;width:65%;background:linear-gradient(90deg,#4ade80,#00d4c8);border-radius:3px"></div></div>'
-    + '<span style="font-size:12px;color:var(--muted)">0:08</span>'
-    + '<button class="btn btn-sm btn-red" onclick="document.getElementById(\'doubt-voice-area\').style.display=\'none\';toast(\'Voice note removed\',\'🗑️\')">🗑️</button></div></div>'
+    // Hidden real image file picker
+    + '<input type="file" id="doubt-image-input" accept="image/*,.png,.jpg,.jpeg,.webp,.gif,.pdf" style="display:none" onchange="window.handleDoubtImageSelected(event)">'
+
+    // Image attachment area with real file preview
+    + '<div id="doubt-attachment-area" style="display:none;margin-bottom:12px;padding:12px 16px;border:1.5px solid rgba(108,71,255,.4);border-radius:12px;background:rgba(108,71,255,.05);align-items:center;justify-content:space-between">'
+    + '<div style="display:flex;align-items:center;gap:12px">'
+    + '<img id="doubt-img-thumb" style="width:44px;height:44px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,.1);display:none">'
+    + '<div id="doubt-img-placeholder" style="width:44px;height:44px;border-radius:8px;background:rgba(108,71,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px">📸</div>'
+    + '<div style="text-align:left">'
+    + '<div id="doubt-img-filename" style="font-weight:700;font-size:13px;color:var(--text);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">image.png</div>'
+    + '<div id="doubt-img-filesize" style="font-size:11px;color:#4ade80;margin-top:2px">0 KB</div>'
+    + '</div></div>'
+    + '<button type="button" class="btn btn-sm btn-red" style="padding:4px 8px;font-size:11px" onclick="window.removeDoubtAttachedImage()">✕ Remove</button>'
+    + '</div>'
     
     + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
     + '<button class="btn btn-solid" onclick="submitDoubt()">🚀 Submit Doubt</button>'
-    + '<button class="btn btn-purple" onclick="document.getElementById(\'doubt-attachment-area\').style.display=\'block\';toast(\'📸 Take a screenshot or upload an image\',\'📸\')">📸 Attach Image</button>'
-    + '<button class="btn btn-teal" onclick="document.getElementById(\'doubt-voice-area\').style.display=\'flex\';toast(\'🎤 Recording voice note...\',\'🎤\')">🎤 Voice Note</button>'
+    + '<button type="button" class="btn btn-purple" onclick="document.getElementById(\'doubt-image-input\').click()">📸 Attach Image</button>'
     + '<button class="btn btn-yellow" onclick="askAIDoubt()" style="margin-left:auto">🤖 Ask AI Instantly</button>'
     + '</div></div>';
 
@@ -9339,6 +9340,53 @@ function askAIDoubt() {
     '<button class="btn btn-solid" onclick="document.getElementById(\'ai-doubt-answer\').style.display=\'block\';toast(\'AI is thinking...\',\'🤖\')">🚀 Get Answer</button>');
 }
 
+// ── Doubt Image Attachment Handlers ──
+window.handleDoubtImageSelected = function(event) {
+  var file = event.target.files && event.target.files[0];
+  if (!file) return;
+  
+  window._selectedDoubtImage = file;
+  var area = document.getElementById('doubt-attachment-area');
+  var nameEl = document.getElementById('doubt-img-filename');
+  var sizeEl = document.getElementById('doubt-img-filesize');
+  var thumbEl = document.getElementById('doubt-img-thumb');
+  var placeholderEl = document.getElementById('doubt-img-placeholder');
+
+  if (nameEl) nameEl.textContent = file.name;
+  if (sizeEl) {
+    sizeEl.textContent = file.size > 1048576 
+      ? (file.size / 1048576).toFixed(1) + ' MB'
+      : (file.size / 1024).toFixed(0) + ' KB';
+  }
+
+  if (file.type.startsWith('image/')) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      if (thumbEl) {
+        thumbEl.src = e.target.result;
+        thumbEl.style.display = 'block';
+      }
+      if (placeholderEl) placeholderEl.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  } else {
+    if (thumbEl) thumbEl.style.display = 'none';
+    if (placeholderEl) placeholderEl.style.display = 'flex';
+  }
+
+  if (area) area.style.display = 'flex';
+  toast('Image "' + file.name + '" attached! 📸', '📸');
+};
+
+window.removeDoubtAttachedImage = function() {
+  window._selectedDoubtImage = null;
+  var input = document.getElementById('doubt-image-input');
+  if (input) input.value = '';
+  var area = document.getElementById('doubt-attachment-area');
+  if (area) area.style.display = 'none';
+  toast('Attachment removed', '🗑️');
+};
+
 // ── Submit Student Doubt ──
 async function submitDoubt() {
   var qEl = document.getElementById('doubt-question');
@@ -9360,6 +9408,7 @@ async function submitDoubt() {
     });
     toast('Doubt submitted successfully!', '✅');
     qEl.value = '';
+    window.removeDoubtAttachedImage();
     var previewBox = document.getElementById('doubt-live-preview');
     if (previewBox) previewBox.style.display = 'none';
     
