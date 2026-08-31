@@ -22,15 +22,15 @@ async function api(endpoint, opts = {}) {
 
 async function syncLMSData() {
   try {
-    window.LMS_COURSES = await api('/api/courses');
-    window.LMS_VIDEOS = await api('/api/videos');
-    window.LMS_LIVE_CLASSES = await api('/api/live');
-    window.LMS_DOUBTS = await api('/api/doubts');
-    window.LMS_MATERIALS = await api('/api/materials');
-    window.LMS_ANNOUNCEMENTS = await api('/api/announcements');
-    window.LMS_FEES = await api('/api/fees');
-    window.LMS_ATTENDANCE = await api('/api/attendance');
-    window.LMS_LEADERBOARD = await api('/api/leaderboard');
+    try { window.LMS_COURSES = await api('/api/courses') || []; } catch(e) { window.LMS_COURSES = window.LMS_COURSES || []; }
+    try { window.LMS_VIDEOS = await api('/api/videos') || []; } catch(e) { window.LMS_VIDEOS = window.LMS_VIDEOS || []; }
+    try { window.LMS_LIVE_CLASSES = await api('/api/live') || []; } catch(e) { window.LMS_LIVE_CLASSES = window.LMS_LIVE_CLASSES || []; }
+    try { window.LMS_DOUBTS = await api('/api/doubts') || []; } catch(e) { window.LMS_DOUBTS = window.LMS_DOUBTS || []; }
+    try { window.LMS_MATERIALS = await api('/api/materials') || []; } catch(e) { window.LMS_MATERIALS = window.LMS_MATERIALS || []; }
+    try { window.LMS_ANNOUNCEMENTS = await api('/api/announcements') || []; } catch(e) { window.LMS_ANNOUNCEMENTS = window.LMS_ANNOUNCEMENTS || []; }
+    try { window.LMS_FEES = await api('/api/fees') || []; } catch(e) { window.LMS_FEES = window.LMS_FEES || []; }
+    try { window.LMS_ATTENDANCE = await api('/api/attendance') || []; } catch(e) { window.LMS_ATTENDANCE = window.LMS_ATTENDANCE || []; }
+    try { window.LMS_LEADERBOARD = await api('/api/leaderboard') || []; } catch(e) { window.LMS_LEADERBOARD = window.LMS_LEADERBOARD || []; }
     
     // Fetch tests from MongoDB
     try {
