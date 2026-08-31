@@ -418,7 +418,7 @@ window.doSignup = async function() {
   var role = window.currentSignupRole || 'student';
   var batch = batchEl ? batchEl.value : 'JEE Advanced (Main + KCET Decoded)';
   var subject = subjectEl ? subjectEl.value : 'Physics';
-  var campus = campusEl ? campusEl.value : 'RV Jayanagar Campus';
+  var campus = campusEl ? campusEl.value : 'RVPU North';
 
   if (!name) { showSignupErr('Please enter your full name'); return; }
   if (!email) { showSignupErr('Please enter a valid email address'); return; }
@@ -3896,7 +3896,7 @@ PAGES['admin_users'] = function() {
     + '</select>'
     + '<select class="inp-field" id="st-filter-campus" style="width:160px" onchange="filterStudentTable()">'
     + '<option value="">All Campuses</option>'
-    + '<option>RV Jayanagar</option><option>RV Rajajinagar</option><option>RV Electronic City</option>'
+    + '<option>RVPU North</option><option>RVPU South</option><option>RVPU Ecity</option><option>RVPU Harohgalli</option><option>RVPU Mysore</option><option>NMKRV PU</option><option>SSMRV PU</option>'
     + '</select>'
     + '<button class="btn btn-red" onclick="openAddStudentModal()">➕ Add Student</button></div>'
     + '<div class="tbl-wrap"><table id="st-table"><thead><tr><th>Student</th><th>Roll No</th><th>Mail ID</th><th>Course</th><th>Campus</th><th>Fee</th><th>Status</th><th>Actions</th></tr></thead><tbody>'
@@ -4187,7 +4187,7 @@ window.openStudentEditModal = function(idx) {
     + '</select></div>'
     + '<div class="inp-row">'
     + '<div class="inp-group"><label>Campus</label><select class="inp-field" id="se-campus">'
-    + ['RV Jayanagar','RV Rajajinagar','RV Electronic City'].map(function(c) { return '<option' + (s.campus===c?' selected':'') + '>' + c + '</option>'; }).join('')
+    + ['RVPU North','RVPU South','RVPU Ecity','RVPU Harohgalli','RVPU Mysore','NMKRV PU','SSMRV PU'].map(function(c) { return '<option' + (s.campus===c?' selected':'') + '>' + c + '</option>'; }).join('')
     + '</select></div>'
     + '<div class="inp-group"><label>Fee Status</label><select class="inp-field" id="se-fee"><option' + (s.fee==='Paid'?' selected':'') + '>Paid</option><option' + (s.fee==='Due'?' selected':'') + '>Due</option><option' + (s.fee==='Overdue'?' selected':'') + '>Overdue</option></select></div>'
     + '</div>';
@@ -4248,7 +4248,7 @@ window.openAddStudentModal = function() {
     + '<option>JEE Advanced (Main + KCET Decoded)</option><option>JEE (Main + KCET Decoded)</option><option>NEET UG Decoded</option><option>Commerce Decoded Programme</option>'
     + '</select></div>'
     + '<div class="inp-row">'
-    + '<div class="inp-group"><label>Campus</label><select class="inp-field" id="add-st-campus"><option>RV Jayanagar</option><option>RV Rajajinagar</option><option>RV Electronic City</option></select></div>'
+    + '<div class="inp-group"><label>Campus</label><select class="inp-field" id="add-st-campus"><option>RVPU North</option><option>RVPU South</option><option>RVPU Ecity</option><option>RVPU Harohgalli</option><option>RVPU Mysore</option><option>NMKRV PU</option><option>SSMRV PU</option></select></div>'
     + '<div class="inp-group"><label>Target Year</label><select class="inp-field" id="add-st-year"><option>2025</option><option>2026</option><option>2027</option></select></div>'
     + '</div>'
     + '<div style="border-top:1px solid var(--border);padding-top:13px;margin-top:4px">'
@@ -4332,7 +4332,7 @@ window.openFacultyEditModal = function(idx) {
     + ['JEE Advanced (Main + KCET Decoded)','JEE (Main + KCET Decoded)','NEET UG Decoded','Commerce Decoded Programme'].map(function(c){ return '<option' + (f.course===c?' selected':'') + '>' + c + '</option>'; }).join('')
     + '</select></div>'
     + '<div class="inp-group"><label>Campus</label><select class="inp-field" id="fe-campus">'
-    + ['RV Jayanagar','RV Rajajinagar','RV Electronic City'].map(function(c){ return '<option' + (f.campus===c?' selected':'') + '>' + c + '</option>'; }).join('')
+    + ['RVPU North','RVPU South','RVPU Ecity','RVPU Harohgalli','RVPU Mysore','NMKRV PU','SSMRV PU'].map(function(c){ return '<option' + (f.campus===c?' selected':'') + '>' + c + '</option>'; }).join('')
     + '</select></div>';
   openDetail('✏️ Edit Faculty — ' + f.n, body,
     '<button class="btn btn-solid" onclick="saveFacultyEdit(' + idx + ')">💾 Save Changes</button>'
@@ -4388,7 +4388,7 @@ window.openAddFacultyModal = function() {
     + '</div>'
     + '<div class="inp-group"><label>Subject</label><select class="inp-field" id="add-fac-sub"><option>Physics</option><option>Chemistry</option><option>Mathematics</option><option>Biology</option><option>Commerce</option><option>Accountancy</option></select></div>'
     + '<div class="inp-group"><label>Course</label><select class="inp-field" id="add-fac-course"><option>JEE Advanced (Main + KCET Decoded)</option><option>JEE (Main + KCET Decoded)</option><option>NEET UG Decoded</option><option>Commerce Decoded Programme</option></select></div>'
-    + '<div class="inp-group"><label>Campus</label><select class="inp-field" id="add-fac-campus"><option>RV Jayanagar</option><option>RV Rajajinagar</option><option>RV Electronic City</option></select></div>'
+    + '<div class="inp-group"><label>Campus</label><select class="inp-field" id="add-fac-campus"><option>RVPU North</option><option>RVPU South</option><option>RVPU Ecity</option><option>RVPU Harohgalli</option><option>RVPU Mysore</option><option>NMKRV PU</option><option>SSMRV PU</option></select></div>'
     + '<div style="border-top:1px solid var(--border);padding-top:13px;margin-top:4px">'
     + '<div style="font-size:12px;font-weight:700;color:var(--faculty);margin-bottom:10px;display:flex;align-items:center;gap:6px">🔑 Create Login Password</div>'
     + '<div class="inp-row">'
