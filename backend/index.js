@@ -105,6 +105,17 @@ const LiveClassSchema = new mongoose.Schema({
   status: { type: String, default: 'upcoming' }, videoUrl: String
 }, { timestamps: true, collection: 'liveclasses' });
 
+const ChatMessageSchema = new mongoose.Schema({
+  liveClassId: { type: mongoose.Schema.Types.ObjectId, ref: 'LiveClass', required: true },
+  sender: { type: String, required: true },
+  senderRole: { type: String, default: 'student' },
+  message: { type: String, required: true },
+  color: { type: String, default: '#4ade80' },
+  pinned: { type: Boolean, default: false },
+  reactions: { type: Array, default: [] }
+}, { timestamps: true, collection: 'chatmessages' });
+
+
 const DoubtSchema = new mongoose.Schema({
   q: String, s: { type: String, default: 'pending' }, t: String,
   sub: String, student: String,
@@ -207,6 +218,7 @@ const Test         = mongoose.model('Test', TestSchema);
 const Approval     = mongoose.model('Approval', ApprovalSchema);
 const Notification = mongoose.model('Notification', NotificationSchema);
 const Payment      = mongoose.model('Payment', PaymentSchema);
+const ChatMessage  = mongoose.model('ChatMessage', ChatMessageSchema);
 
 // ═══════════════════════════════════════════════════
 // REAL-TIME EVENT STREAMING (SSE & BROADCAST)
@@ -863,6 +875,72 @@ app.delete('/api/live/:id', protect, async (req, res) => {
   broadcastRealtimeEvent('LIVE_CLASS_DELETED', { id: req.params.id });
   res.json({ message: 'Live class removed' });
 });
+
+// ─── LIVE CLASS CHAT API ───
+app.get('/api/live/:id/chat', protect, async (req, res) => {
+  try {
+    const messages = await ChatMessage.find({ liveClassId: req.params.id }).sort({ createdAt: 1 }).lean();
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/live/:id/chat', protect, async (req, res) => {
+  try {
+    const msg = await ChatMessage.create({
+      liveClassId: req.params.id,
+      sender: req.user.name,
+      senderRole: req.user.role,
+      message: req.body.message,
+      color: req.body.color || '#4ade80',
+      pinned: false,
+      reactions: []
+    });
+    broadcastRealtimeEvent('CHAT_MESSAGE', {
+      _id: msg._id,
+      liveClassId: req.params.id,
+      sender: msg.sender,
+      senderRole: msg.senderRole,
+      message: msg.message,
+      color: msg.color,
+      pinned: msg.pinned,
+      reactions: msg.reactions,
+      createdAt: msg.createdAt
+    });
+    res.status(201).json(msg);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.post('/api/live/:id/qa', protect, async (req, res) => {
+  try {
+    const msg = await ChatMessage.create({
+      liveClassId: req.params.id,
+      sender: req.user.name,
+      senderRole: req.user.role,
+      message: req.body.question,
+      color: req.body.color || '#4ade80',
+      pinned: false,
+      reactions: [],
+      type: 'question'
+    });
+    broadcastRealtimeEvent('QA_MESSAGE', {
+      _id: msg._id,
+      liveClassId: req.params.id,
+      sender: msg.sender,
+      senderRole: msg.senderRole,
+      message: msg.message,
+      color: msg.color,
+      createdAt: msg.createdAt
+    });
+    res.status(201).json(msg);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 // ═══════════════════════════════════════════════════
 // ANNOUNCEMENTS API (WITH REAL-TIME BROADCASTS)

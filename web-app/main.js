@@ -489,7 +489,8 @@ function setupRealtimeEvents() {
       'TEST_CREATED', 'TEST_UPDATED', 'TEST_DELETED', 'TEST_ATTEMPTED', 'QUIZ_SUBMITTED',
       'MATERIAL_UPLOADED', 'MATERIAL_UPDATED', 'MATERIAL_DELETED',
       'VIDEO_CREATED', 'VIDEO_UPDATED', 'VIDEO_DELETED',
-      'LIVE_CLASS_UPDATED', 'ANNOUNCEMENT_CREATED', 'PAYMENT_RECEIVED'
+      'LIVE_CLASS_UPDATED', 'LIVE_CLASS_STARTED', 'LIVE_CLASS_ENDED', 'LIVE_CLASS_DELETED',
+      'ANNOUNCEMENT_CREATED', 'PAYMENT_RECEIVED'
     ];
 
     eventTypes.forEach(function(evName) {
@@ -498,6 +499,65 @@ function setupRealtimeEvents() {
         updateNotificationBadge();
         if (G.page) loadPage(G.page);
       });
+    });
+
+    // ─── Real-time CHAT_MESSAGE listener ───
+    _realtimeSource.addEventListener('CHAT_MESSAGE', function(e) {
+      try {
+        var msg = JSON.parse(e.data);
+        var s = window.liveClassState;
+        if (!s || !s.activeClassId) return;
+        // Only process messages for the currently open live class
+        if (msg.liveClassId !== s.activeClassId) return;
+        // Avoid duplicates (the sender already added it optimistically)
+        var myName = (G && G.user) ? G.user.name : '';
+        if (msg.sender === myName) return;
+        // Push the incoming message to local state
+        s.chatMessages.push({
+          id: msg._id || Date.now(),
+          n: msg.sender,
+          m: msg.message,
+          t: 'Just now',
+          c: msg.color || '#4ade80',
+          reactions: msg.reactions || [],
+          pinned: msg.pinned || false,
+          isFaculty: msg.senderRole === 'faculty'
+        });
+        // Re-render all visible chat panels
+        ['stu', 'fac', 'cmo'].forEach(function(ctx) {
+          if (document.getElementById(ctx + '-panel-chat')) {
+            window.lcRenderChat(ctx);
+          }
+        });
+      } catch(err) { console.warn('CHAT_MESSAGE parse error:', err); }
+    });
+
+    // ─── Real-time QA_MESSAGE listener ───
+    _realtimeSource.addEventListener('QA_MESSAGE', function(e) {
+      try {
+        var msg = JSON.parse(e.data);
+        var s = window.liveClassState;
+        if (!s || !s.activeClassId) return;
+        if (msg.liveClassId !== s.activeClassId) return;
+        var myName = (G && G.user) ? G.user.name : '';
+        if (msg.sender === myName) return;
+        s.questions.push({
+          id: msg._id || Date.now(),
+          n: msg.sender,
+          c: msg.color || '#4ade80',
+          q: msg.message,
+          t: 'Just now',
+          votes: 0,
+          myVote: false,
+          answered: false,
+          answer: ''
+        });
+        ['stu', 'fac', 'cmo'].forEach(function(ctx) {
+          if (document.getElementById(ctx + '-panel-qa')) {
+            window.lcRenderQA(ctx);
+          }
+        });
+      } catch(err) { console.warn('QA_MESSAGE parse error:', err); }
     });
 
     _realtimeSource.onerror = function() {
@@ -1444,19 +1504,10 @@ PAGES['student_videos'] = function() {
 
 // ──────────────── LIVE CLASS SHARED STATE ────────────────
 window.liveClassState = window.liveClassState || {
-
-  chatMessages: [
-    {id:1,n:'Sneha P.',m:'Great explanation sir! The Gauss Law derivation is very clear 🙌',t:'3m ago',c:'#6c47ff',reactions:[{e:'❤️',count:3,mine:false},{e:'👍',count:5,mine:false}],pinned:false},
-    {id:2,n:'Rohan G.',m:'Can you repeat the formula for electric flux through a closed surface?',t:'2m ago',c:'#ff6b35',reactions:[],pinned:false},
-    {id:3,n:'Ananya S.',m:'Thank you! Very clear explanation 👏',t:'1m ago',c:'#4ade80',reactions:[{e:'🔥',count:2,mine:false}],pinned:false},
-    {id:4,n:'Dr. Priya (Faculty)',m:'Check slide 14 for the full derivation. Remember: ∮E·dA = Q/ε₀',t:'45s ago',c:'#00d4c8',reactions:[{e:'👍',count:8,mine:false}],pinned:true,isFaculty:true}
-  ],
-  pinnedMsg: 'Check slide 14 for the full derivation. Remember: ∮E·dA = Q/ε₀',
-  questions: [
-    {id:1,n:'Rohan G.',c:'#ff6b35',q:'Why does the electric field inside a conductor become zero in electrostatic equilibrium?',t:'5m ago',votes:7,myVote:false,answered:true,answer:'Great question! In electrostatic equilibrium, free charges redistribute until the net field inside is zero. Any residual field would cause charge movement, contradicting the equilibrium condition.',answeredBy:'Dr. Priya Mehta'},
-    {id:2,n:'Meera K.',c:'#a855f7',q:'How do we apply Gauss Law when charge distribution is not symmetric?',t:'3m ago',votes:12,myVote:false,answered:false,answer:''},
-    {id:3,n:'Arjun S.',c:'#fbbf24',q:'What is the significance of choosing a Gaussian surface?',t:'1m ago',votes:4,myVote:false,answered:false,answer:''}
-  ],
+  activeClassId: null,
+  chatMessages: [],
+  pinnedMsg: '',
+  questions: [],
   activePoll: {
     active: true,
     question: 'What is the electric field inside a uniformly charged solid sphere at distance r < R?',
@@ -1465,12 +1516,9 @@ window.liveClassState = window.liveClassState || {
     totalVotes: 29,
     myVote: -1
   },
-  raisedHands: [
-    {id:1, n:'Kiran Patel', c:'#ff6b35', since:'2m ago', called:false},
-    {id:2, n:'Sneha Roy', c:'#4ade80', since:'1m ago', called:false}
-  ],
+  raisedHands: [],
   studentHandRaised: false,
-  nextMsgId: 5
+  nextMsgId: 1
 };
 
 // ──────────────── STUDENT LIVE CLASS (ENHANCED) ────────────────
@@ -1478,17 +1526,6 @@ PAGES['student_live'] = function() {
   var dbLive = (window.LMS_LIVE_CLASSES && window.LMS_LIVE_CLASSES.length > 0) ? window.LMS_LIVE_CLASSES : [];
   var ongoing = dbLive.filter(function(c){ return c.status === 'ongoing' || c.status === 'live'; });
   var activeClass = ongoing[0] || (dbLive.length > 0 ? dbLive[0] : null);
-
-  var upcoming = dbLive.map(function(c) {
-    return {
-      time: c.time || '11:00 AM',
-      date: c.date || 'Today',
-      sub: c.sub || 'Physics',
-      topic: c.topic || 'General Lecture',
-      fac: c.fac || 'Dr. Priya Mehta',
-      n: c.online || 120
-    };
-  });
 
   var recorded = (window.LMS_VIDEOS || []).slice(0, 6).map(function(v) {
     return {
@@ -1519,6 +1556,7 @@ PAGES['student_live'] = function() {
   if (activeClass) {
     var isLiveNow = ongoing.length > 0 || activeClass.status === 'live';
     var classTopicEscaped = (activeClass.topic || 'Live Session').replace(/'/g,"\\'");
+    var activeClassId = activeClass._id || '';
     liveBox = '<div class="enhanced-card border-glow" style="margin-bottom:20px;padding:0;overflow:hidden">'
       + '<div style="position:relative;aspect-ratio:21/9;background:linear-gradient(135deg,rgba(10,12,28,.95),rgba(20,22,50,.95),rgba(108,71,255,.1));display:flex;align-items:center;justify-content:center;min-height:220px">'
       + '<div style="position:absolute;top:14px;left:14px;display:flex;align-items:center;gap:8px">'
@@ -1530,7 +1568,7 @@ PAGES['student_live'] = function() {
       + '<div style="color:var(--muted);font-size:13px;margin-bottom:12px">' + (activeClass.fac || 'Faculty') + ' &nbsp;•&nbsp; ' + (activeClass.time ? (activeClass.date + ' at ' + activeClass.time) : 'Active Session') + '</div>'
       + badges
       + '<div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">'
-      + '<button class="btn btn-red glow-join" onclick="openLiveClassModal({ topic:\'' + classTopicEscaped + '\', fac:\'' + (activeClass.fac||'Faculty').replace(/'/g,"\\'") + '\', sub:\'' + (activeClass.sub||'Physics') + '\', batch:\'' + (activeClass.batch||'JEE Advanced').replace(/'/g,"\\'") + '\' })" style="font-weight:800;padding:12px 28px;font-size:15px;border-radius:12px">🎥 ' + (isLiveNow ? 'Join Live Class' : 'Enter Classroom') + '</button>'
+      + '<button class="btn btn-red glow-join" onclick="openLiveClassModal({ _id:\'' + activeClassId + '\', topic:\'' + classTopicEscaped + '\', fac:\'' + (activeClass.fac||'Faculty').replace(/'/g,"\\'") + '\', sub:\'' + (activeClass.sub||'Physics') + '\', batch:\'' + (activeClass.batch||'JEE Advanced').replace(/'/g,"\\'") + '\' })" style="font-weight:800;padding:12px 28px;font-size:15px;border-radius:12px">🎥 ' + (isLiveNow ? 'Join Live Class' : 'Enter Classroom') + '</button>'
       + raiseHandBtn
       + '</div></div>'
       + '</div></div>';
@@ -1544,12 +1582,13 @@ PAGES['student_live'] = function() {
   var upHtml = dbLive.length > 0 ? dbLive.map(function(c) {
     var isLive = c.status === 'live' || c.status === 'ongoing';
     var topicEscaped = (c.topic || 'Lecture').replace(/'/g,"\\'");
-    return '<div class="sched-item" style="cursor:pointer" onclick="openLiveClassModal({ topic:\'' + topicEscaped + '\', fac:\'' + (c.fac||'Faculty').replace(/'/g,"\\'") + '\', sub:\'' + (c.sub||'Physics') + '\', batch:\'' + (c.batch||'JEE Advanced').replace(/'/g,"\\'") + '\' })">'  
+    var cId = c._id || '';
+    return '<div class="sched-item" style="cursor:pointer" onclick="openLiveClassModal({ _id:\'' + cId + '\', topic:\'' + topicEscaped + '\', fac:\'' + (c.fac||'Faculty').replace(/'/g,"\\'") + '\', sub:\'' + (c.sub||'Physics') + '\', batch:\'' + (c.batch||'JEE Advanced').replace(/'/g,"\\'") + '\' })">'  
       + '<div class="sched-time"><div class="st" style="' + (isLive ? 'color:var(--admin);font-weight:900' : '') + '">' + (isLive ? 'LIVE' : (c.time || '12:00 PM')) + '</div><div class="sd">' + (c.date || 'Today') + '</div></div>'
       + '<div class="sched-body"><div class="sched-title">' + (c.sub ? c.sub + ': ' : '') + c.topic + '</div>'
       + '<div class="sched-meta">' + (c.fac || 'Faculty') + ' • ' + (c.online || 120) + ' enrolled <span class="badge ' + (isLive ? 'badge-red' : 'badge-purple') + '" style="margin-left:6px">' + (isLive ? '🔴 LIVE NOW' : 'Scheduled') + '</span></div></div>'
       + '<div style="display:flex;gap:6px">'
-      + '<button class="btn btn-sm ' + (isLive ? 'btn-red glow-join' : 'btn-solid') + '" onclick="event.stopPropagation();openLiveClassModal({ topic:\'' + topicEscaped + '\', fac:\'' + (c.fac||'Faculty').replace(/'/g,"\\'") + '\', sub:\'' + (c.sub||'Physics') + '\', batch:\'' + (c.batch||'JEE Advanced').replace(/'/g,"\\'") + '\' })">🎥 ' + (isLive ? 'Join Now' : 'Enter') + '</button>'
+      + '<button class="btn btn-sm ' + (isLive ? 'btn-red glow-join' : 'btn-solid') + '" onclick="event.stopPropagation();openLiveClassModal({ _id:\'' + cId + '\', topic:\'' + topicEscaped + '\', fac:\'' + (c.fac||'Faculty').replace(/'/g,"\\'") + '\', sub:\'' + (c.sub||'Physics') + '\', batch:\'' + (c.batch||'JEE Advanced').replace(/'/g,"\\'") + '\' })">🎥 ' + (isLive ? 'Join Now' : 'Enter') + '</button>'
       + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();toast(\'Reminder set for ' + topicEscaped + '!\',\'🔔\')">🔔</button></div></div>';
   }).join('') : '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No upcoming classes scheduled yet.</div>';
 
@@ -2982,6 +3021,29 @@ window.startFacultyLiveClass = async function(id, topic, batch, time) {
     } catch(e) {
       console.warn('Start live class API error:', e);
     }
+  }
+  // Store active class ID for chat
+  window.liveClassState.activeClassId = (id && id !== 'undefined') ? id : null;
+  if (window.liveClassState.activeClassId) {
+    // Load chat history from server for faculty
+    try {
+      var messages = await api('/api/live/' + id + '/chat');
+      if (messages && messages.length > 0) {
+        window.liveClassState.chatMessages = messages.map(function(m) {
+          return {
+            id: m._id || Date.now(),
+            n: m.sender + (m.senderRole === 'faculty' ? ' (Faculty)' : ''),
+            m: m.message,
+            t: new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+            c: m.color || '#4ade80',
+            reactions: m.reactions || [],
+            pinned: m.pinned || false,
+            isFaculty: m.senderRole === 'faculty'
+          };
+        });
+        window.liveClassState.nextMsgId = messages.length + 10;
+      }
+    } catch(e) { console.warn('Chat history load error:', e); }
   }
   openFacultyClassModal(topic || 'Live Session', batch || 'JEE Advanced Batch A', time || '12:00 PM', 'live', 'chat');
 };
@@ -8221,14 +8283,31 @@ window.lcRenderChat = function(ctx) {
   if (inp) { inp.style.cssText='flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--text);outline:none'; }
 };
 
-window.lcSendChat = function(ctx) {
+window.lcSendChat = async function(ctx) {
   var inp = document.getElementById(ctx+'-chat-input');
   if (!inp || !inp.value.trim()) return;
   var s = window.liveClassState;
   var name = (G && G.user ? G.user.name : 'You');
-  s.chatMessages.push({id: s.nextMsgId++, n: name, m: inp.value.trim(), t:'Just now', c:'#4ade80', reactions:[], pinned:false});
+  var isFaculty = (G && G.role === 'faculty');
+  var msgText = inp.value.trim();
+  var color = isFaculty ? '#00d4c8' : '#4ade80';
+
+  // Optimistic local update for instant feedback
+  s.chatMessages.push({id: s.nextMsgId++, n: name + (isFaculty ? ' (Faculty)' : ''), m: msgText, t:'Just now', c: color, reactions:[], pinned:false, isFaculty: isFaculty});
   inp.value = '';
   window.lcRenderChat(ctx);
+
+  // Persist to backend and broadcast via SSE to other clients
+  if (s.activeClassId) {
+    try {
+      await api('/api/live/' + s.activeClassId + '/chat', {
+        method: 'POST',
+        body: JSON.stringify({ message: msgText, color: color })
+      });
+    } catch(err) {
+      console.warn('Chat send error:', err);
+    }
+  }
 };
 
 window.lcToggleReaction = function(msgId, reactIdx, ctx) {
@@ -8288,15 +8367,30 @@ window.lcRenderQA = function(ctx) {
   if (inp) inp.style.cssText='flex:1;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:8px;padding:8px 11px;font-size:12px;color:var(--text);outline:none';
 };
 
-window.lcSubmitQuestion = function(ctx) {
+window.lcSubmitQuestion = async function(ctx) {
   var inp = document.getElementById(ctx+'-qa-input');
   if (!inp || !inp.value.trim()) return;
   var s = window.liveClassState;
   var name = (G && G.user ? G.user.name : 'You');
-  s.questions.push({id: Date.now(), n:name, c:'#4ade80', q:inp.value.trim(), t:'Just now', votes:0, myVote:false, answered:false, answer:''});
+  var qText = inp.value.trim();
+
+  // Optimistic local update
+  s.questions.push({id: Date.now(), n:name, c:'#4ade80', q:qText, t:'Just now', votes:0, myVote:false, answered:false, answer:''});
   inp.value = '';
   toast('Question submitted! ✅','🙋');
   window.lcRenderQA(ctx);
+
+  // Persist to backend and broadcast via SSE
+  if (s.activeClassId) {
+    try {
+      await api('/api/live/' + s.activeClassId + '/qa', {
+        method: 'POST',
+        body: JSON.stringify({ question: qText, color: '#4ade80' })
+      });
+    } catch(err) {
+      console.warn('QA submit error:', err);
+    }
+  }
 };
 
 window.lcUpvote = function(qId, ctx) {
@@ -8583,6 +8677,7 @@ function openLiveClassModal(classData) {
   var teacher = 'Dr. Priya Mehta';
   var sub = 'JEE Advanced Batch A';
   var vidSrc = sampleList[0].url;
+  var resolvedClassId = null;
 
   if (classData && typeof classData === 'object') {
     if (classData.topic || classData.title) title = (classData.sub ? classData.sub + ' — ' : '') + (classData.topic || classData.title);
@@ -8590,6 +8685,7 @@ function openLiveClassModal(classData) {
     if (classData.batch) sub = classData.batch;
     if (classData.videoUrl) vidSrc = classData.videoUrl;
     else vidSrc = sampleList[Math.floor(Math.random() * sampleList.length)].url;
+    if (classData._id) resolvedClassId = classData._id;
   } else if (typeof classData === 'string' && classData.startsWith('http')) {
     vidSrc = classData;
   } else if (typeof classData === 'string' && classData.length > 0) {
@@ -8597,6 +8693,48 @@ function openLiveClassModal(classData) {
     vidSrc = sampleList[Math.floor(Math.random() * sampleList.length)].url;
   } else {
     vidSrc = sampleList[Math.floor(Math.random() * sampleList.length)].url;
+  }
+
+  // Resolve the live class ID from LMS data if not passed directly
+  if (!resolvedClassId && window.LMS_LIVE_CLASSES && window.LMS_LIVE_CLASSES.length > 0) {
+    var topicToMatch = (classData && classData.topic) || '';
+    var matched = window.LMS_LIVE_CLASSES.find(function(c) {
+      return c.topic === topicToMatch || (c.sub && c.topic && title.indexOf(c.topic) >= 0);
+    });
+    if (matched) resolvedClassId = matched._id;
+    // Fallback: use the first live/ongoing class
+    if (!resolvedClassId) {
+      var ongoing = window.LMS_LIVE_CLASSES.filter(function(c) { return c.status === 'live' || c.status === 'ongoing'; });
+      if (ongoing.length > 0) resolvedClassId = ongoing[0]._id;
+      else if (window.LMS_LIVE_CLASSES.length > 0) resolvedClassId = window.LMS_LIVE_CLASSES[0]._id;
+    }
+  }
+
+  // Store active class ID and load chat history
+  window.liveClassState.activeClassId = resolvedClassId;
+  if (resolvedClassId) {
+    // Load chat history from server
+    api('/api/live/' + resolvedClassId + '/chat').then(function(messages) {
+      if (messages && messages.length > 0) {
+        window.liveClassState.chatMessages = messages.map(function(m) {
+          return {
+            id: m._id || Date.now(),
+            n: m.sender + (m.senderRole === 'faculty' ? ' (Faculty)' : ''),
+            m: m.message,
+            t: new Date(m.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+            c: m.color || '#4ade80',
+            reactions: m.reactions || [],
+            pinned: m.pinned || false,
+            isFaculty: m.senderRole === 'faculty'
+          };
+        });
+        window.liveClassState.nextMsgId = messages.length + 10;
+        // Re-render chat panels after loading history
+        ['stu', 'fac', 'cmo'].forEach(function(ctx) {
+          if (document.getElementById(ctx + '-panel-chat')) window.lcRenderChat(ctx);
+        });
+      }
+    }).catch(function(err) { console.warn('Chat history load error:', err); });
   }
 
   var sideTabs = [
