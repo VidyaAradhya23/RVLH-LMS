@@ -20,31 +20,52 @@ async function api(endpoint, opts = {}) {
   return data;
 }
 
+window.sortByDateDesc = function(list) {
+  if (!Array.isArray(list)) return [];
+  return list.slice().sort(function(a, b) {
+    var da = a.createdAt ? new Date(a.createdAt).getTime() : (a._id ? parseInt(String(a._id).substring(0, 8), 16) * 1000 : (a.id && !isNaN(a.id) ? Number(a.id) : 0));
+    var db = b.createdAt ? new Date(b.createdAt).getTime() : (b._id ? parseInt(String(b._id).substring(0, 8), 16) * 1000 : (b.id && !isNaN(b.id) ? Number(b.id) : 0));
+    return db - da;
+  });
+};
+
+window.formatDateDisplay = function(d) {
+  if (!d) return 'Just now';
+  if (typeof d === 'string' && (d.includes('ago') || d === 'Just now' || d === 'Today' || d === 'Yesterday')) return d;
+  try {
+    var dt = new Date(d);
+    if (isNaN(dt.getTime())) return String(d);
+    return dt.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch(e) {
+    return String(d);
+  }
+};
+
 async function syncLMSData() {
   try {
     // ⚡ Ultra-fast unified single request fetch
     try {
       const bundle = await api('/api/sync');
       if (bundle && bundle.courses) {
-        window.LMS_COURSES = bundle.courses || [];
-        window.LMS_VIDEOS = bundle.videos || [];
-        window.LMS_LIVE_CLASSES = bundle.liveClasses || [];
-        window.LMS_DOUBTS = bundle.doubts || [];
-        window.LMS_MATERIALS = bundle.materials || [];
-        window.LMS_ANNOUNCEMENTS = bundle.announcements || [];
-        window.LMS_FEES = bundle.fees || [];
-        window.LMS_ATTENDANCE = bundle.attendance || [];
+        window.LMS_COURSES = window.sortByDateDesc(bundle.courses || []);
+        window.LMS_VIDEOS = window.sortByDateDesc(bundle.videos || []);
+        window.LMS_LIVE_CLASSES = window.sortByDateDesc(bundle.liveClasses || []);
+        window.LMS_DOUBTS = window.sortByDateDesc(bundle.doubts || []);
+        window.LMS_MATERIALS = window.sortByDateDesc(bundle.materials || []);
+        window.LMS_ANNOUNCEMENTS = window.sortByDateDesc(bundle.announcements || []);
+        window.LMS_FEES = window.sortByDateDesc(bundle.fees || []);
+        window.LMS_ATTENDANCE = window.sortByDateDesc(bundle.attendance || []);
         window.LMS_LEADERBOARD = bundle.leaderboard || [];
-        window.LMS_TESTS = bundle.tests || [];
+        window.LMS_TESTS = window.sortByDateDesc(bundle.tests || []);
         window.mockTests = window.LMS_TESTS;
-        window.LMS_QUIZ_RESULTS = bundle.quizResults || [];
+        window.LMS_QUIZ_RESULTS = window.sortByDateDesc(bundle.quizResults || []);
         window.QUIZ_RESULTS = window.LMS_QUIZ_RESULTS;
-        window.LMS_APPROVALS = bundle.approvals || [];
-        window.LMS_PAYMENTS = bundle.payments || [];
+        window.LMS_APPROVALS = window.sortByDateDesc(bundle.approvals || []);
+        window.LMS_PAYMENTS = window.sortByDateDesc(bundle.payments || []);
         window.PAYMENT_HISTORY = window.LMS_PAYMENTS;
-        window.LMS_STUDENTS = bundle.students || [];
-        window.LMS_TEACHERS = bundle.teachers || [];
-        window.LMS_NOTIFICATIONS = bundle.notifications || [];
+        window.LMS_STUDENTS = window.sortByDateDesc(bundle.students || []);
+        window.LMS_TEACHERS = window.sortByDateDesc(bundle.teachers || []);
+        window.LMS_NOTIFICATIONS = window.sortByDateDesc(bundle.notifications || []);
       }
     } catch(err) {
       console.warn('Sync endpoint fallback to parallel fetch');
@@ -67,29 +88,30 @@ async function syncLMSData() {
         api('/api/notifications')
       ]);
       
-      window.LMS_COURSES = results[0].value || window.LMS_COURSES || [];
-      window.LMS_VIDEOS = results[1].value || window.LMS_VIDEOS || [];
-      window.LMS_LIVE_CLASSES = results[2].value || window.LMS_LIVE_CLASSES || [];
-      window.LMS_DOUBTS = results[3].value || window.LMS_DOUBTS || [];
-      window.LMS_MATERIALS = results[4].value || window.LMS_MATERIALS || [];
-      window.LMS_ANNOUNCEMENTS = results[5].value || window.LMS_ANNOUNCEMENTS || [];
-      window.LMS_FEES = results[6].value || window.LMS_FEES || [];
-      window.LMS_ATTENDANCE = results[7].value || window.LMS_ATTENDANCE || [];
+      window.LMS_COURSES = window.sortByDateDesc(results[0].value || window.LMS_COURSES || []);
+      window.LMS_VIDEOS = window.sortByDateDesc(results[1].value || window.LMS_VIDEOS || []);
+      window.LMS_LIVE_CLASSES = window.sortByDateDesc(results[2].value || window.LMS_LIVE_CLASSES || []);
+      window.LMS_DOUBTS = window.sortByDateDesc(results[3].value || window.LMS_DOUBTS || []);
+      window.LMS_MATERIALS = window.sortByDateDesc(results[4].value || window.LMS_MATERIALS || []);
+      window.LMS_ANNOUNCEMENTS = window.sortByDateDesc(results[5].value || window.LMS_ANNOUNCEMENTS || []);
+      window.LMS_FEES = window.sortByDateDesc(results[6].value || window.LMS_FEES || []);
+      window.LMS_ATTENDANCE = window.sortByDateDesc(results[7].value || window.LMS_ATTENDANCE || []);
       window.LMS_LEADERBOARD = results[8].value || window.LMS_LEADERBOARD || [];
-      window.LMS_TESTS = results[9].value || window.LMS_TESTS || [];
+      window.LMS_TESTS = window.sortByDateDesc(results[9].value || window.LMS_TESTS || []);
       window.mockTests = window.LMS_TESTS;
-      window.LMS_QUIZ_RESULTS = results[10].value || window.LMS_QUIZ_RESULTS || [];
+      window.LMS_QUIZ_RESULTS = window.sortByDateDesc(results[10].value || window.LMS_QUIZ_RESULTS || []);
       window.QUIZ_RESULTS = window.LMS_QUIZ_RESULTS;
-      window.LMS_APPROVALS = results[11].value || window.LMS_APPROVALS || [];
-      window.LMS_PAYMENTS = results[12].value || window.LMS_PAYMENTS || [];
+      window.LMS_APPROVALS = window.sortByDateDesc(results[11].value || window.LMS_APPROVALS || []);
+      window.LMS_PAYMENTS = window.sortByDateDesc(results[12].value || window.LMS_PAYMENTS || []);
       window.PAYMENT_HISTORY = window.LMS_PAYMENTS;
-      window.LMS_STUDENTS = results[13].value || window.LMS_STUDENTS || [];
-      window.LMS_TEACHERS = results[14].value || window.LMS_TEACHERS || [];
-      window.LMS_NOTIFICATIONS = results[15].value || window.LMS_NOTIFICATIONS || [];
+      window.LMS_STUDENTS = window.sortByDateDesc(results[13].value || window.LMS_STUDENTS || []);
+      window.LMS_TEACHERS = window.sortByDateDesc(results[14].value || window.LMS_TEACHERS || []);
+      window.LMS_NOTIFICATIONS = window.sortByDateDesc(results[15].value || window.LMS_NOTIFICATIONS || []);
     }
 
     // Sync backwards compatibility variables
     window.studentDoubts = window.LMS_DOUBTS;
+
 
     // Sync COURSE_DB for Admin Courses page
     window.COURSE_DB = (window.LMS_COURSES || []).map(function(c, i) {
