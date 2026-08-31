@@ -613,11 +613,13 @@ app.post('/api/courses', protect, async (req, res) => {
     subjects: subjects || ['Physics','Chemistry','Mathematics'],
     curriculum: curriculum || 'Standard curriculum', rating: 5.0, reviews: 1, pub: true
   });
+  broadcastRealtimeEvent('COURSE_CREATED', course);
   res.status(201).json(course);
 });
 app.post('/api/courses/:id/enroll', protect, async (req, res) => {
   const course = await Course.findByIdAndUpdate(req.params.id, { enrolled: true }, { new: true });
   if (!course) return res.status(404).json({ message: 'Course not found' });
+  broadcastRealtimeEvent('COURSE_UPDATED', course);
   res.json(course);
 });
 app.put('/api/courses/:id', protect, async (req, res) => {
@@ -629,20 +631,25 @@ app.put('/api/courses/:id', protect, async (req, res) => {
   if (req.body.maxSt !== undefined) update.maxSt = Number(req.body.maxSt);
   const course = await Course.findByIdAndUpdate(req.params.id, update, { new: true });
   if (!course) return res.status(404).json({ message: 'Course not found' });
+  broadcastRealtimeEvent('COURSE_UPDATED', course);
   res.json(course);
 });
 app.put('/api/courses/:id/status', protect, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
   const course = await Course.findById(req.params.id);
   if (!course) return res.status(404).json({ message: 'Course not found' });
-  course.pub = !course.pub; await course.save(); res.json(course);
+  course.pub = !course.pub; await course.save();
+  broadcastRealtimeEvent('COURSE_UPDATED', course);
+  res.json(course);
 });
 app.delete('/api/courses/:id', protect, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
   const course = await Course.findByIdAndDelete(req.params.id);
   if (!course) return res.status(404).json({ message: 'Course not found' });
+  broadcastRealtimeEvent('COURSE_DELETED', { id: req.params.id });
   res.json({ message: 'Course deleted successfully' });
 });
+
 
 // ═══════════════════════════════════════════════════
 // VIDEOS API
