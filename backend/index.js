@@ -537,25 +537,25 @@ app.put('/api/auth/profile', protect, async (req, res) => {
 app.get('/api/auth/users', protect, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
   const [students, teachers, admins] = await Promise.all([
-    Student.find().select('-password'),
-    Teacher.find().select('-password'),
-    Admin.find().select('-password')
+    Student.find().select('-password').sort({ createdAt: -1 }),
+    Teacher.find().select('-password').sort({ createdAt: -1 }),
+    Admin.find().select('-password').sort({ createdAt: -1 })
   ]);
   res.json([...students, ...teachers, ...admins]);
 });
 
 // Dedicated endpoints for specific role data
 app.get('/api/students', protect, async (req, res) => {
-  res.json(await Student.find().select('-password'));
+  res.json(await Student.find().select('-password').sort({ createdAt: -1 }));
 });
 
 app.get('/api/teachers', protect, async (req, res) => {
-  res.json(await Teacher.find().select('-password'));
+  res.json(await Teacher.find().select('-password').sort({ createdAt: -1 }));
 });
 
 app.get('/api/admins', protect, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
-  res.json(await Admin.find().select('-password'));
+  res.json(await Admin.find().select('-password').sort({ createdAt: -1 }));
 });
 
 app.put('/api/auth/users/:id', protect, async (req, res) => {
@@ -600,7 +600,7 @@ app.delete('/api/auth/users/:id', protect, async (req, res) => {
 // ═══════════════════════════════════════════════════
 // COURSES API
 // ═══════════════════════════════════════════════════
-app.get('/api/courses', protect, async (req, res) => res.json(await Course.find()));
+app.get('/api/courses', protect, async (req, res) => res.json(await Course.find().sort({ createdAt: -1 })));
 app.post('/api/courses', protect, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
   const { title, e, desc, fac, total, fee, cat, dur, subjects, curriculum } = req.body;
@@ -654,7 +654,7 @@ app.delete('/api/courses/:id', protect, async (req, res) => {
 // ═══════════════════════════════════════════════════
 // VIDEOS API
 // ═══════════════════════════════════════════════════
-app.get('/api/videos', protect, async (req, res) => res.json(await Video.find()));
+app.get('/api/videos', protect, async (req, res) => res.json(await Video.find().sort({ createdAt: -1 })));
 app.post('/api/videos', protect, async (req, res) => {
   if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
   const video = await Video.create({
@@ -797,7 +797,7 @@ app.put('/api/doubts/:id/resolve', protect, async (req, res) => {
 // ═══════════════════════════════════════════════════
 // MATERIALS & VIDEOS API (WITH REAL-TIME BROADCASTS)
 // ═══════════════════════════════════════════════════
-app.get('/api/materials', protect, async (req, res) => res.json(await Material.find()));
+app.get('/api/materials', protect, async (req, res) => res.json(await Material.find().sort({ createdAt: -1 })));
 app.post('/api/materials', protect, async (req, res) => {
   if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
   const mat = await Material.create({
@@ -1218,21 +1218,21 @@ app.get('/api/sync', protect, async (req, res) => {
       announcements, fees, attendance, leaderboard, tests,
       quizResults, approvals, payments, students, teachers, notifications
     ] = await Promise.all([
-      Course.find().lean(),
-      Video.find().lean(),
-      LiveClass.find().lean(),
+      Course.find().sort({ createdAt: -1 }).lean(),
+      Video.find().sort({ createdAt: -1 }).lean(),
+      LiveClass.find().sort({ createdAt: -1 }).lean(),
       Doubt.find().sort({ createdAt: -1 }).lean(),
-      Material.find().lean(),
+      Material.find().sort({ createdAt: -1 }).lean(),
       Announcement.find().sort({ createdAt: -1 }).lean(),
-      Fee.find().lean(),
+      Fee.find().sort({ createdAt: -1 }).lean(),
       Attendance.find().sort({ createdAt: -1 }).lean(),
       Leaderboard.find().sort({ rank: 1 }).lean(),
       Test.find().sort({ createdAt: -1 }).lean(),
       QuizResult.find().sort({ createdAt: -1 }).lean(),
       Approval.find().sort({ createdAt: -1 }).lean(),
       Payment.find().sort({ createdAt: -1 }).lean(),
-      Student.find().select('-password').lean(),
-      Teacher.find().select('-password').lean(),
+      Student.find().select('-password').sort({ createdAt: -1 }).lean(),
+      Teacher.find().select('-password').sort({ createdAt: -1 }).lean(),
       Notification.find(notifQuery).sort({ createdAt: -1 }).limit(30).lean()
     ]);
 
