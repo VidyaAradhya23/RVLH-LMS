@@ -2056,15 +2056,17 @@ PAGES['student_doubts'] = function() {
     + '<div id="doubt-list-container">'
     + doubts.map(function(d) {
       var col = subColors[d.sub] || 'var(--purple)';
-      return '<div class="enhanced-card doubt-card-item" style="margin-bottom:10px;cursor:pointer" data-q="'+d.q.replace(/"/g,'&quot;')+'" data-sub="'+d.sub+'" data-status="'+d.s+'" data-ai="'+d.ai+'" onclick="openEnhancedDoubtDetail(\''+d.q.replace(/'/g,"\\'")+'\',\''+d.s+'\',\''+d.sub+'\')">'
+      var hasAi = d.ai === true || d.ai === 'true' || (d.replies && d.replies.some(function(r){ return r.sender && r.sender.indexOf('AI') > -1; }));
+      var replyCount = Array.isArray(d.replies) ? d.replies.length : (d.replies || 1);
+      return '<div class="enhanced-card doubt-card-item" style="margin-bottom:10px;cursor:pointer" data-q="'+d.q.replace(/"/g,'&quot;')+'" data-sub="'+d.sub+'" data-status="'+d.s+'" data-ai="'+(hasAi ? 'true' : 'false')+'" onclick="openEnhancedDoubtDetail(\''+d.q.replace(/'/g,"\\'")+'\',\''+d.s+'\',\''+d.sub+'\')">'
         + '<div style="display:flex;align-items:flex-start;gap:12px">'
         + '<div style="width:40px;height:40px;border-radius:12px;background:color-mix(in srgb,'+col+' 12%,var(--surface2));display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">💬</div>'
         + '<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.45">'+d.q+'</div>'
         + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
         + '<span class="badge" style="background:color-mix(in srgb,'+col+' 12%,transparent);color:'+col+';border:1px solid color-mix(in srgb,'+col+' 25%,transparent)">'+d.sub+'</span>'
-        + '<span style="font-size:11px;color:var(--muted)">'+d.t+'</span>'
-        + '<span style="font-size:11px;color:var(--muted)">💬 '+d.replies+' replies</span>'
-        + (d.ai ? '<span class="badge badge-teal" style="font-size:10px">🤖 AI Answered</span>' : '')
+        + '<span style="font-size:11px;color:var(--muted)">'+(d.t||'Just now')+'</span>'
+        + '<span style="font-size:11px;color:var(--muted)">💬 '+replyCount+' '+(replyCount === 1 ? 'entry' : 'replies')+'</span>'
+        + (hasAi ? '<span class="badge badge-teal" style="font-size:10px;font-weight:700">🤖 AI Answered</span>' : '')
         + '</div></div>'
         + '<span class="badge '+(d.s==='resolved'?'badge-green':'badge-yellow')+'">'+d.s+'</span></div></div>';
     }).join('') 
@@ -9465,22 +9467,82 @@ window.generateAIDoubtAnswer = function() {
         + '<strong>💡 Pro Tip:</strong> To master this concept, solve 5-10 DPP (Daily Practice Problems) and check our curated Formula Sheets in the Study Materials section!</div>';
     }
 
+    var detectedSub = qLower.includes('chem') || qLower.includes('reaction') || qLower.includes('sn1') || qLower.includes('acid') ? 'Chemistry'
+      : qLower.includes('math') || qLower.includes('integrat') || qLower.includes('calculus') ? 'Maths'
+      : qLower.includes('bio') || qLower.includes('cell') || qLower.includes('dna') ? 'Biology'
+      : 'Physics';
+
+    window._lastGeneratedAIHtml = contentHtml;
+    window._lastGeneratedAISub = detectedSub;
+    window._lastGeneratedAIQ = q;
+
+    // Automatically save doubt to database and in-memory list so it appears under AI Answered
+    window.saveAIDoubtToNotes(q, contentHtml, detectedSub, true);
+
     ansBox.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;border-bottom:1px solid rgba(0,212,200,.2);padding-bottom:8px">'
       + '<div style="display:flex;align-items:center;gap:8px">'
       + '<span style="font-size:22px">🤖</span>'
       + '<span style="font-family:Syne,sans-serif;font-size:14px;font-weight:800;color:#00d4c8">AI Academic Tutor Response</span>'
       + '</div>'
-      + '<span style="font-size:11px;color:var(--muted);background:rgba(255,255,255,.06);padding:3px 8px;border-radius:12px">Instant Verified</span>'
+      + '<span style="font-size:11px;color:#4ade80;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);padding:3px 8px;border-radius:12px;font-weight:700">✓ Saved in AI Answered</span>'
       + '</div>'
       + '<div style="font-size:13px;line-height:1.7;color:var(--text)">' + contentHtml + '</div>'
       + '<div style="display:flex;gap:8px;margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);flex-wrap:wrap">'
       + '<button class="btn btn-sm btn-purple" onclick="toast(\'AI solution copied to clipboard!\',\'📋\')">📋 Copy Solution</button>'
-      + '<button class="btn btn-sm btn-teal" onclick="toast(\'Saved to your Personal Notes!\',\'💾\')">💾 Save to Notes</button>'
+      + '<button class="btn btn-sm btn-teal" onclick="window.saveAIDoubtToNotes(\'' + q.replace(/'/g,"\\'") + '\', null, \'' + detectedSub + '\', false)">💾 Save to Notes</button>'
       + '<button class="btn btn-sm btn-yellow" onclick="document.getElementById(\'doubt-question\').value=\'' + q.replace(/'/g,"\\'") + '\';closeModal(\'modal-detail\');toast(\'Transferred to Teacher Doubt Form\',\'✍️\')">✍️ Send to Teacher</button>'
       + '</div>';
 
-    toast('AI Tutor generated solution! 🚀', '💡');
+    toast('AI Tutor generated & saved answer! 🚀', '💡');
   }, 450);
+};
+
+window.saveAIDoubtToNotes = async function(q, contentHtml, sub, isAuto) {
+  var question = q || window._lastGeneratedAIQ || (document.getElementById('ai-doubt-input') ? document.getElementById('ai-doubt-input').value.trim() : 'Academic Doubt');
+  var answer = contentHtml || window._lastGeneratedAIHtml || 'Explanation saved.';
+  var subject = sub || window._lastGeneratedAISub || 'Physics';
+
+  var existing = (window.LMS_DOUBTS || []).find(function(d) { return d.q === question && d.ai; });
+  if (!existing) {
+    var newDoubt = {
+      _id: 'ai-' + Date.now(),
+      q: question,
+      sub: subject,
+      student: (G.user && G.user.name) || 'Arjun Sharma',
+      s: 'resolved',
+      ai: true,
+      t: 'Just now',
+      replies: [
+        { sender: (G.user && G.user.name) || 'Student', text: question, time: 'Just now' },
+        { sender: '🤖 AI Academic Tutor', text: answer, time: 'Just now' }
+      ]
+    };
+    if (!window.LMS_DOUBTS) window.LMS_DOUBTS = [];
+    window.LMS_DOUBTS.unshift(newDoubt);
+  }
+
+  try {
+    await api('/api/doubts', {
+      method: 'POST',
+      body: JSON.stringify({
+        q: question,
+        sub: subject,
+        ai: true,
+        s: 'resolved',
+        replies: [
+          { sender: (G.user && G.user.name) || 'Student', text: question, time: 'Just now' },
+          { sender: '🤖 AI Academic Tutor', text: answer, time: 'Just now' }
+        ]
+      })
+    });
+    await syncLMSData();
+  } catch(e) {
+    console.warn('Save AI doubt to API notice:', e);
+  }
+
+  if (!isAuto) {
+    toast('💾 Saved to Your Doubts (under AI Answered)!', '✅');
+  }
 };
 
 // ── AI Doubt Modal ──

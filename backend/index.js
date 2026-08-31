@@ -765,10 +765,19 @@ app.put('/api/notifications/read-all', protect, async (req, res) => {
 app.get('/api/doubts', protect, async (req, res) => res.json(await Doubt.find().sort({ createdAt: -1 })));
 
 app.post('/api/doubts', protect, async (req, res) => {
+  const isAi = req.body.ai === true;
+  const initialReplies = (req.body.replies && req.body.replies.length > 0)
+    ? req.body.replies
+    : [{ sender: req.user.name, text: req.body.q, time: 'Just now' }];
+
   const doubt = await Doubt.create({
-    q: req.body.q, s: 'pending', t: 'Just now',
-    sub: req.body.sub || 'General', student: req.user.name,
-    replies: [{ sender: req.user.name, text: req.body.q, time: 'Just now' }], ai: false
+    q: req.body.q,
+    s: req.body.s || (isAi ? 'resolved' : 'pending'),
+    t: 'Just now',
+    sub: req.body.sub || 'General',
+    student: req.user.name,
+    replies: initialReplies,
+    ai: isAi
   });
 
   await sendNotification({
