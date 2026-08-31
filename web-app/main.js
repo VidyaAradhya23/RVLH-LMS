@@ -540,17 +540,18 @@ function setupRealtimeEvents() {
         if (!s || !s.activeClassId) return;
         if (msg.liveClassId !== s.activeClassId) return;
         var myName = (G && G.user) ? G.user.name : '';
-        if (msg.sender === myName) return;
+        var isFac = msg.senderRole === 'faculty' || (msg.sender && msg.sender.indexOf('(Faculty)') >= 0);
         s.questions.push({
           id: msg._id || Date.now(),
-          n: msg.sender,
-          c: msg.color || '#4ade80',
+          n: msg.sender + (isFac && msg.sender.indexOf('(Faculty)') === -1 ? ' (Faculty)' : ''),
+          c: msg.color || (isFac ? '#00d4c8' : '#4ade80'),
           q: msg.message,
           t: 'Just now',
           votes: 0,
           myVote: false,
           answered: false,
-          answer: ''
+          answer: '',
+          isFaculty: isFac
         });
         ['stu', 'fac', 'cmo'].forEach(function(ctx) {
           if (document.getElementById(ctx + '-panel-qa')) {
@@ -8396,6 +8397,8 @@ window.lcRenderQA = function(ctx) {
   var sorted = s.questions.slice().sort(function(a,b){ return (b.votes||0)-(a.votes||0); });
   var qHtml = sorted.length ? sorted.map(function(q){
     var qIdStr = String(q.id).replace(/'/g,"\\'");
+    var isFacultyQuestion = q.isFaculty || (q.n && q.n.indexOf('(Faculty)') >= 0);
+    var facultyBadge = isFacultyQuestion ? '<span style="background:rgba(0,212,200,.12);border:1px solid rgba(0,212,200,.25);border-radius:10px;padding:1px 6px;font-size:9px;font-weight:700;color:#00d4c8;margin-left:6px">FACULTY</span>' : '';
     var ansHtml = q.answered
       ? '<div class="qa-answer-bubble"><span>✅ Answered by '+q.answeredBy+'</span>'+q.answer+'</div>'
       : '';
@@ -8403,15 +8406,16 @@ window.lcRenderQA = function(ctx) {
       ? (q.answered ? '<span class="qa-answered-badge">✅ Answered</span>' : '<button class="qa-answer-btn" onclick="window.lcOpenAnswerModal(\''+qIdStr+'\')" style="background:linear-gradient(135deg,#6c47ff,#a855f7);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✍️ Answer</button>')
       : '<button class="qa-upvote'+(q.myVote?' voted':'')+'" onclick="window.lcUpvote(\''+qIdStr+'\',\''+ctx+'\')" title="Upvote">👍 '+q.votes+'</button>';
     return '<div class="qa-question'+(q.answered?' answered':'')+'">'  
-      + '<div class="qa-meta"><div class="qa-avatar" style="background:'+q.c+'">'+q.n[0]+'</div><span class="qa-name">'+q.n+'</span><span class="qa-time">'+q.t+'</span></div>'
+      + '<div class="qa-meta"><div class="qa-avatar" style="background:'+q.c+'">'+q.n[0]+'</div><span class="qa-name" style="color:'+q.c+'">'+q.n+'</span>'+facultyBadge+'<span class="qa-time">'+q.t+'</span></div>'
       + '<div class="qa-text">'+q.q+'</div>'
       + '<div class="qa-actions">' + actionHtml + (!isFaculty?'<span style="font-size:10px;color:var(--muted);margin-left:auto">' + q.votes + ' votes</span>':'') + '</div>'
       + ansHtml + '</div>';
-  }).join('') : '<div class="poll-no-active"><div style="font-size:32px">🙋</div><div>No questions yet</div><div style="font-size:12px">' + (isFaculty ? 'Student questions will appear here in real-time.' : 'Be the first to ask!') + '</div></div>';
+  }).join('') : '<div class="poll-no-active"><div style="font-size:32px">🙋</div><div>No questions yet</div><div style="font-size:12px">' + (isFaculty ? 'Type below to post a question for your students, or wait for student questions.' : 'Be the first to ask!') + '</div></div>';
 
-  var inputHtml = !isFaculty
-    ? '<div class="qa-input-bar"><input id="'+ctx+'-qa-input" placeholder="Ask a question..." onkeydown="if(event.key===\'Enter\'){window.lcSubmitQuestion(\''+ctx+'\')}"><button class="qa-submit-btn" onclick="window.lcSubmitQuestion(\''+ctx+'\')" style="padding:8px 14px">Ask ❓</button></div>'
-    : '';
+  var placeholder = isFaculty ? 'Post a question or prompt for the class...' : 'Ask a question...';
+  var btnText = isFaculty ? 'Post Question ❓' : 'Ask ❓';
+
+  var inputHtml = '<div class="qa-input-bar"><input id="'+ctx+'-qa-input" placeholder="'+placeholder+'" onkeydown="if(event.key===\'Enter\'){window.lcSubmitQuestion(\''+ctx+'\')}"><button class="qa-submit-btn" onclick="window.lcSubmitQuestion(\''+ctx+'\')" style="padding:8px 14px">'+btnText+'</button></div>';
 
   panel.innerHTML = '<div style="flex:1;overflow-y:auto;padding:10px">' + qHtml + '</div>' + inputHtml;
   var inp = document.getElementById(ctx+'-qa-input');
@@ -8422,27 +8426,44 @@ window.lcSubmitQuestion = async function(ctx) {
   var inp = document.getElementById(ctx+'-qa-input');
   if (!inp || !inp.value.trim()) return;
   var s = window.liveClassState;
+  var isFaculty = (G && G.role === 'faculty');
   var name = (G && G.user ? G.user.name : 'You');
+  var displayName = isFaculty ? name + ' (Faculty)' : name;
+  var color = isFaculty ? '#00d4c8' : '#4ade80';
   var qText = inp.value.trim();
 
   // Optimistic local update
-  s.questions.push({id: Date.now(), n:name, c:'#4ade80', q:qText, t:'Just now', votes:0, myVote:false, answered:false, answer:''});
+  s.questions.push({
+    id: Date.now(),
+    n: displayName,
+    c: color,
+    q: qText,
+    t: 'Just now',
+    votes: 0,
+    myVote: false,
+    answered: false,
+    answer: '',
+    isFaculty: isFaculty
+  });
   inp.value = '';
-  toast('Question submitted! ✅','🙋');
-  window.lcRenderQA(ctx);
+  toast((isFaculty ? 'Question posted to class! ❓' : 'Question submitted! ✅'), '🙋');
+  ['stu', 'fac', 'cmo'].forEach(function(c) {
+    if (document.getElementById(c + '-panel-qa')) window.lcRenderQA(c);
+  });
 
   // Persist to backend and broadcast via SSE
   if (s.activeClassId) {
     try {
       await api('/api/live/' + s.activeClassId + '/qa', {
         method: 'POST',
-        body: JSON.stringify({ question: qText, color: '#4ade80' })
+        body: JSON.stringify({ question: qText, color: color })
       });
     } catch(err) {
       console.warn('QA submit error:', err);
     }
   }
 };
+
 
 window.lcUpvote = function(qId, ctx) {
   var s = window.liveClassState;
