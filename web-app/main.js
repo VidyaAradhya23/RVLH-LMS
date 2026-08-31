@@ -2855,11 +2855,25 @@ function openResolveDoubt(student, doubtText) {
     + '<div style="font-size:13px;font-weight:500">' + doubtText + '</div></div>'
     + '<div class="inp-group"><label>Your Answer</label>'
     + '<textarea id="doubt-resolve-textarea" class="inp-field" placeholder="Type your response here..." rows="4" style="width:100%;resize:vertical;margin-top:4px"></textarea></div>'
-    + '<div class="inp-group"><label>Attach Resource</label>'
+    
+    // Hidden real file picker
+    + '<input type="file" id="resolve-attachment-input" accept="image/*,video/*,.pdf,.doc,.docx,.ppt,.pptx,.txt" style="display:none" onchange="window.handleResolveAttachment(event)">'
+    
+    // Attachment preview area
+    + '<div id="resolve-attachment-area" style="display:none;margin:10px 0;padding:12px 14px;border:1.5px solid rgba(108,71,255,.4);border-radius:12px;background:rgba(108,71,255,.05);align-items:center;justify-content:space-between">'
+    + '<div style="display:flex;align-items:center;gap:12px">'
+    + '<img id="resolve-img-thumb" style="width:40px;height:40px;border-radius:8px;object-fit:cover;border:1px solid rgba(255,255,255,.1);display:none">'
+    + '<div id="resolve-file-icon" style="width:40px;height:40px;border-radius:8px;background:rgba(108,71,255,.2);display:flex;align-items:center;justify-content:center;font-size:20px">📎</div>'
+    + '<div style="text-align:left">'
+    + '<div id="resolve-file-name" style="font-weight:700;font-size:13px;color:var(--text);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">file.pdf</div>'
+    + '<div id="resolve-file-size" style="font-size:11px;color:#4ade80;margin-top:2px">0 KB</div>'
+    + '</div></div>'
+    + '<button type="button" class="btn btn-sm btn-red" style="padding:4px 8px;font-size:11px" onclick="window.removeResolveAttachment()">✕ Remove</button>'
+    + '</div>'
+    
+    + '<div class="inp-group" style="margin-top:8px"><label>Attachment</label>'
     + '<div style="display:flex;gap:7px;margin-top:4px">'
-    + '<button class="btn btn-purple" onclick="toast(\'Image upload\',\'🖼\')">🖼 Image</button>'
-    + '<button class="btn btn-purple" onclick="toast(\'Video upload\',\'📹\')">📹 Video</button>'
-    + '<button class="btn btn-purple" onclick="toast(\'PDF upload\',\'📄\')">📄 PDF</button></div></div>';
+    + '<button type="button" class="btn btn-purple" onclick="document.getElementById(\'resolve-attachment-input\').click()">📎 Attach File</button></div></div>';
   openDetail('💬 Resolve Doubt — ' + student, body, '<button class="btn btn-solid" onclick="window.submitDoubtResolution(\'' + doubtId + '\')">📤 Post Answer</button>');
 }
 
@@ -10027,8 +10041,54 @@ window.lcEndPoll = window.lcEndPoll;
 window.lcRenderHands = window.lcRenderHands;
 window.lcCallHand = window.lcCallHand;
 window.lcDismissHand = window.lcDismissHand;
-window.toggleStudentHand = window.toggleStudentHand;
-window.modalToggleHand = window.modalToggleHand;
+window.handleResolveAttachment = function(event) {
+  var file = event.target.files && event.target.files[0];
+  if (!file) return;
+  
+  window._selectedResolveFile = file;
+  var area = document.getElementById('resolve-attachment-area');
+  var nameEl = document.getElementById('resolve-file-name');
+  var sizeEl = document.getElementById('resolve-file-size');
+  var thumbEl = document.getElementById('resolve-img-thumb');
+  var iconEl = document.getElementById('resolve-file-icon');
+
+  if (nameEl) nameEl.textContent = file.name;
+  if (sizeEl) {
+    sizeEl.textContent = file.size > 1048576 
+      ? (file.size / 1048576).toFixed(1) + ' MB'
+      : (file.size / 1024).toFixed(0) + ' KB';
+  }
+
+  if (file.type.startsWith('image/')) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      if (thumbEl) {
+        thumbEl.src = e.target.result;
+        thumbEl.style.display = 'block';
+      }
+      if (iconEl) iconEl.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  } else {
+    if (thumbEl) thumbEl.style.display = 'none';
+    if (iconEl) {
+      iconEl.style.display = 'flex';
+      iconEl.textContent = file.type.startsWith('video/') ? '📹' : file.name.endsWith('.pdf') ? '📄' : '📎';
+    }
+  }
+
+  if (area) area.style.display = 'flex';
+  toast('File "' + file.name + '" attached! 📎', '📎');
+};
+
+window.removeResolveAttachment = function() {
+  window._selectedResolveFile = null;
+  var input = document.getElementById('resolve-attachment-input');
+  if (input) input.value = '';
+  var area = document.getElementById('resolve-attachment-area');
+  if (area) area.style.display = 'none';
+  toast('Attachment removed', '🗑️');
+};
 
 window.submitDoubtResolution = async function(doubtId) {
   var textarea = document.getElementById('doubt-resolve-textarea');
@@ -10037,12 +10097,16 @@ window.submitDoubtResolution = async function(doubtId) {
     return;
   }
   var answerText = textarea.value.trim();
+  if (window._selectedResolveFile) {
+    answerText += '\n📎 Attached: ' + window._selectedResolveFile.name;
+  }
   try {
     await api('/api/doubts/' + doubtId + '/reply', {
       method: 'POST',
       body: JSON.stringify({ text: answerText })
     });
     toast('Answer posted successfully!', '✅');
+    window.removeResolveAttachment();
     await syncLMSData();
     closeModal('modal-detail');
     loadPage('doubts');
