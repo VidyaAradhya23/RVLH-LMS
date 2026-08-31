@@ -1459,8 +1459,7 @@ function openCourseDetail(title, emoji, col, faculty, total, done, pct) {
     { label: '📄 Download Notes', act: 'loadPage(\'material\')' },
     { label: '📝 Chapter Tests', act: 'loadPage(\'tests\')' },
     { label: '💬 Ask Doubt', act: 'loadPage(\'doubts\')' },
-    { label: '📊 My Progress', act: 'loadPage(\'progress\')' },
-    { label: '🎨 Digital Blackboard', act: 'openDigitalBlackboard()' }
+    { label: '📊 My Progress', act: 'loadPage(\'progress\')' }
   ];
 
   var actionHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">'
