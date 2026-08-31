@@ -172,6 +172,18 @@ const ApprovalSchema = new mongoose.Schema({
   reason: String
 }, { timestamps: true, collection: 'approvals' });
 
+const NotificationSchema = new mongoose.Schema({
+  recipientRole: { type: String, enum: ['all', 'student', 'faculty', 'admin'], default: 'all' },
+  recipientName: String,
+  title: { type: String, required: true },
+  message: { type: String, required: true },
+  type: { type: String, default: 'info' },
+  icon: { type: String, default: '🔔' },
+  link: String,
+  read: { type: Boolean, default: false },
+  date: { type: String, default: 'Just now' }
+}, { timestamps: true, collection: 'notifications' });
+
 const PaymentSchema = new mongoose.Schema({
   id: String, student: String, material: String,
   amount: Number, date: String, method: String,
@@ -193,7 +205,41 @@ const Leaderboard  = mongoose.model('Leaderboard', LeaderboardSchema);
 const QuizResult   = mongoose.model('QuizResult', QuizResultSchema);
 const Test         = mongoose.model('Test', TestSchema);
 const Approval     = mongoose.model('Approval', ApprovalSchema);
+const Notification = mongoose.model('Notification', NotificationSchema);
 const Payment      = mongoose.model('Payment', PaymentSchema);
+
+// ═══════════════════════════════════════════════════
+// REAL-TIME EVENT STREAMING (SSE & BROADCAST)
+// ═══════════════════════════════════════════════════
+let sseClients = [];
+
+function broadcastRealtimeEvent(event, data) {
+  const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  sseClients.forEach(client => {
+    try {
+      client.res.write(payload);
+    } catch(e) {}
+  });
+}
+
+async function sendNotification({ recipientRole, recipientName, title, message, type, icon, link }) {
+  try {
+    const notif = await Notification.create({
+      recipientRole: recipientRole || 'all',
+      recipientName: recipientName || null,
+      title,
+      message,
+      type: type || 'info',
+      icon: icon || '🔔',
+      link: link || null,
+      date: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ', ' + new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    });
+    broadcastRealtimeEvent('NOTIFICATION', notif);
+    return notif;
+  } catch (e) {
+    console.error('Notification creation error:', e);
+  }
+}
 
 // Helper to find any user across all 3 collections
 async function findUserAnywhere(query) {
@@ -592,12 +638,15 @@ app.post('/api/videos', protect, async (req, res) => {
     batch: req.body.batch || 'General', dur: req.body.dur || '30:00',
     fac: req.user.name, col: '#ff6b35', views: 0, bookmarked: false, trending: false
   });
+  broadcastRealtimeEvent('VIDEO_CREATED', video);
   res.status(201).json(video);
 });
 app.put('/api/videos/:id/bookmark', protect, async (req, res) => {
   const video = await Video.findById(req.params.id);
   if (!video) return res.status(404).json({ message: 'Video not found' });
-  video.bookmarked = !video.bookmarked; await video.save(); res.json(video);
+  video.bookmarked = !video.bookmarked; await video.save();
+  broadcastRealtimeEvent('VIDEO_UPDATED', video);
+  res.json(video);
 });
 app.put('/api/videos/:id', protect, async (req, res) => {
   if (req.user.role !== 'admin' && req.user.role !== 'faculty') return res.status(403).json({ message: 'Unauthorized' });
@@ -605,17 +654,159 @@ app.put('/api/videos/:id', protect, async (req, res) => {
   ['title','sub','dur','batch'].forEach(f => { if (req.body[f] !== undefined) update[f] = req.body[f]; });
   const video = await Video.findByIdAndUpdate(req.params.id, update, { new: true });
   if (!video) return res.status(404).json({ message: 'Video not found' });
+  broadcastRealtimeEvent('VIDEO_UPDATED', video);
   res.json(video);
 });
 app.delete('/api/videos/:id', protect, async (req, res) => {
   if (req.user.role !== 'admin' && req.user.role !== 'faculty') return res.status(403).json({ message: 'Unauthorized' });
   const video = await Video.findByIdAndDelete(req.params.id);
   if (!video) return res.status(404).json({ message: 'Video not found' });
+  broadcastRealtimeEvent('VIDEO_DELETED', { id: req.params.id });
   res.json({ message: 'Video deleted' });
 });
 
 // ═══════════════════════════════════════════════════
-// LIVE CLASSES API
+// REAL-TIME EVENT STREAM (SSE) & NOTIFICATIONS API
+// ═══════════════════════════════════════════════════
+app.get('/api/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const clientId = Date.now() + '-' + Math.random();
+  const newClient = { id: clientId, res };
+  sseClients.push(newClient);
+
+  res.write(`event: CONNECTED\ndata: ${JSON.stringify({ status: 'connected', time: Date.now() })}\n\n`);
+
+  req.on('close', () => {
+    sseClients = sseClients.filter(c => c.id !== clientId);
+  });
+});
+
+app.get('/api/notifications', protect, async (req, res) => {
+  try {
+    const query = {
+      $or: [
+        { recipientRole: 'all' },
+        { recipientRole: req.user.role },
+        { recipientName: req.user.name }
+      ]
+    };
+    const notifications = await Notification.find(query).sort({ createdAt: -1 }).limit(40);
+    res.json(notifications);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+app.put('/api/notifications/:id/read', protect, async (req, res) => {
+  const notif = await Notification.findByIdAndUpdate(req.params.id, { read: true }, { new: true });
+  res.json(notif);
+});
+
+app.put('/api/notifications/read-all', protect, async (req, res) => {
+  await Notification.updateMany({
+    $or: [
+      { recipientRole: 'all' },
+      { recipientRole: req.user.role },
+      { recipientName: req.user.name }
+    ]
+  }, { read: true });
+  res.json({ success: true });
+});
+
+// ═══════════════════════════════════════════════════
+// DOUBTS API (WITH REAL-TIME BROADCASTS)
+// ═══════════════════════════════════════════════════
+app.get('/api/doubts', protect, async (req, res) => res.json(await Doubt.find().sort({ createdAt: -1 })));
+
+app.post('/api/doubts', protect, async (req, res) => {
+  const doubt = await Doubt.create({
+    q: req.body.q, s: 'pending', t: 'Just now',
+    sub: req.body.sub || 'General', student: req.user.name,
+    replies: [{ sender: req.user.name, text: req.body.q, time: 'Just now' }], ai: false
+  });
+
+  await sendNotification({
+    recipientRole: 'faculty',
+    title: '❓ New Doubt Asked',
+    message: `${req.user.name} asked: "${req.body.q.substring(0, 50)}..."`,
+    type: 'doubt',
+    icon: '❓',
+    link: 'doubts'
+  });
+
+  broadcastRealtimeEvent('DOUBT_CREATED', doubt);
+  res.status(201).json(doubt);
+});
+
+app.post('/api/doubts/:id/reply', protect, async (req, res) => {
+  const doubt = await Doubt.findById(req.params.id);
+  if (!doubt) return res.status(404).json({ message: 'Doubt not found' });
+  doubt.replies.push({ sender: req.user.name, text: req.body.text, time: 'Just now' });
+  if (req.user.role === 'faculty') doubt.s = 'resolved';
+  await doubt.save();
+
+  await sendNotification({
+    recipientName: doubt.student,
+    recipientRole: 'student',
+    title: '💡 Doubt Answered!',
+    message: `${req.user.name} replied to your doubt on ${doubt.sub}: "${req.body.text.substring(0, 50)}..."`,
+    type: 'doubt',
+    icon: '💡',
+    link: 'student_doubts'
+  });
+
+  broadcastRealtimeEvent('DOUBT_REPLIED', doubt);
+  res.status(201).json(doubt);
+});
+
+app.put('/api/doubts/:id/resolve', protect, async (req, res) => {
+  const doubt = await Doubt.findByIdAndUpdate(req.params.id, { s: 'resolved' }, { new: true });
+  if (!doubt) return res.status(404).json({ message: 'Doubt not found' });
+  broadcastRealtimeEvent('DOUBT_RESOLVED', doubt);
+  res.json(doubt);
+});
+
+// ═══════════════════════════════════════════════════
+// MATERIALS & VIDEOS API (WITH REAL-TIME BROADCASTS)
+// ═══════════════════════════════════════════════════
+app.get('/api/materials', protect, async (req, res) => res.json(await Material.find()));
+app.post('/api/materials', protect, async (req, res) => {
+  if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
+  const mat = await Material.create({
+    name: req.body.name, type: req.body.type || 'pdf',
+    sub: req.body.sub, fac: req.user.name, size: req.body.size || '1.5 MB',
+    batch: req.body.batch || 'All Batches', date: 'Just now'
+  });
+  broadcastRealtimeEvent('MATERIAL_UPLOADED', mat);
+  res.status(201).json(mat);
+});
+
+app.put('/api/materials/:id', protect, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'faculty') return res.status(403).json({ message: 'Unauthorized' });
+  const update = {};
+  if (req.body.name !== undefined) update.name = req.body.name;
+  else if (req.body.title !== undefined) update.name = req.body.title;
+  ['type','sub','size','batch'].forEach(f => { if (req.body[f] !== undefined) update[f] = req.body[f]; });
+  const mat = await Material.findByIdAndUpdate(req.params.id, update, { new: true });
+  if (!mat) return res.status(404).json({ message: 'Material not found' });
+  broadcastRealtimeEvent('MATERIAL_UPDATED', mat);
+  res.json(mat);
+});
+
+app.delete('/api/materials/:id', protect, async (req, res) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'faculty') return res.status(403).json({ message: 'Unauthorized' });
+  const mat = await Material.findByIdAndDelete(req.params.id);
+  if (!mat) return res.status(404).json({ message: 'Material not found' });
+  broadcastRealtimeEvent('MATERIAL_DELETED', { id: req.params.id });
+  res.json({ message: 'Material deleted' });
+});
+
+// ═══════════════════════════════════════════════════
+// LIVE CLASSES API (WITH REAL-TIME BROADCASTS)
 // ═══════════════════════════════════════════════════
 app.get('/api/live', protect, async (req, res) => res.json(await LiveClass.find()));
 app.post('/api/live', protect, async (req, res) => {
@@ -625,156 +816,69 @@ app.post('/api/live', protect, async (req, res) => {
     sub: req.body.sub || req.user.subject || 'General',
     topic: req.body.topic, fac: req.user.name, online: 0, status: 'upcoming'
   });
+
+  await sendNotification({
+    recipientRole: 'student',
+    title: '🔴 Live Class Scheduled',
+    message: `${req.user.name} scheduled a Live Class: "${req.body.topic}" on ${live.date} at ${live.time}`,
+    type: 'live',
+    icon: '🔴',
+    link: 'student_live'
+  });
+
+  broadcastRealtimeEvent('LIVE_CLASS_UPDATED', live);
   res.status(201).json(live);
 });
 
 // ═══════════════════════════════════════════════════
-// DOUBTS API
-// ═══════════════════════════════════════════════════
-app.get('/api/doubts', protect, async (req, res) => res.json(await Doubt.find().sort({ createdAt: -1 })));
-app.post('/api/doubts', protect, async (req, res) => {
-  const doubt = await Doubt.create({
-    q: req.body.q, s: 'pending', t: 'Just now',
-    sub: req.body.sub || 'General', student: req.user.name,
-    replies: [{ sender: req.user.name, text: req.body.q, time: 'Just now' }], ai: false
-  });
-  res.status(201).json(doubt);
-});
-app.post('/api/doubts/:id/reply', protect, async (req, res) => {
-  const doubt = await Doubt.findById(req.params.id);
-  if (!doubt) return res.status(404).json({ message: 'Doubt not found' });
-  doubt.replies.push({ sender: req.user.name, text: req.body.text, time: 'Just now' });
-  if (req.user.role === 'faculty') doubt.s = 'resolved';
-  await doubt.save(); res.status(201).json(doubt);
-});
-app.put('/api/doubts/:id/resolve', protect, async (req, res) => {
-  const doubt = await Doubt.findByIdAndUpdate(req.params.id, { s: 'resolved' }, { new: true });
-  if (!doubt) return res.status(404).json({ message: 'Doubt not found' });
-  res.json(doubt);
-});
-
-// ═══════════════════════════════════════════════════
-// MATERIALS API
-// ═══════════════════════════════════════════════════
-app.get('/api/materials', protect, async (req, res) => res.json(await Material.find()));
-app.post('/api/materials', protect, async (req, res) => {
-  if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
-  const mat = await Material.create({
-    name: req.body.name, type: req.body.type || 'pdf',
-    sub: req.body.sub, fac: req.user.name, size: '1.5 MB', date: 'Just now'
-  });
-  res.status(201).json(mat);
-});
-app.put('/api/materials/:id', protect, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'faculty') return res.status(403).json({ message: 'Unauthorized' });
-  const update = {};
-  if (req.body.name !== undefined) update.name = req.body.name;
-  else if (req.body.title !== undefined) update.name = req.body.title;
-  ['type','sub','size','batch'].forEach(f => { if (req.body[f] !== undefined) update[f] = req.body[f]; });
-  const mat = await Material.findByIdAndUpdate(req.params.id, update, { new: true });
-  if (!mat) return res.status(404).json({ message: 'Material not found' });
-  res.json(mat);
-});
-app.delete('/api/materials/:id', protect, async (req, res) => {
-  if (req.user.role !== 'admin' && req.user.role !== 'faculty') return res.status(403).json({ message: 'Unauthorized' });
-  const mat = await Material.findByIdAndDelete(req.params.id);
-  if (!mat) return res.status(404).json({ message: 'Material not found' });
-  res.json({ message: 'Material deleted' });
-});
-
-// ═══════════════════════════════════════════════════
-// ANNOUNCEMENTS API
+// ANNOUNCEMENTS API (WITH REAL-TIME BROADCASTS)
 // ═══════════════════════════════════════════════════
 app.get('/api/announcements', protect, async (req, res) => res.json(await Announcement.find().sort({ createdAt: -1 })));
 app.post('/api/announcements', protect, async (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
-  const { title, body, cat, urgent, target, draft } = req.body;
+  if (req.user.role !== 'admin' && req.user.role !== 'faculty') return res.status(403).json({ message: 'Unauthorized' });
   const ann = await Announcement.create({
-    title, body, cat: cat || 'Notice', date: 'Just now',
-    urgent: !!urgent, target: target || 'all', draft: !!draft
+    title: req.body.title, desc: req.body.desc,
+    tag: req.body.tag || 'General', date: 'Just now', fac: req.user.name
   });
+
+  await sendNotification({
+    recipientRole: 'all',
+    title: '📢 ' + ann.title,
+    message: ann.desc,
+    type: 'announcement',
+    icon: '📢',
+    link: 'announcements'
+  });
+
+  broadcastRealtimeEvent('ANNOUNCEMENT_CREATED', ann);
   res.status(201).json(ann);
 });
-app.put('/api/announcements/:id', protect, async (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
-  const update = {};
-  ['title','body','cat','target'].forEach(f => { if (req.body[f] !== undefined) update[f] = req.body[f]; });
-  if (req.body.urgent !== undefined) update.urgent = !!req.body.urgent;
-  if (req.body.draft !== undefined) update.draft = !!req.body.draft;
-  const ann = await Announcement.findByIdAndUpdate(req.params.id, update, { new: true });
-  if (!ann) return res.status(404).json({ message: 'Announcement not found' });
-  res.json(ann);
-});
 
 // ═══════════════════════════════════════════════════
-// FEES API
+// TESTS & QUIZ RESULTS API (WITH REAL-TIME BROADCASTS)
 // ═══════════════════════════════════════════════════
-app.get('/api/fees', protect, async (req, res) => res.json(await Fee.find()));
-app.put('/api/fees/:id', protect, async (req, res) => {
-  if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
-  const fee = await Fee.findByIdAndUpdate(req.params.id, { status: req.body.status || 'Paid' }, { new: true });
-  if (!fee) return res.status(404).json({ message: 'Fee record not found' });
-  res.json(fee);
-});
-
-// ═══════════════════════════════════════════════════
-// ATTENDANCE API
-// ═══════════════════════════════════════════════════
-app.get('/api/attendance', protect, async (req, res) => res.json(await Attendance.find().sort({ createdAt: -1 })));
-app.post('/api/attendance', protect, async (req, res) => {
-  if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
-  const att = await Attendance.create({
-    date: req.body.date || new Date().toISOString().slice(0, 10),
-    status: req.body.status || 'Present',
-    sub: req.body.sub || 'Physics', topic: req.body.topic || 'General'
-  });
-  res.status(201).json(att);
-});
-
-// ═══════════════════════════════════════════════════
-// LEADERBOARD, QUIZ RESULTS, PAYMENTS API
-// ═══════════════════════════════════════════════════
-app.get('/api/leaderboard', protect, async (req, res) => res.json(await Leaderboard.find().sort({ rank: 1 })));
-
-app.get('/api/quiz-results', protect, async (req, res) => res.json(await QuizResult.find().sort({ createdAt: -1 })));
-app.post('/api/quiz-results', protect, async (req, res) => {
-  const { student, roll, course, subject, video, score, total, date } = req.body;
-  const qr = await QuizResult.create({
-    student: student || req.user.name,
-    roll: roll || req.user.roll || 'RV2024001',
-    course: course || req.user.batch || 'JEE Advanced (Main + KCET Decoded)',
-    subject, video, score: Number(score), total: Number(total || 100),
-    date: date || 'Just now'
-  });
-  res.status(201).json(qr);
-});
-
-// ═══════════════════════════════════════════════════
-// TESTS & QUIZZES API
-// ═══════════════════════════════════════════════════
-app.get('/api/tests', protect, async (req, res) => {
-  res.json(await Test.find().sort({ createdAt: -1 }));
-});
-
+app.get('/api/tests', protect, async (req, res) => res.json(await Test.find().sort({ createdAt: -1 })));
 app.post('/api/tests', protect, async (req, res) => {
   if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
-  const { n, type, subject, qs, duration, marksCorrect, marksWrong, batch, startDate, endDate, deadline } = req.body;
   const test = await Test.create({
-    n,
-    type: type || 'DPP',
-    subject: subject || 'Physics',
-    qs: Number(qs || 20),
-    duration: duration || '60 min',
-    marksCorrect: marksCorrect || '+4',
-    marksWrong: marksWrong || '-1',
-    batch: batch || 'All Batches',
-    startDate,
-    endDate,
-    deadline: deadline || 'Mar 25',
-    att: 0,
-    pub: true,
-    fac: req.user.name
+    n: req.body.n, type: req.body.type || 'DPP',
+    subject: req.body.subject || 'Physics', qs: req.body.qs || 20,
+    duration: req.body.duration || '60 min', marksCorrect: req.body.marksCorrect || '+4',
+    marksWrong: req.body.marksWrong || '-1', batch: req.body.batch || 'JEE Advanced A',
+    startDate: req.body.startDate, endDate: req.body.endDate,
+    deadline: req.body.deadline || 'Mar 25', att: 0, pub: true, fac: req.user.name
   });
+
+  await sendNotification({
+    recipientRole: 'student',
+    title: '📝 New Test Assigned',
+    message: `${req.user.name} published a new test: "${test.n}" (${test.duration})`,
+    type: 'test',
+    icon: '📝',
+    link: 'student_tests'
+  });
+
+  broadcastRealtimeEvent('TEST_CREATED', test);
   res.status(201).json(test);
 });
 
@@ -782,6 +886,7 @@ app.put('/api/tests/:id', protect, async (req, res) => {
   if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
   const test = await Test.findByIdAndUpdate(req.params.id, req.body, { new: true });
   if (!test) return res.status(404).json({ message: 'Test not found' });
+  broadcastRealtimeEvent('TEST_UPDATED', test);
   res.json(test);
 });
 
@@ -789,6 +894,7 @@ app.delete('/api/tests/:id', protect, async (req, res) => {
   if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
   const test = await Test.findByIdAndDelete(req.params.id);
   if (!test) return res.status(404).json({ message: 'Test not found' });
+  broadcastRealtimeEvent('TEST_DELETED', { id: req.params.id });
   res.json({ message: 'Test deleted' });
 });
 
@@ -798,11 +904,29 @@ app.post('/api/tests/:id/attempt', protect, async (req, res) => {
     test.att = (test.att || 0) + 1;
     await test.save();
   }
+  broadcastRealtimeEvent('TEST_ATTEMPTED', { id: req.params.id, att: test ? test.att : 0 });
   res.json({ success: true, test });
 });
 
+app.get('/api/quiz-results', protect, async (req, res) => res.json(await QuizResult.find().sort({ createdAt: -1 })));
+app.post('/api/quiz-results', protect, async (req, res) => {
+  const qr = await QuizResult.create(req.body);
+
+  await sendNotification({
+    recipientRole: 'faculty',
+    title: '📊 Quiz Submitted',
+    message: `${req.body.student} completed "${req.body.video}" with score ${req.body.score}/${req.body.total}`,
+    type: 'test',
+    icon: '📊',
+    link: 'faculty_tracker'
+  });
+
+  broadcastRealtimeEvent('QUIZ_SUBMITTED', qr);
+  res.status(201).json(qr);
+});
+
 // ═══════════════════════════════════════════════════
-// APPROVALS API (Content Moderation)
+// APPROVALS API (CONTENT MODERATION WITH REAL-TIME WORKFLOW)
 // ═══════════════════════════════════════════════════
 app.get('/api/approvals', protect, async (req, res) => {
   res.json(await Approval.find().sort({ createdAt: -1 }));
@@ -822,6 +946,17 @@ app.post('/api/approvals', protect, async (req, res) => {
     date: new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }),
     st: 'pending'
   });
+
+  await sendNotification({
+    recipientRole: 'admin',
+    title: '⏳ New Submission for Approval',
+    message: `${req.user.name} submitted "${title}" (${subject}) for review`,
+    type: 'approval',
+    icon: '⏳',
+    link: 'approvals'
+  });
+
+  broadcastRealtimeEvent('APPROVAL_REQUESTED', appItem);
   res.status(201).json(appItem);
 });
 
@@ -830,7 +965,6 @@ app.put('/api/approvals/:id/approve', protect, async (req, res) => {
   const appItem = await Approval.findByIdAndUpdate(req.params.id, { st: 'approved' }, { new: true });
   if (!appItem) return res.status(404).json({ message: 'Approval item not found' });
   
-  // Automatically publish to materials or videos
   if (appItem.type === 'video') {
     await Video.create({
       thumb: '🎥',
@@ -855,28 +989,69 @@ app.put('/api/approvals/:id/approve', protect, async (req, res) => {
     });
   }
 
+  await sendNotification({
+    recipientName: appItem.faculty,
+    recipientRole: 'faculty',
+    title: '✅ Content Approved!',
+    message: `Admin approved your content: "${appItem.title}". It is now live for all students!`,
+    type: 'approval',
+    icon: '✅',
+    link: 'content'
+  });
+
+  await sendNotification({
+    recipientRole: 'student',
+    title: '📚 New Study Material Live',
+    message: `New ${appItem.type} available: "${appItem.title}" by ${appItem.faculty}`,
+    type: 'material',
+    icon: '📚',
+    link: 'materials'
+  });
+
+  broadcastRealtimeEvent('APPROVAL_STATUS_CHANGED', { id: req.params.id, status: 'approved', item: appItem });
   res.json({ success: true, item: appItem });
 });
 
 app.put('/api/approvals/:id/reject', protect, async (req, res) => {
   if (req.user.role !== 'admin') return res.status(403).json({ message: 'Admin only' });
+  const reason = req.body.reason || 'Content did not meet quality standards';
   const appItem = await Approval.findByIdAndUpdate(req.params.id, {
     st: 'rejected',
-    reason: req.body.reason || 'Content did not meet quality standards'
+    reason: reason
   }, { new: true });
   if (!appItem) return res.status(404).json({ message: 'Approval item not found' });
+
+  await sendNotification({
+    recipientName: appItem.faculty,
+    recipientRole: 'faculty',
+    title: '❌ Content Submission Feedback',
+    message: `Admin requested changes for "${appItem.title}": "${reason}"`,
+    type: 'approval',
+    icon: '❌',
+    link: 'content'
+  });
+
+  broadcastRealtimeEvent('APPROVAL_STATUS_CHANGED', { id: req.params.id, status: 'rejected', item: appItem });
   res.json({ success: true, item: appItem });
 });
 
 // ═══════════════════════════════════════════════════
-// HIGH-PERFORMANCE UNIFIED BATCH SYNC API (10x Faster)
+// HIGH-PERFORMANCE UNIFIED BATCH SYNC API
 // ═══════════════════════════════════════════════════
 app.get('/api/sync', protect, async (req, res) => {
   try {
+    const notifQuery = {
+      $or: [
+        { recipientRole: 'all' },
+        { recipientRole: req.user.role },
+        { recipientName: req.user.name }
+      ]
+    };
+
     const [
       courses, videos, liveClasses, doubts, materials,
       announcements, fees, attendance, leaderboard, tests,
-      quizResults, approvals, payments, students, teachers
+      quizResults, approvals, payments, students, teachers, notifications
     ] = await Promise.all([
       Course.find().lean(),
       Video.find().lean(),
@@ -892,13 +1067,14 @@ app.get('/api/sync', protect, async (req, res) => {
       Approval.find().sort({ createdAt: -1 }).lean(),
       Payment.find().sort({ createdAt: -1 }).lean(),
       Student.find().select('-password').lean(),
-      Teacher.find().select('-password').lean()
+      Teacher.find().select('-password').lean(),
+      Notification.find(notifQuery).sort({ createdAt: -1 }).limit(30).lean()
     ]);
 
     res.json({
       courses, videos, liveClasses, doubts, materials,
       announcements, fees, attendance, leaderboard, tests,
-      quizResults, approvals, payments, students, teachers
+      quizResults, approvals, payments, students, teachers, notifications
     });
   } catch (err) {
     res.status(500).json({ message: err.message });

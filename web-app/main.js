@@ -44,6 +44,7 @@ async function syncLMSData() {
         window.PAYMENT_HISTORY = window.LMS_PAYMENTS;
         window.LMS_STUDENTS = bundle.students || [];
         window.LMS_TEACHERS = bundle.teachers || [];
+        window.LMS_NOTIFICATIONS = bundle.notifications || [];
       }
     } catch(err) {
       console.warn('Sync endpoint fallback to parallel fetch');
@@ -62,7 +63,8 @@ async function syncLMSData() {
         api('/api/approvals'),
         api('/api/payments'),
         api('/api/students'),
-        api('/api/teachers')
+        api('/api/teachers'),
+        api('/api/notifications')
       ]);
       
       window.LMS_COURSES = results[0].value || window.LMS_COURSES || [];
@@ -83,6 +85,7 @@ async function syncLMSData() {
       window.PAYMENT_HISTORY = window.LMS_PAYMENTS;
       window.LMS_STUDENTS = results[13].value || window.LMS_STUDENTS || [];
       window.LMS_TEACHERS = results[14].value || window.LMS_TEACHERS || [];
+      window.LMS_NOTIFICATIONS = results[15].value || window.LMS_NOTIFICATIONS || [];
     }
 
     // Sync backwards compatibility variables
@@ -337,6 +340,68 @@ async function doLogin() {
   }
 }
 
+// ═══════════════════════════════════════════════════════
+// REAL-TIME EVENT STREAMING (SSE CLIENT)
+// ═══════════════════════════════════════════════════════
+let _realtimeSource = null;
+
+function setupRealtimeEvents() {
+  if (typeof EventSource === 'undefined') return;
+  if (_realtimeSource) {
+    try { _realtimeSource.close(); } catch(e) {}
+  }
+
+  try {
+    _realtimeSource = new EventSource('/api/events');
+
+    _realtimeSource.addEventListener('NOTIFICATION', async function(e) {
+      try {
+        const notif = JSON.parse(e.data);
+        if (notif.recipientRole === 'all' || notif.recipientRole === G.role || notif.recipientName === (G.user && G.user.name)) {
+          toast((notif.icon || '🔔') + ' ' + notif.title + ': ' + notif.message, '');
+          await syncLMSData();
+          updateNotificationBadge();
+          if (G.page) loadPage(G.page);
+        }
+      } catch(err) {}
+    });
+
+    const eventTypes = [
+      'DOUBT_CREATED', 'DOUBT_REPLIED', 'DOUBT_RESOLVED',
+      'APPROVAL_REQUESTED', 'APPROVAL_STATUS_CHANGED',
+      'TEST_CREATED', 'TEST_UPDATED', 'TEST_DELETED', 'TEST_ATTEMPTED', 'QUIZ_SUBMITTED',
+      'MATERIAL_UPLOADED', 'MATERIAL_UPDATED', 'MATERIAL_DELETED',
+      'VIDEO_CREATED', 'VIDEO_UPDATED', 'VIDEO_DELETED',
+      'LIVE_CLASS_UPDATED', 'ANNOUNCEMENT_CREATED', 'PAYMENT_RECEIVED'
+    ];
+
+    eventTypes.forEach(function(evName) {
+      _realtimeSource.addEventListener(evName, async function() {
+        await syncLMSData();
+        updateNotificationBadge();
+        if (G.page) loadPage(G.page);
+      });
+    });
+
+    _realtimeSource.onerror = function() {
+      // Reconnect after brief pause
+      setTimeout(setupRealtimeEvents, 7000);
+    };
+  } catch(err) {
+    console.warn('Realtime connection note:', err);
+  }
+}
+
+// Background auto-sync heartbeat for active tabs
+setInterval(async function() {
+  if (token && G.user && document.visibilityState === 'visible') {
+    try {
+      await syncLMSData();
+      updateNotificationBadge();
+    } catch(e) {}
+  }
+}, 5000);
+
 async function launch() {
   var ls = document.getElementById('login-screen');
   var ap = document.getElementById('app-shell');
@@ -346,6 +411,8 @@ async function launch() {
   try {
     await syncLMSData();
     initApp();
+    updateNotificationBadge();
+    setupRealtimeEvents();
   } catch(err) {
     console.error('initApp error:', err);
     showErr('App failed to load: ' + err.message);
@@ -773,39 +840,65 @@ function makeAv(letter, bg) {
 }
 
 // ═══════════════════════════════════════════════════════
-// NOTIFICATIONS / PROFILE / SEARCH
+// NOTIFICATIONS / PROFILE / SEARCH (LIVE REAL-TIME DATA)
 // ═══════════════════════════════════════════════════════
+function updateNotificationBadge() {
+  var notifs = window.LMS_NOTIFICATIONS || [];
+  var unreadCount = notifs.filter(function(n){ return !n.read; }).length;
+  var notifBtn = document.getElementById('tb-notif');
+  if (notifBtn) {
+    if (unreadCount > 0) {
+      notifBtn.classList.add('has-dot');
+      notifBtn.setAttribute('title', unreadCount + ' unread notification' + (unreadCount > 1 ? 's' : ''));
+    } else {
+      notifBtn.classList.remove('has-dot');
+      notifBtn.setAttribute('title', 'Notifications');
+    }
+  }
+}
+
+async function markAllNotificationsRead() {
+  try {
+    await api('/api/notifications/read-all', { method: 'PUT' });
+    (window.LMS_NOTIFICATIONS || []).forEach(function(n){ n.read = true; });
+    updateNotificationBadge();
+    buildNotifContent();
+    toast('All notifications marked as read', '✅');
+  } catch(err) {
+    console.error('Mark read error:', err);
+  }
+}
+window.markAllNotificationsRead = markAllNotificationsRead;
+
 function buildNotifContent() {
-  var data = {
-    student: [
-      { icon:'📡', title:'Live Class: Electrostatics', sub:'Starting in 30 minutes', time:'10 min ago', unread:true },
-      { icon:'📝', title:'New Test Available', sub:'Chapter 5 - Wave Optics DPP', time:'1 hour ago', unread:true },
-      { icon:'💬', title:'Doubt Resolved', sub:'Your question on Integration answered', time:'2 hours ago', unread:true },
-      { icon:'💳', title:'Fee Reminder', sub:'Monthly fee due by March 15', time:'Yesterday', unread:false },
-      { icon:'🏆', title:'Rank Update', sub:'Your batch rank improved to #4', time:'2 days ago', unread:false },
-    ],
-    faculty: [
-      { icon:'💬', title:'5 New Doubts', sub:'Students awaiting resolution', time:'15 min ago', unread:true },
-      { icon:'👥', title:'New Students Added', sub:'3 students added to JEE Batch A', time:'1 hour ago', unread:true },
-      { icon:'📊', title:'Monthly Report Ready', sub:'March 2024 performance report', time:'Yesterday', unread:false },
-    ],
-    admin: [
-      { icon:'👥', title:'New Enrollments', sub:'15 new student registrations pending', time:'30 min ago', unread:true },
-      { icon:'💳', title:'Fee Collection', sub:'₹1,45,000 collected today', time:'1 hour ago', unread:true },
-      { icon:'⚠️', title:'System Alert', sub:'Storage at 78% capacity', time:'2 hours ago', unread:false },
-      { icon:'📊', title:'Weekly Report', sub:'Analytics report generated', time:'Yesterday', unread:false },
-    ],
-  };
-  var list = (data[G.role] || []).map(function(n) {
-    return '<div style="display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--border)'
-      + (n.unread ? ';font-weight:600' : '') + '">'
-      + '<div style="width:8px;height:8px;border-radius:50%;background:' + (n.unread ? 'var(--admin)' : 'var(--border)') + ';flex-shrink:0;margin-top:5px"></div>'
-      + '<div style="flex:1"><div style="font-size:13px">' + n.icon + ' ' + n.title + '</div>'
-      + '<div style="font-size:11px;color:var(--muted)">' + n.sub + '</div></div>'
-      + '<div style="font-size:11px;color:var(--muted);flex-shrink:0">' + n.time + '</div>'
+  var notifs = window.LMS_NOTIFICATIONS || [];
+  
+  if (notifs.length === 0) {
+    document.getElementById('notif-body').innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted)">'
+      + '<div style="font-size:32px;margin-bottom:8px">🔔</div>'
+      + '<div style="font-weight:600;font-size:14px">No new notifications</div>'
+      + '<div style="font-size:12px;margin-top:4px">You are all caught up!</div></div>';
+    return;
+  }
+
+  var header = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">'
+    + '<span style="font-size:12px;font-weight:700;color:var(--muted)">RECENT ALERTS</span>'
+    + '<button class="btn btn-sm btn-purple" onclick="window.markAllNotificationsRead()" style="padding:3px 8px;font-size:11px">✓ Mark All Read</button>'
+    + '</div>';
+
+  var list = notifs.map(function(n) {
+    var isUnread = !n.read;
+    return '<div style="display:flex;gap:11px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer'
+      + (isUnread ? ';background:rgba(108,71,255,0.04);border-radius:8px;padding:10px' : '') + '" onclick="' + (n.link ? 'closeModal(\'modal-notif\');loadPage(\'' + n.link + '\')' : '') + '">'
+      + '<div style="font-size:20px;flex-shrink:0">' + (n.icon || '🔔') + '</div>'
+      + '<div style="flex:1"><div style="font-size:13px;font-weight:' + (isUnread ? '700' : '500') + '">' + n.title + '</div>'
+      + '<div style="font-size:12px;color:var(--muted);margin-top:2px;line-height:1.4">' + n.message + '</div>'
+      + '<div style="font-size:10px;color:var(--muted);margin-top:4px">' + (n.date || 'Just now') + '</div></div>'
+      + (isUnread ? '<div style="width:7px;height:7px;border-radius:50%;background:var(--admin);flex-shrink:0;margin-top:6px"></div>' : '')
       + '</div>';
   }).join('');
-  document.getElementById('notif-body').innerHTML = list;
+
+  document.getElementById('notif-body').innerHTML = header + list;
 }
 
 function buildProfileContent() {
