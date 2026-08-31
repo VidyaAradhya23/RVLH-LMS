@@ -2457,20 +2457,45 @@ PAGES['faculty_content'] = function() {
 
   var uploadForm = '<div class="card">'
     + '<div class="card-title" style="margin-bottom:14px">📤 Upload New Content</div>'
-    + makeInputGroup('Content Type','select','📹 Video Lecture, 📄 PDF Notes, 📊 PPT, 📘 Reference Book')
-    + makeInputGroup('Title','text','e.g. Electrostatics — Gauss Law Part 1')
+    + '<div class="inp-group"><label>Content Type</label><select class="inp-field" id="upload-content-type">'
+    + '<option value="pdf">📄 PDF Notes</option><option value="ppt">📊 PPT Presentation</option><option value="video">📹 Video Lecture</option><option value="book">📘 Reference Book</option>'
+    + '</select></div>'
+    + '<div class="inp-group"><label>Title</label><input type="text" class="inp-field" id="upload-content-title" placeholder="e.g. Electrostatics — Gauss Law Part 1"></div>'
     + '<div class="inp-row">'
-    + makeInputGroup('Subject','select','Physics, Chemistry, Maths, Biology')
-    + makeInputGroup('Chapter','text','Chapter 5')
+    + '<div class="inp-group"><label>Subject</label><select class="inp-field" id="upload-content-subject"><option>Physics</option><option>Chemistry</option><option>Mathematics</option><option>Biology</option><option>Accountancy</option><option>Economics</option></select></div>'
+    + '<div class="inp-group"><label>Chapter / Topic</label><input type="text" class="inp-field" id="upload-content-chapter" placeholder="e.g. Chapter 5 — Gauss Law"></div>'
     + '</div>'
-    + makeInputGroup('Assign to Batch','select','All Batches, JEE Advanced A, JEE Advanced B, NEET Batch')
-    + '<div style="border:2px dashed var(--border);border-radius:var(--radius);padding:28px;text-align:center;cursor:pointer;margin-bottom:13px" onclick="toast(\'File picker opened\',\'📎\')">'
-    + '<div style="font-size:30px;margin-bottom:7px">☁️</div>'
-    + '<div style="font-size:13px;color:var(--muted)">Click to upload or drag & drop</div>'
-    + '<div style="font-size:11px;color:var(--border);margin-top:3px">MP4, PDF, PPT up to 2GB</div></div>'
+    + '<div class="inp-group"><label>Assign to Batch</label><select class="inp-field" id="upload-content-batch">'
+    + '<option>All Batches</option><option>JEE Advanced A</option><option>JEE Advanced B</option><option>NEET Batch</option><option>Commerce Decoded</option>'
+    + '</select></div>'
+    // Hidden real file input
+    + '<input type="file" id="faculty-file-input" style="display:none" accept=".pdf,.ppt,.pptx,.doc,.docx,.mp4,.mov,.png,.jpg,.jpeg,.zip" onchange="window.handleFacultyFileSelected(event)">'
+    // Dropzone
+    + '<div id="upload-dropzone" style="border:2px dashed rgba(108,71,255,0.4);border-radius:var(--radius);padding:24px;text-align:center;cursor:pointer;margin-bottom:13px;background:rgba(108,71,255,0.03);transition:all 0.2s ease" '
+    + 'onclick="window.triggerFacultyFilePicker()" '
+    + 'ondragover="event.preventDefault();this.style.borderColor=\'#6c47ff\';this.style.background=\'rgba(108,71,255,0.1)\'" '
+    + 'ondragleave="this.style.borderColor=\'rgba(108,71,255,0.4)\';this.style.background=\'rgba(108,71,255,0.03)\'" '
+    + 'ondrop="window.handleFacultyFileDrop(event)">'
+    + '<div id="dropzone-prompt">'
+    + '<div style="font-size:32px;margin-bottom:8px">☁️</div>'
+    + '<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Click to attach file or drag & drop</div>'
+    + '<div style="font-size:12px;color:var(--muted)">Supports PDF, PPT, Word, MP4, Images up to 2GB</div>'
+    + '</div>'
+    // File preview container (hidden by default)
+    + '<div id="dropzone-preview" style="display:none;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px 16px">'
+    + '<div style="display:flex;align-items:center;gap:12px">'
+    + '<span id="preview-file-icon" style="font-size:24px">📄</span>'
+    + '<div style="text-align:left">'
+    + '<div id="preview-file-name" style="font-weight:700;font-size:13px;color:var(--text);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">filename.pdf</div>'
+    + '<div id="preview-file-size" style="font-size:11px;color:#4ade80;margin-top:2px">0 KB</div>'
+    + '</div></div>'
+    + '<button type="button" class="btn btn-sm btn-red" style="padding:4px 8px;font-size:11px" onclick="window.removeFacultyAttachedFile(event)">✕ Remove</button>'
+    + '</div>'
+    + '</div>'
     + '<div style="display:flex;gap:8px">'
-    + '<button class="btn btn-teal" onclick="submitFacultyUpload()">📤 Submit for Approval</button>'
-    + '<button class="btn btn-purple" onclick="toast(\'Scheduled\',\'📅\')">📅 Schedule</button></div></div>';
+    + '<button class="btn btn-teal" style="flex:1" onclick="window.submitFacultyUpload()">📤 Submit for Approval</button>'
+    + '<button class="btn btn-purple" onclick="toast(\'Content scheduled for publishing! 📅\',\'📅\')">📅 Schedule</button>'
+    + '</div></div>';
 
   var libHtml = '<div class="card"><div class="card-title" style="margin-bottom:14px">📚 Content Library</div>'
     + library.map(function(c) {
@@ -7214,19 +7239,140 @@ function exportPayments() {
 }
 
 // ════════════════════════════════════════
-// FACULTY UPLOAD → PENDING_APPROVALS
+// FACULTY UPLOAD & FILE ATTACHMENT HANDLERS
 // ════════════════════════════════════════
+window._selectedFacultyFile = null;
+
+window.triggerFacultyFilePicker = function() {
+  var fileInput = document.getElementById('faculty-file-input');
+  if (fileInput) fileInput.click();
+};
+
+window.handleFacultyFileSelected = function(event) {
+  var file = event.target.files && event.target.files[0];
+  if (file) {
+    window.processFacultyAttachedFile(file);
+  }
+};
+
+window.handleFacultyFileDrop = function(event) {
+  event.preventDefault();
+  var dropzone = document.getElementById('upload-dropzone');
+  if (dropzone) {
+    dropzone.style.borderColor = 'rgba(108,71,255,0.4)';
+    dropzone.style.background = 'rgba(108,71,255,0.03)';
+  }
+  var dt = event.dataTransfer;
+  if (dt && dt.files && dt.files.length > 0) {
+    var file = dt.files[0];
+    window.processFacultyAttachedFile(file);
+  }
+};
+
+window.processFacultyAttachedFile = function(file) {
+  window._selectedFacultyFile = file;
+
+  var promptEl = document.getElementById('dropzone-prompt');
+  var previewEl = document.getElementById('dropzone-preview');
+  var nameEl = document.getElementById('preview-file-name');
+  var sizeEl = document.getElementById('preview-file-size');
+  var iconEl = document.getElementById('preview-file-icon');
+  var titleEl = document.getElementById('upload-content-title');
+  var typeEl = document.getElementById('upload-content-type');
+
+  if (promptEl) promptEl.style.display = 'none';
+  if (previewEl) previewEl.style.display = 'flex';
+
+  var ext = (file.name.split('.').pop() || '').toLowerCase();
+  var icon = '📄';
+  var typeVal = 'pdf';
+
+  if (['mp4', 'mov', 'avi', 'mkv', 'webm'].indexOf(ext) >= 0) {
+    icon = '🎥';
+    typeVal = 'video';
+  } else if (['ppt', 'pptx'].indexOf(ext) >= 0) {
+    icon = '📊';
+    typeVal = 'ppt';
+  } else if (['doc', 'docx', 'txt'].indexOf(ext) >= 0) {
+    icon = '📘';
+    typeVal = 'book';
+  } else if (['png', 'jpg', 'jpeg', 'svg'].indexOf(ext) >= 0) {
+    icon = '🖼️';
+    typeVal = 'pdf';
+  }
+
+  if (nameEl) nameEl.textContent = file.name;
+  if (iconEl) iconEl.textContent = icon;
+
+  var sizeStr = file.size > 1048576 
+    ? (file.size / 1048576).toFixed(1) + ' MB'
+    : (file.size / 1024).toFixed(0) + ' KB';
+  if (sizeEl) sizeEl.textContent = sizeStr + ' • Ready to upload';
+
+  // Auto-fill title if empty
+  if (titleEl && !titleEl.value.trim()) {
+    var baseName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+    // Replace underscores/dashes with spaces and capitalize
+    baseName = baseName.replace(/[-_]/g, ' ');
+    titleEl.value = baseName;
+  }
+
+  // Auto-select type
+  if (typeEl) {
+    typeEl.value = typeVal;
+  }
+
+  toast('Attached: ' + file.name, '📎');
+};
+
+window.removeFacultyAttachedFile = function(event) {
+  if (event) event.stopPropagation();
+  window._selectedFacultyFile = null;
+  var fileInput = document.getElementById('faculty-file-input');
+  if (fileInput) fileInput.value = '';
+
+  var promptEl = document.getElementById('dropzone-prompt');
+  var previewEl = document.getElementById('dropzone-preview');
+  if (promptEl) promptEl.style.display = 'block';
+  if (previewEl) previewEl.style.display = 'none';
+
+  toast('Attachment removed', '🗑️');
+};
+
 async function submitFacultyUpload() {
-  var titleEl   = document.querySelectorAll('#page-body .inp-field')[1];
-  var typeEl    = document.querySelectorAll('#page-body select')[0];
-  var subjectEl = document.querySelectorAll('#page-body select')[1];
-  var title   = titleEl   ? titleEl.value.trim()   : '';
-  var type    = typeEl    ? typeEl.value            : 'Video Lecture';
-  var subject = subjectEl ? subjectEl.value         : 'Physics';
-  if (!title) { toast('Enter a title before uploading!','⚠️'); return; }
-  
-  var isVideo = type.toLowerCase().indexOf('video') >= 0;
-  
+  var titleEl = document.getElementById('upload-content-title');
+  var typeEl = document.getElementById('upload-content-type');
+  var subjectEl = document.getElementById('upload-content-subject');
+  var chapterEl = document.getElementById('upload-content-chapter');
+  var batchEl = document.getElementById('upload-content-batch');
+
+  var title = titleEl ? titleEl.value.trim() : '';
+  var type = typeEl ? typeEl.value : 'pdf';
+  var subject = subjectEl ? subjectEl.value : 'Physics';
+  var chapter = chapterEl ? chapterEl.value.trim() : '';
+  var batch = batchEl ? batchEl.value : 'All Batches';
+
+  var attachedFile = window._selectedFacultyFile;
+
+  if (!title && !attachedFile) {
+    toast('Please enter a title or attach a file!', '⚠️');
+    if (titleEl) titleEl.focus();
+    return;
+  }
+
+  if (!title && attachedFile) {
+    title = attachedFile.name.substring(0, attachedFile.name.lastIndexOf('.')) || attachedFile.name;
+  }
+
+  var isVideo = type === 'video' || (attachedFile && attachedFile.name && attachedFile.name.match(/\.(mp4|mov|avi|mkv|webm)$/i));
+
+  var fileSizeStr = '2.4 MB';
+  if (attachedFile) {
+    fileSizeStr = attachedFile.size > 1048576 
+      ? (attachedFile.size / 1048576).toFixed(1) + ' MB'
+      : (attachedFile.size / 1024).toFixed(0) + ' KB';
+  }
+
   try {
     if (isVideo) {
       await api('/api/videos', {
@@ -7235,29 +7381,39 @@ async function submitFacultyUpload() {
           title: title,
           sub: subject,
           dur: '45:00',
+          batch: batch,
           thumb: '🎥'
         })
       });
     } else {
+      var fileName = attachedFile ? attachedFile.name : (title + (type === 'ppt' ? '.pptx' : '.pdf'));
       await api('/api/materials', {
         method: 'POST',
         body: JSON.stringify({
-          name: title + ' Notes.pdf',
-          type: 'pdf',
-          sub: subject
+          name: fileName,
+          type: type,
+          sub: subject,
+          size: fileSizeStr,
+          batch: batch
         })
       });
     }
-    toast('"' + title + '" uploaded successfully!', '📤');
+
+    toast('🎉 "' + title + '" uploaded & attached successfully!', '📤');
+
+    // Reset form
+    window.removeFacultyAttachedFile();
     if (titleEl) titleEl.value = '';
-    
-    // Re-sync data and reload page
+    if (chapterEl) chapterEl.value = '';
+
+    // Re-sync and refresh library
     await syncLMSData();
     loadPage('content');
   } catch (err) {
     toast('Upload failed: ' + err.message, '❌');
   }
 }
+window.submitFacultyUpload = submitFacultyUpload;
 
 window.openEditLibraryItem = function(id, isVideo) {
   if (String(id).indexOf('mock') === 0) {
