@@ -109,26 +109,16 @@
         </div>
       </div>
 
-      <!-- ── SIGN UP FORM ── -->
+      <!-- ── SIGN UP FORM (STUDENT ONLY) ── -->
       <div id="auth-signup-section" style="display:none">
-        <h2>Create Account</h2>
-        <p class="sub">Join RV Learning Hub today</p>
+        <h2>Student Registration</h2>
+        <p class="sub">Create your RV Learning Hub student account</p>
 
-        <div class="role-grid">
-          <div class="role-card active" style="--rc:var(--student)" id="su-rc-student" onclick="selectSignupRole('student')">
-            <div class="ri">&#127891;</div>
-            <div class="rn">Student</div>
-            <div class="rd">Start learning</div>
-          </div>
-          <div class="role-card" style="--rc:var(--faculty)" id="su-rc-faculty" onclick="selectSignupRole('faculty')">
-            <div class="ri">&#128104;&#8205;&#127979;</div>
-            <div class="rn">Faculty</div>
-            <div class="rd">Teach students</div>
-          </div>
-          <div class="role-card" style="--rc:var(--admin)" id="su-rc-admin" onclick="selectSignupRole('admin')">
-            <div class="ri">&#128737;</div>
-            <div class="rn">Admin</div>
-            <div class="rd">Manage portal</div>
+        <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);border-radius:12px;padding:10px 14px;margin-bottom:18px;display:flex;align-items:center;gap:10px">
+          <div style="font-size:24px">&#127891;</div>
+          <div>
+            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--student)">New Student Account</div>
+            <div style="font-size:11px;color:var(--muted)">Faculty & Admin accounts are provisioned by Administration</div>
           </div>
         </div>
 
@@ -163,17 +153,6 @@
             <option>NEET UG 2025</option>
             <option>KCET Batch</option>
             <option>Commerce Decoded</option>
-          </select>
-        </div>
-
-        <div class="form-group" id="su-group-subject" style="display:none">
-          <label>Teaching Subject</label>
-          <select class="form-input" id="su-subject" style="background:var(--surface-solid)">
-            <option>Physics</option>
-            <option>Chemistry</option>
-            <option>Mathematics</option>
-            <option>Biology</option>
-            <option>Commerce</option>
           </select>
         </div>
 

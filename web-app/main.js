@@ -323,29 +323,13 @@ window.switchAuthMode = function(mode) {
   }
 };
 
+window.currentSignupRole = 'student';
+
 window.selectSignupRole = function(role) {
-  window.currentSignupRole = role;
-  var roles = ['student','faculty','admin'];
-  for (var i=0; i<roles.length; i++) {
-    var card = document.getElementById('su-rc-' + roles[i]);
-    if (card) card.classList.toggle('active', roles[i] === role);
-  }
-
-  var bg = document.getElementById('su-group-batch');
-  var sg = document.getElementById('su-group-subject');
-
-  if (role === 'faculty') {
-    if (bg) bg.style.display = 'block';
-    if (sg) sg.style.display = 'block';
-  } else if (role === 'student') {
-    if (bg) bg.style.display = 'block';
-    if (sg) sg.style.display = 'none';
-  } else {
-    if (bg) bg.style.display = 'none';
-    if (sg) sg.style.display = 'none';
-  }
+  window.currentSignupRole = 'student';
   hideSignupErr();
 };
+
 
 function selectRole(role) {
   G.role = role;
