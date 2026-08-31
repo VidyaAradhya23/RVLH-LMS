@@ -141,6 +141,23 @@ const QuizResultSchema = new mongoose.Schema({
   video: String, score: Number, total: Number, date: String
 }, { timestamps: true, collection: 'quizresults' });
 
+const TestSchema = new mongoose.Schema({
+  n: { type: String, required: true },
+  type: { type: String, default: 'DPP' },
+  subject: { type: String, default: 'Physics' },
+  qs: { type: Number, default: 20 },
+  duration: { type: String, default: '60 min' },
+  marksCorrect: { type: String, default: '+4' },
+  marksWrong: { type: String, default: '-1' },
+  batch: { type: String, default: 'JEE Advanced A' },
+  startDate: String,
+  endDate: String,
+  deadline: { type: String, default: 'Mar 25' },
+  att: { type: Number, default: 0 },
+  pub: { type: Boolean, default: true },
+  fac: String
+}, { timestamps: true, collection: 'tests' });
+
 const PaymentSchema = new mongoose.Schema({
   id: String, student: String, material: String,
   amount: Number, date: String, method: String,
@@ -160,6 +177,7 @@ const Fee          = mongoose.model('Fee', FeeSchema);
 const Attendance   = mongoose.model('Attendance', AttendanceSchema);
 const Leaderboard  = mongoose.model('Leaderboard', LeaderboardSchema);
 const QuizResult   = mongoose.model('QuizResult', QuizResultSchema);
+const Test         = mongoose.model('Test', TestSchema);
 const Payment      = mongoose.model('Payment', PaymentSchema);
 
 // Helper to find any user across all 3 collections
@@ -714,6 +732,58 @@ app.post('/api/quiz-results', protect, async (req, res) => {
     date: date || 'Just now'
   });
   res.status(201).json(qr);
+});
+
+// ═══════════════════════════════════════════════════
+// TESTS & QUIZZES API
+// ═══════════════════════════════════════════════════
+app.get('/api/tests', protect, async (req, res) => {
+  res.json(await Test.find().sort({ createdAt: -1 }));
+});
+
+app.post('/api/tests', protect, async (req, res) => {
+  if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
+  const { n, type, subject, qs, duration, marksCorrect, marksWrong, batch, startDate, endDate, deadline } = req.body;
+  const test = await Test.create({
+    n,
+    type: type || 'DPP',
+    subject: subject || 'Physics',
+    qs: Number(qs || 20),
+    duration: duration || '60 min',
+    marksCorrect: marksCorrect || '+4',
+    marksWrong: marksWrong || '-1',
+    batch: batch || 'All Batches',
+    startDate,
+    endDate,
+    deadline: deadline || 'Mar 25',
+    att: 0,
+    pub: true,
+    fac: req.user.name
+  });
+  res.status(201).json(test);
+});
+
+app.put('/api/tests/:id', protect, async (req, res) => {
+  if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
+  const test = await Test.findByIdAndUpdate(req.params.id, req.body, { new: true });
+  if (!test) return res.status(404).json({ message: 'Test not found' });
+  res.json(test);
+});
+
+app.delete('/api/tests/:id', protect, async (req, res) => {
+  if (req.user.role !== 'faculty' && req.user.role !== 'admin') return res.status(403).json({ message: 'Unauthorized' });
+  const test = await Test.findByIdAndDelete(req.params.id);
+  if (!test) return res.status(404).json({ message: 'Test not found' });
+  res.json({ message: 'Test deleted' });
+});
+
+app.post('/api/tests/:id/attempt', protect, async (req, res) => {
+  const test = await Test.findById(req.params.id);
+  if (test) {
+    test.att = (test.att || 0) + 1;
+    await test.save();
+  }
+  res.json({ success: true, test });
 });
 
 app.get('/api/payments', protect, async (req, res) => res.json(await Payment.find().sort({ createdAt: -1 })));
