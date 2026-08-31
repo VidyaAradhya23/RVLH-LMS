@@ -1228,6 +1228,99 @@ app.put('/api/approvals/:id/reject', protect, async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════
+// FEES & PAYMENTS API (WITH REAL-TIME BROADCASTS)
+// ═══════════════════════════════════════════════════
+app.get('/api/fees', protect, async (req, res) => {
+  if (req.user.role === 'student') {
+    res.json(await Fee.find({ $or: [{ student: req.user.name }, { roll: req.user.roll }] }).sort({ createdAt: -1 }));
+  } else {
+    res.json(await Fee.find().sort({ createdAt: -1 }));
+  }
+});
+
+app.get('/api/payments', protect, async (req, res) => {
+  if (req.user.role === 'student') {
+    res.json(await Payment.find({ student: req.user.name }).sort({ createdAt: -1 }));
+  } else {
+    res.json(await Payment.find().sort({ createdAt: -1 }));
+  }
+});
+
+app.post('/api/payments', protect, async (req, res) => {
+  try {
+    const amt = Number(req.body.amount) || 15000;
+    const method = req.body.method || 'UPI / GPay / PhonePe';
+    const txnId = 'TXN' + Math.floor(100000 + Math.random() * 900000);
+    const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+    // 1. Create Payment record in MongoDB
+    const payment = await Payment.create({
+      id: txnId,
+      student: req.user.name,
+      material: req.body.item || 'Course Fee Payment',
+      amount: amt,
+      date: dateStr,
+      method: method,
+      status: 'success',
+      type: req.body.type || 'fee',
+      notes: req.body.notes || `Online Fee Payment via ${method}`
+    });
+
+    // 2. Update Fee record in MongoDB
+    let fee = await Fee.findOne({ $or: [{ student: req.user.name }, { roll: req.user.roll }] });
+    if (fee) {
+      fee.paid = (fee.paid || 0) + amt;
+      fee.pending = Math.max(0, (fee.amount || (fee.paid + fee.pending || 45000)) - fee.paid);
+      fee.status = fee.pending === 0 ? 'Paid' : 'Partial';
+      fee.method = method;
+      fee.date = dateStr;
+      await fee.save();
+    } else {
+      fee = await Fee.create({
+        student: req.user.name,
+        roll: req.user.roll || 'RV2024001',
+        amount: 45000,
+        paid: amt,
+        pending: Math.max(0, 45000 - amt),
+        status: (45000 - amt) === 0 ? 'Paid' : 'Partial',
+        method: method,
+        dueDate: 'Mar 31, 2026',
+        date: dateStr
+      });
+    }
+
+    // 3. Update Student feeStatus in MongoDB
+    await Student.findOneAndUpdate(
+      { $or: [{ name: req.user.name }, { email: req.user.email }] },
+      { feeStatus: fee.status === 'Paid' ? 'Paid' : 'Partial' }
+    );
+
+    // 4. Send Confirmation Notification
+    await sendNotification({
+      recipientName: req.user.name,
+      recipientRole: 'student',
+      title: '💳 Fee Payment Received',
+      message: `Your payment of ₹${amt.toLocaleString()} via ${method} was successful. Transaction ID: ${txnId}`,
+      type: 'fee',
+      icon: '💳',
+      link: 'fees'
+    });
+
+    broadcastRealtimeEvent('PAYMENT_CREATED', payment);
+    broadcastRealtimeEvent('FEE_UPDATED', fee);
+
+    res.status(201).json({
+      success: true,
+      payment: payment,
+      fee: fee,
+      txnId: txnId
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ═══════════════════════════════════════════════════
 // HIGH-PERFORMANCE UNIFIED BATCH SYNC API
 // ═══════════════════════════════════════════════════
 app.get('/api/sync', protect, async (req, res) => {
