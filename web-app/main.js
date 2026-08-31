@@ -8343,20 +8343,21 @@ window.lcRenderQA = function(ctx) {
   var panel = document.getElementById(ctx+'-panel-qa');
   if (!panel) return;
   var isFaculty = (G && G.role === 'faculty');
-  var sorted = s.questions.slice().sort(function(a,b){ return b.votes-a.votes; });
+  var sorted = s.questions.slice().sort(function(a,b){ return (b.votes||0)-(a.votes||0); });
   var qHtml = sorted.length ? sorted.map(function(q){
+    var qIdStr = String(q.id).replace(/'/g,"\\'");
     var ansHtml = q.answered
       ? '<div class="qa-answer-bubble"><span>✅ Answered by '+q.answeredBy+'</span>'+q.answer+'</div>'
       : '';
     var actionHtml = isFaculty
-      ? (q.answered ? '<span class="qa-answered-badge">✅ Answered</span>' : '<button class="qa-answer-btn" onclick="window.lcOpenAnswerModal('+q.id+')">Answer</button>')
-      : '<button class="qa-upvote'+(q.myVote?' voted':'')+'" onclick="window.lcUpvote('+q.id+',\''+ctx+'\')" title="Upvote">👍 '+q.votes+'</button>';
+      ? (q.answered ? '<span class="qa-answered-badge">✅ Answered</span>' : '<button class="qa-answer-btn" onclick="window.lcOpenAnswerModal(\''+qIdStr+'\')" style="background:linear-gradient(135deg,#6c47ff,#a855f7);color:#fff;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">✍️ Answer</button>')
+      : '<button class="qa-upvote'+(q.myVote?' voted':'')+'" onclick="window.lcUpvote(\''+qIdStr+'\',\''+ctx+'\')" title="Upvote">👍 '+q.votes+'</button>';
     return '<div class="qa-question'+(q.answered?' answered':'')+'">'  
       + '<div class="qa-meta"><div class="qa-avatar" style="background:'+q.c+'">'+q.n[0]+'</div><span class="qa-name">'+q.n+'</span><span class="qa-time">'+q.t+'</span></div>'
       + '<div class="qa-text">'+q.q+'</div>'
       + '<div class="qa-actions">' + actionHtml + (!isFaculty?'<span style="font-size:10px;color:var(--muted);margin-left:auto">' + q.votes + ' votes</span>':'') + '</div>'
       + ansHtml + '</div>';
-  }).join('') : '<div class="poll-no-active"><div style="font-size:32px">🙋</div><div>No questions yet</div><div style="font-size:12px">Be the first to ask!</div></div>';
+  }).join('') : '<div class="poll-no-active"><div style="font-size:32px">🙋</div><div>No questions yet</div><div style="font-size:12px">' + (isFaculty ? 'Student questions will appear here in real-time.' : 'Be the first to ask!') + '</div></div>';
 
   var inputHtml = !isFaculty
     ? '<div class="qa-input-bar"><input id="'+ctx+'-qa-input" placeholder="Ask a question..." onkeydown="if(event.key===\'Enter\'){window.lcSubmitQuestion(\''+ctx+'\')}"><button class="qa-submit-btn" onclick="window.lcSubmitQuestion(\''+ctx+'\')" style="padding:8px 14px">Ask ❓</button></div>'
@@ -8395,7 +8396,7 @@ window.lcSubmitQuestion = async function(ctx) {
 
 window.lcUpvote = function(qId, ctx) {
   var s = window.liveClassState;
-  var q = s.questions.find(function(x){ return x.id===qId; });
+  var q = s.questions.find(function(x){ return String(x.id)===String(qId); });
   if (!q) return;
   q.myVote = !q.myVote;
   q.votes += q.myVote ? 1 : -1;
@@ -8404,14 +8405,15 @@ window.lcUpvote = function(qId, ctx) {
 
 window.lcOpenAnswerModal = function(qId) {
   var s = window.liveClassState;
-  var q = s.questions.find(function(x){ return x.id===qId; });
-  if (!q) return;
+  var q = s.questions.find(function(x){ return String(x.id)===String(qId); });
+  if (!q) { toast('Question not found', '⚠️'); return; }
+  var qIdStr = String(qId).replace(/'/g,"\\'");
   var body = '<div style="margin-bottom:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px">'
     + '<div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Student Question</div>'
     + '<div style="font-size:13px;line-height:1.5">'+q.q+'</div></div>'
-    + '<div class="qa-answer-form"><textarea id="fac-answer-textarea" placeholder="Type your answer here..." style="width:100%"></textarea></div>';
+    + '<div class="qa-answer-form"><textarea id="fac-answer-textarea" placeholder="Type your answer here..." style="width:100%;min-height:80px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px;font-size:13px;color:var(--text);resize:vertical"></textarea></div>';
   openDetail('✍️ Answer Question', body,
-    '<button class="btn btn-solid" onclick="window.lcPostAnswer('+qId+')">📤 Post Answer</button>'
+    '<button class="btn btn-solid" onclick="window.lcPostAnswer(\''+qIdStr+'\')" style="background:linear-gradient(135deg,#6c47ff,#a855f7);border:none;padding:10px 20px;border-radius:10px;color:#fff;font-weight:700;cursor:pointer">📤 Post Answer</button>'
   );
 };
 
@@ -8419,15 +8421,17 @@ window.lcPostAnswer = function(qId) {
   var ta = document.getElementById('fac-answer-textarea');
   if (!ta || !ta.value.trim()) { toast('Please type an answer', '⚠️'); return; }
   var s = window.liveClassState;
-  var q = s.questions.find(function(x){ return x.id===qId; });
-  if (!q) return;
+  var q = s.questions.find(function(x){ return String(x.id)===String(qId); });
+  if (!q) { toast('Question not found', '⚠️'); return; }
   q.answered = true;
   q.answer = ta.value.trim();
   q.answeredBy = (G && G.user ? G.user.name : 'Faculty');
   toast('Answer posted! Students can see it now ✅', '✅');
   closeModal('modal-detail');
-  // re-render if faculty panel is open
-  if (document.getElementById('fac-panel-qa')) window.lcRenderQA('fac');
+  // re-render all visible Q&A panels
+  ['fac', 'stu', 'cmo'].forEach(function(ctx) {
+    if (document.getElementById(ctx + '-panel-qa')) window.lcRenderQA(ctx);
+  });
 };
 
 window.lcRenderPoll = function(ctx) {
