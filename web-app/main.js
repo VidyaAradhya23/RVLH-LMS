@@ -313,44 +313,6 @@ function hideErr() {
   if (el) el.style.display = 'none';
 }
 
-function showSignupErr(msg) {
-  var el = document.getElementById('signup-error');
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
-}
-function hideSignupErr() {
-  var el = document.getElementById('signup-error');
-  if (el) el.style.display = 'none';
-}
-
-window.currentSignupRole = 'student';
-
-window.switchAuthMode = function(mode) {
-  var inSec = document.getElementById('auth-signin-section');
-  var upSec = document.getElementById('auth-signup-section');
-  var tabIn = document.getElementById('tab-signin');
-  var tabUp = document.getElementById('tab-signup');
-
-  if (mode === 'signup') {
-    if (inSec) inSec.style.display = 'none';
-    if (upSec) upSec.style.display = 'block';
-    if (tabIn) { tabIn.style.background = 'transparent'; tabIn.style.color = 'var(--muted)'; }
-    if (tabUp) { tabUp.style.background = 'var(--grad-1)'; tabUp.style.color = '#fff'; }
-    hideSignupErr();
-  } else {
-    if (inSec) inSec.style.display = 'block';
-    if (upSec) upSec.style.display = 'none';
-    if (tabIn) { tabIn.style.background = 'var(--grad-1)'; tabIn.style.color = '#fff'; }
-    if (tabUp) { tabUp.style.background = 'transparent'; tabUp.style.color = 'var(--muted)'; }
-    hideErr();
-  }
-};
-
-window.currentSignupRole = 'student';
-
-window.selectSignupRole = function(role) {
-  window.currentSignupRole = 'student';
-  hideSignupErr();
-};
 
 
 function selectRole(role) {
@@ -402,66 +364,6 @@ async function doLogin() {
   }
 }
 
-window.doSignup = async function() {
-  var nameEl = document.getElementById('su-name');
-  var emailEl = document.getElementById('su-email');
-  var phoneEl = document.getElementById('su-phone');
-  var passEl = document.getElementById('su-pass');
-  var batchEl = document.getElementById('su-batch');
-  var subjectEl = document.getElementById('su-subject');
-  var campusEl = document.getElementById('su-campus');
-
-  var name = nameEl ? nameEl.value.trim() : '';
-  var email = emailEl ? emailEl.value.trim().toLowerCase() : '';
-  var phone = phoneEl ? phoneEl.value.trim() : '';
-  var password = passEl ? passEl.value.trim() : '';
-  var role = window.currentSignupRole || 'student';
-  var batch = batchEl ? batchEl.value : 'JEE Advanced (Main + KCET Decoded)';
-  var subject = subjectEl ? subjectEl.value : 'Physics';
-  var campus = campusEl ? campusEl.value : 'RVPU North';
-
-  if (!name) { showSignupErr('Please enter your full name'); return; }
-  if (!email) { showSignupErr('Please enter a valid email address'); return; }
-  if (!phone) { showSignupErr('Please enter your phone number'); return; }
-  if (!password || password.length < 4) { showSignupErr('Password must be at least 4 characters'); return; }
-
-  hideSignupErr();
-  var btn = document.getElementById('btn-signup');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Creating account...'; }
-
-  try {
-    var regRes = await api('/api/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: name,
-        email: email,
-        phone: phone,
-        password: password,
-        role: role,
-        batch: batch,
-        subject: subject,
-        campus: campus
-      })
-    });
-
-    // Auto login with new credentials
-    const loginRes = await api('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email: email, password: password })
-    });
-
-    token = loginRes.token;
-    localStorage.setItem('lms_token', token);
-    G.user = loginRes.user;
-    G.role = loginRes.user.role;
-    toast('Account created successfully! Welcome, ' + name + ' 🎉', '✨');
-    launch();
-  } catch(err) {
-    showSignupErr(err.message || 'Registration failed');
-  } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '✨ Create Account & Sign In'; }
-  }
-};
 
 // ═══════════════════════════════════════════════════════
 // REAL-TIME EVENT STREAMING (SSE CLIENT)
@@ -719,20 +621,6 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
 
-  // Dynamically populate available courses from MongoDB in signup dropdown
-  fetch('/api/courses/public')
-    .then(function(res) { return res.json(); })
-    .then(function(courses) {
-      var batchSelect = document.getElementById('su-batch');
-      if (batchSelect && Array.isArray(courses) && courses.length > 0) {
-        batchSelect.innerHTML = courses.map(function(c) {
-          var title = c.title || c.n || 'Course';
-          var emoji = c.e || '📚';
-          return '<option value="' + title + '">' + emoji + ' ' + title + '</option>';
-        }).join('');
-      }
-    })
-    .catch(function(e) { /* keep static defaults */ });
 
   // Populate email spans safely
   function setTxt(id, val) { var el=document.getElementById(id); if(el) el.textContent=val; }

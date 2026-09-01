@@ -28,11 +28,6 @@
       <p>JEE &nbsp;&bull;&nbsp; NEET &nbsp;&bull;&nbsp; Commerce</p>
     </div>
     <div class="login-card">
-      <div class="auth-toggle-tabs" style="display:flex;gap:6px;background:rgba(255,255,255,0.04);padding:4px;border-radius:14px;margin-bottom:20px;border:1px solid rgba(255,255,255,0.08)">
-        <button type="button" id="tab-signin" class="auth-tab-btn active" onclick="switchAuthMode('signin')" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--grad-1);color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s">🔐 Sign In</button>
-        <button type="button" id="tab-signup" class="auth-tab-btn" onclick="switchAuthMode('signup')" style="flex:1;padding:10px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s">✨ Sign Up</button>
-      </div>
-
       <!-- ── SIGN IN FORM ── -->
       <div id="auth-signin-section">
         <h2>Welcome back</h2>
@@ -72,10 +67,6 @@
 
         <button class="btn-login" id="btn-signin" style="cursor:pointer">Sign In</button>
 
-        <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--muted)">
-          Don't have an account? <a href="javascript:void(0)" onclick="switchAuthMode('signup')" style="color:#a78bff;font-weight:700;text-decoration:none">Create one now ✨</a>
-        </div>
-
         <div class="demo-btns" style="margin-top:16px">
           <button class="demo-btn" id="demo-student">Student Demo</button>
           <button class="demo-btn" id="demo-faculty">Faculty Demo</button>
@@ -106,79 +97,6 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- ── SIGN UP FORM (STUDENT ONLY) ── -->
-      <div id="auth-signup-section" style="display:none">
-        <h2>Student Registration</h2>
-        <p class="sub">Create your RV Learning Hub student account</p>
-
-        <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);border-radius:12px;padding:10px 14px;margin-bottom:18px;display:flex;align-items:center;gap:10px">
-          <div style="font-size:24px">&#127891;</div>
-          <div>
-            <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--student)">New Student Account</div>
-            <div style="font-size:11px;color:var(--muted)">Faculty & Admin accounts are provisioned by Administration</div>
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Full Name</label>
-          <input type="text" class="form-input" id="su-name" placeholder="e.g. Ramesh Kumar">
-        </div>
-
-        <div class="form-group">
-          <label>Email Address</label>
-          <input type="email" class="form-input" id="su-email" placeholder="e.g. ramesh@example.com">
-        </div>
-
-        <div class="form-group">
-          <label>Phone Number</label>
-          <input type="tel" class="form-input" id="su-phone" placeholder="e.g. 9876543210">
-        </div>
-
-        <div class="form-group">
-          <label>Password</label>
-          <div style="position:relative">
-            <input type="password" class="form-input" id="su-pass" placeholder="Create a secure password" style="padding-right:60px">
-            <button type="button" id="btn-su-toggle-pw" onclick="toggleFieldPw('su-pass','btn-su-toggle-pw')" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);font-weight:600;padding:4px 6px">👁️</button>
-          </div>
-        </div>
-
-        <div class="form-group" id="su-group-batch">
-          <label>Select Target Course / Program</label>
-          <select class="form-input" id="su-batch" style="background:var(--surface-solid)">
-            <option value="JEE Advanced (Main + KCET Decoded)">⚛️ JEE Advanced (Main + KCET Decoded)</option>
-            <option value="JEE (Main + KCET Decoded)">🎯 JEE (Main + KCET Decoded)</option>
-            <option value="NEET UG Decoded">🔬 NEET UG Decoded</option>
-            <option value="Commerce Decoded Program">📊 Commerce Decoded (PUC + CA/CS/CMA)</option>
-            <option value="Foundation (Grade 8-10)">📐 Foundation (Grade 8-10)</option>
-            <option value="Abacus">🧮 Abacus & Vedic Mathematics</option>
-            <option value="KCET Batch">⚡ KCET Focused Crash Batch</option>
-            <option value="PUC II Science (PCMB/PCMC)">🧪 PUC II Science (PCMB / PCMC)</option>
-            <option value="PUC I Science">📘 PUC I Science Foundation</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Campus / College</label>
-          <select class="form-input" id="su-campus" style="background:var(--surface-solid)">
-            <option value="RVPU North">🏫 RVPU North</option>
-            <option value="RVPU South">🏫 RVPU South</option>
-            <option value="RVPU Ecity">🏫 RVPU Ecity</option>
-            <option value="RVPU Harohgalli">🏫 RVPU Harohgalli</option>
-            <option value="RVPU Mysore">🏫 RVPU Mysore</option>
-            <option value="NMKRV PU">🏫 NMKRV PU</option>
-            <option value="SSMRV PU">🏫 SSMRV PU</option>
-          </select>
-        </div>
-
-        <div id="signup-error" style="display:none;background:rgba(255,45,107,.12);border:1px solid rgba(255,45,107,.4);color:#ff2d6b;border-radius:8px;padding:11px 14px;font-size:13px;margin-bottom:12px;text-align:center;font-weight:500"></div>
-
-        <button class="btn-login" id="btn-signup" onclick="doSignup()" style="cursor:pointer;background:linear-gradient(135deg,#00c6ff,#00d4c8,#4ade80)">✨ Create Account & Sign In</button>
-
-        <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--muted)">
-          Already have an account? <a href="javascript:void(0)" onclick="switchAuthMode('signin')" style="color:#a78bff;font-weight:700;text-decoration:none">Sign In 🔐</a>
         </div>
       </div>
 
