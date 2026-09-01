@@ -1192,7 +1192,6 @@ var NAV = {
       { id:'announcements',icon:'📢', label:'Announcements', n:2 },
     ]},
     { sec:'More', items:[
-      { id:'feedback',  icon:'⭐', label:'Give Feedback' },
       { id:'profile',   icon:'👤', label:'Profile' },
     ]},
   ],
@@ -1211,7 +1210,7 @@ var NAV = {
     ]},
     { sec:'More', items:[
       { id:'reports',  icon:'📋', label:'Monthly Report' },
-      { id:'feedback', icon:'⭐', label:'Student Feedback' },
+      { id:'profile',  icon:'👤', label:'My Profile' },
     ]},
   ],
   admin: [
@@ -1268,7 +1267,7 @@ var PAGE_TITLES = {
   dashboard:'Dashboard', courses:'Courses', videos:'Video Lectures', live:'Live Class',
   tests:'Test Series', material:'Material', doubts:'Doubts',
   progress:'Grading', attendance:'Attendance', leaderboard:'Leaderboard',
-  fees:'Fee Status', feedback:'Give Feedback',
+  fees:'Fee Status',
   announcements:'Announcements', profile:'Profile',
   batches:'My Batches', content:'Upload Content', tracker:'Student Tracker',
   analytics:'Analytics', reports:'Reports', users:'User Management',
@@ -1292,7 +1291,6 @@ function loadPage(id, addHistory) {
   if (G.role === 'faculty') {
     if (id === 'tests') title = 'Create Tests';
     if (id === 'live') title = 'Schedule Classes';
-    if (id === 'feedback') title = 'Student Feedback';
   }
   document.getElementById('tb-title').textContent = title;
   var body = document.getElementById('page-body');
@@ -2732,39 +2730,7 @@ function openPayModal() {
   openDetail('💳 Make Payment', body, '<button class="btn btn-solid" onclick="toast(\'Payment initiated!\',\'💳\');closeModal(\'modal-detail\')">Pay ₹15,000</button>');
 }
 
-// ──────────────── STUDENT FEEDBACK ────────────────
-PAGES['student_feedback'] = function() {
-  var faculty = [
-    { n:'Dr. Priya Mehta', s:'Physics',   e:'👩‍🏫', r:4.8 },
-    { n:'Prof. Amit Singh',s:'Chemistry', e:'👨‍🏫', r:4.5 },
-    { n:'Mr. Raj Sharma',  s:'Maths',     e:'👨‍🏫', r:4.3 },
-  ];
-  var html = '<div class="card"><div class="card-title" style="margin-bottom:14px">⭐ Rate Your Faculty</div>'
-    + faculty.map(function(f) {
-        return '<div class="list-item" onclick="openFeedbackForm(\'' + f.n.replace(/'/g,"\\'") + '\',\'' + f.s + '\')">'
-          + '<div class="li-icon" style="background:var(--surface2);font-size:20px">' + f.e + '</div>'
-          + '<div class="li-content"><div class="li-title">' + f.n + '</div><div class="li-sub">' + f.s + ' • ⭐ ' + f.r + '</div></div>'
-          + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();openFeedbackForm(\'' + f.n.replace(/'/g,"\\'") + '\',\'' + f.s + '\')">Give Feedback</button></div>';
-      }).join('') + '</div>';
-  return html;
-};
 
-function openFeedbackForm(name, sub) {
-  var body = '<div style="margin-bottom:14px;font-size:13px;color:var(--muted)">' + sub + ' • Your feedback helps improve teaching quality</div>'
-    + '<div class="inp-group"><label>Rating</label>'
-    + '<div style="display:flex;gap:6px;margin-top:4px" id="star-wrap">'
-    + [1,2,3,4,5].map(function(n) {
-        return '<button style="font-size:22px;background:none;border:none;cursor:pointer;transition:.2s;filter:grayscale(.8)" onclick="rateStar(this,' + n + ')">⭐</button>';
-      }).join('') + '</div></div>'
-    + makeInputGroup('Comments','textarea','Share your experience...');
-  openDetail('⭐ Feedback for ' + name, body, '<button class="btn btn-solid" onclick="toast(\'Feedback submitted!\',\'✅\');closeModal(\'modal-detail\')">Submit</button>');
-}
-
-function rateStar(el, n) {
-  var btns = document.querySelectorAll('#star-wrap button');
-  btns.forEach(function(b, i) { b.style.filter = i < n ? 'grayscale(0)' : 'grayscale(.8)'; });
-  toast('Rated ' + n + ' stars', '⭐');
-}
 
 // ═══════════════════════════════════════════════════════
 // FACULTY PAGES
@@ -3208,24 +3174,6 @@ PAGES['faculty_reports'] = function() {
       }).join('') + '</div></div>';
 };
 
-PAGES['faculty_feedback'] = function() {
-  var fb = [
-    { st:'Sneha Patel',  r:5, c:'Explains concepts very clearly. Examples are excellent!',       d:'Mar 10',batch:'JEE A' },
-    { st:'Arjun Sharma', r:5, c:'Best physics teacher I have had. Very patient with doubts.',    d:'Mar 9', batch:'JEE A' },
-    { st:'Rohan Gupta',  r:4, c:'Good style. Would appreciate more solved examples.',             d:'Mar 8', batch:'JEE B' },
-    { st:'Ananya Singh', r:5, c:'The way she derives formulas makes it easy to understand.',     d:'Mar 7', batch:'JEE A' },
-  ];
-  return '<div class="card"><div class="card-title" style="margin-bottom:14px">⭐ Feedback Received</div>'
-    + fb.map(function(f) {
-        return '<div class="card" style="margin-bottom:11px;background:var(--surface2)">'
-          + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">'
-          + '<div style="display:flex;align-items:center;gap:8px">'
-          + makeAv(f.st.charAt(0), 'rgba(0,212,200,.1)')
-          + '<div><div style="font-weight:600;font-size:13px">' + f.st + '</div><div style="font-size:11px;color:var(--muted)">' + f.batch + ' • ' + f.d + '</div></div></div>'
-          + '<span style="color:var(--yellow);font-size:13px">' + '⭐'.repeat(f.r) + '</span></div>'
-          + '<div style="font-size:13px;color:var(--muted);font-style:italic">"' + f.c + '"</div></div>';
-      }).join('') + '</div>';
-};
 
 // ═══════════════════════════════════════════════════════
 // ADMIN PAGES
