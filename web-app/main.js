@@ -53,7 +53,6 @@ async function syncLMSData() {
         window.LMS_DOUBTS = window.sortByDateDesc(bundle.doubts || []);
         window.LMS_MATERIALS = window.sortByDateDesc(bundle.materials || []);
         window.LMS_ANNOUNCEMENTS = window.sortByDateDesc(bundle.announcements || []);
-        window.LMS_FEES = window.sortByDateDesc(bundle.fees || []);
         window.LMS_ATTENDANCE = window.sortByDateDesc(bundle.attendance || []);
         window.LMS_LEADERBOARD = bundle.leaderboard || [];
         window.LMS_TESTS = window.sortByDateDesc(bundle.tests || []);
@@ -76,7 +75,6 @@ async function syncLMSData() {
         api('/api/doubts'),
         api('/api/materials'),
         api('/api/announcements'),
-        api('/api/fees'),
         api('/api/attendance'),
         api('/api/leaderboard'),
         api('/api/tests'),
@@ -94,8 +92,7 @@ async function syncLMSData() {
       window.LMS_DOUBTS = window.sortByDateDesc(results[3].value || window.LMS_DOUBTS || []);
       window.LMS_MATERIALS = window.sortByDateDesc(results[4].value || window.LMS_MATERIALS || []);
       window.LMS_ANNOUNCEMENTS = window.sortByDateDesc(results[5].value || window.LMS_ANNOUNCEMENTS || []);
-      window.LMS_FEES = window.sortByDateDesc(results[6].value || window.LMS_FEES || []);
-      window.LMS_ATTENDANCE = window.sortByDateDesc(results[7].value || window.LMS_ATTENDANCE || []);
+      window.LMS_ATTENDANCE = window.sortByDateDesc(results[6].value || window.LMS_ATTENDANCE || []);
       window.LMS_LEADERBOARD = results[8].value || window.LMS_LEADERBOARD || [];
       window.LMS_TESTS = window.sortByDateDesc(results[9].value || window.LMS_TESTS || []);
       window.mockTests = window.LMS_TESTS;
@@ -197,19 +194,11 @@ async function syncLMSData() {
         roll: u.roll || 'RV2024001',
         course: u.batch || 'JEE Advanced (Main + KCET Decoded)',
         batch: 'Batch A',
-        fee: u.feeStatus || 'Paid',
         st: u.st || 'active',
         email: u.email,
         campus: u.campus || 'RV Jayanagar',
         gender: u.gender || 'Male',
-        mobile: u.phone || '+91 98001 00001',
-        feeStatus: u.feeStatus || 'Paid',
-        feeAmount: u.feeAmount || 45000,
-        feePaid: u.feePaid || 0,
-        feePending: u.feePending !== undefined ? u.feePending : 45000,
-        feeDueDate: u.feeDueDate || 'Mar 31',
-        feeMethod: u.feeMethod || '—',
-        feeDate: u.feeDate || '—'
+        mobile: u.phone || '+91 98001 00001'
       }));
       
       window.ADMIN_FACULTY = allUsers.filter(u => u.role === 'faculty').map(u => ({
@@ -224,41 +213,6 @@ async function syncLMSData() {
         rat: '4.8',
         st: u.st || 'active'
       }));
-
-      // Map FEE_STUDENTS from window.ADMIN_STUDENTS
-      window.FEE_STUDENTS = window.ADMIN_STUDENTS.map(function(s) {
-        return {
-          n: s.n,
-          roll: s.roll,
-          course: s.course,
-          amount: s.feeAmount,
-          paid: s.feePaid,
-          pending: s.feePending,
-          due: s.feeDueDate,
-          method: s.feeMethod,
-          date: s.feeDate,
-          st: s.feeStatus.toLowerCase(), // 'paid', 'pending', 'overdue'
-          campus: s.campus
-        };
-      });
-
-      // Calculate FEE_COURSE_DATA dynamically
-      const courseMap = {};
-      window.COURSE_DB.forEach(c => {
-        courseMap[c.n] = { n: c.n, students: 0, fee: c.fee, collected: 0, pending: 0, col: c.col };
-      });
-      window.FEE_STUDENTS.forEach(s => {
-        if (!courseMap[s.course]) {
-          courseMap[s.course] = { n: s.course, students: 0, fee: s.amount, collected: 0, pending: 0, col: '#6c47ff' };
-        }
-        const cm = courseMap[s.course];
-        cm.students++;
-        cm.collected += s.paid;
-        cm.pending += s.pending;
-      });
-      window.FEE_COURSE_DATA = Object.values(courseMap);
-      FEE_STUDENTS = window.FEE_STUDENTS;
-      FEE_COURSE_DATA = window.FEE_COURSE_DATA;
     }
     if (window.COURSE_DB) COURSE_DB = window.COURSE_DB;
     if (window.ADMIN_STUDENTS) ADMIN_STUDENTS = window.ADMIN_STUDENTS;
@@ -747,7 +701,6 @@ var NAV = {
       { id:'progress',     icon:'📊', label:'Grading' },
       { id:'attendance',   icon:'✅', label:'Attendance' },
       { id:'leaderboard',  icon:'🏆', label:'Leaderboard' },
-      { id:'fees',         icon:'💳', label:'Fee Status' },
       { id:'announcements',icon:'📢', label:'Announcements', n:2 },
     ]},
     { sec:'More', items:[
@@ -777,7 +730,6 @@ var NAV = {
       { id:'dashboard', icon:'🏠', label:'Dashboard' },
       { id:'users',     icon:'👥', label:'User Management' },
       { id:'courses',   icon:'🏗️', label:'Course Builder' },
-      { id:'fees',      icon:'💳', label:'Fee & Billing' },
       { id:'media',     icon:'🎬', label:'Videos & Materials' },
       { id:'quiz',      icon:'📝', label:'Quiz Results' },
     ]},
@@ -826,7 +778,6 @@ var PAGE_TITLES = {
   dashboard:'Dashboard', courses:'Courses', videos:'Video Lectures', live:'Live Class',
   tests:'Test Series', material:'Material', doubts:'Doubts',
   progress:'Grading', attendance:'Attendance', leaderboard:'Leaderboard',
-  fees:'Fee Status',
   announcements:'Announcements', profile:'Profile',
   batches:'My Batches', content:'Upload Content', tracker:'Student Tracker',
   analytics:'Analytics', reports:'Reports', users:'User Management',
@@ -844,7 +795,6 @@ function loadPage(id, addHistory) {
   var title = PAGE_TITLES[id] || id;
   if (G.role === 'admin') {
     if (id === 'courses') title = 'Course Builder';
-    if (id === 'fees') title = 'Fee & Billing';
     if (id === 'live') title = 'Schedule Classes';
   }
   if (G.role === 'faculty') {
@@ -2519,124 +2469,7 @@ PAGES['student_leaderboard'] = function() {
     + '<div class="tbl-wrap"><table><thead><tr><th>Rank</th><th>Student</th><th>Avg Score</th><th>Tests</th><th>Attendance</th></tr></thead><tbody>' + rows + '</tbody></table></div></div>';
 };
 
-// ──────────────── STUDENT FEES ────────────────
-PAGES['student_fees'] = function() {
-  var u = G.user || {};
-  var totalFee = u.feeAmount || 45000;
-  var paidFee = u.feePaid || 30000;
-  var dueFee = u.feePending !== undefined ? u.feePending : Math.max(0, totalFee - paidFee);
-  var dueDate = u.feeDate || 'April 15, 2025';
 
-  var stats = makeStats([
-    { icon:'💰', val:'₹' + totalFee.toLocaleString(), label:'Total Course Fee', col:'var(--muted)' },
-    { icon:'✅', val:'₹' + paidFee.toLocaleString(),  label:'Amount Paid',     col:'var(--student)' },
-    { icon:'⏳', val:'₹' + dueFee.toLocaleString(),   label:'Amount Due',      col:'var(--admin)' },
-    { icon:'📅', val:dueFee === 0 ? 'Fully Paid' : dueDate, label:dueFee === 0 ? 'Status' : 'Next Due Date', col:'var(--yellow)' },
-  ]);
-
-  var payments = (window.LMS_PAYMENTS || []).filter(function(p){
-    return !p.student || p.student === u.name || p.student === 'Unknown Student';
-  });
-
-  var payHtml = payments.length > 0 ? payments.map(function(p) {
-    return '<div class="list-item" style="cursor:pointer" onclick="openFeeReceipt(\'' + (p.date||'Today') + '\',\'₹' + (p.amount||0).toLocaleString() + '\',\'' + (p.method||'UPI') + '\',\'' + (p.id||'TXN') + '\')">'
-      + '<div class="li-icon" style="background:rgba(74,222,128,.1)">✅</div>'
-      + '<div class="li-content"><div class="li-title">₹' + (p.amount||0).toLocaleString() + '</div><div class="li-sub">' + (p.date||'Recent') + ' • ' + (p.method||'Online') + ' • ' + (p.material||p.type||'Course Fee') + '</div></div>'
-      + '<span class="badge badge-green">' + (p.status || 'Paid') + '</span></div>';
-  }).join('') : '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px">No past payment transactions found.</div>';
-
-  var payBox = '<div class="card"><div class="card-title" style="margin-bottom:14px">💳 Payment History</div>' + payHtml + '</div>';
-
-  var dueBox = '<div class="card"><div class="card-title" style="margin-bottom:14px">💸 Pay Fees</div>'
-    + '<div class="fee-card" style="margin-bottom:13px">'
-    + '<div style="font-size:12px;color:var(--muted);margin-bottom:3px">Outstanding Balance</div>'
-    + '<div style="font-family:Syne,sans-serif;font-size:26px;font-weight:800;color:' + (dueFee > 0 ? 'var(--admin)' : 'var(--student)') + '">₹' + dueFee.toLocaleString() + '</div>'
-    + '<div style="font-size:12px;color:var(--muted);margin-top:3px">' + (dueFee > 0 ? 'Due Date: ' + dueDate : '✅ All fees are fully cleared!') + '</div></div>'
-    + (dueFee > 0 ? ('<div style="display:flex;flex-direction:column;gap:8px">'
-      + '<button class="btn btn-green" onclick="openPayModal(' + dueFee + ')">💳 Pay Online (₹' + dueFee.toLocaleString() + ')</button>'
-      + '<button class="btn btn-purple" onclick="toast(\'EMI application requested!\',\'📋\')">📋 Apply for EMI Plan</button>'
-      + '<button class="btn btn-teal" onclick="toast(\'Scholarship criteria form opened\',\'🎓\')">🎓 Apply for Scholarship</button></div>') : '<div class="badge badge-green" style="padding:10px;justify-content:center;font-size:13px">✨ No pending dues</div>')
-    + '</div>';
-
-  return stats + '<div class="grid-2">' + payBox + dueBox + '</div>';
-};
-
-function openFeeReceipt(date, amount, method, ref) {
-  var u = G.user || {};
-  var body = '<div style="text-align:center;padding:14px 0 18px">'
-    + '<div style="font-size:44px;margin-bottom:8px">🧾</div>'
-    + '<div style="font-size:18px;font-weight:700;margin-bottom:2px">RV Learning Hub</div>'
-    + '<div style="color:var(--muted);font-size:12px">Official Fee Receipt</div></div>'
-    + '<div style="display:grid;gap:8px">'
-    + [['Student', u.name || 'Student'],['Roll No', u.roll || 'RV2024001'],['Amount', amount],['Date', date],['Payment Method', method],['Transaction ID', ref],['Status', 'Paid ✅']].map(function(e) { return makeFeeCard(e[0], e[1]); }).join('')
-    + '</div>';
-  openDetail('🧾 Fee Receipt', body, '<button class="btn btn-teal" onclick="window.downloadGenericFeeReceipt(\''+date+'\',\''+amount+'\',\''+method+'\',\''+ref+'\');closeModal(\'modal-detail\')">⬇ Download Receipt</button>');
-}
-
-function openPayModal(amountToPay) {
-  var amt = amountToPay || 15000;
-  var body = '<div style="display:flex;flex-direction:column;gap:12px">'
-    + '<div class="inp-group"><label>Amount to Pay (₹)</label><input type="number" id="pay-amount-inp" class="inp-field" value="' + amt + '"></div>'
-    + '<div class="inp-group"><label>Payment Method</label><select id="pay-method-select" class="inp-field"><option>UPI / GPay / PhonePe</option><option>Net Banking</option><option>Credit / Debit Card</option></select></div>'
-    + '</div>';
-  openDetail('💳 Online Fee Payment', body, '<button class="btn btn-solid" onclick="window.submitOnlineFeePayment()">✅ Confirm & Pay</button>');
-}
-
-window.submitOnlineFeePayment = async function() {
-  var u = G.user || {};
-  var amtInp = document.getElementById('pay-amount-inp');
-  var methodInp = document.getElementById('pay-method-select');
-  var amt = amtInp ? Number(amtInp.value) : 22500;
-  var method = methodInp ? methodInp.value : 'UPI / GPay / PhonePe';
-
-  if (!amt || amt <= 0) {
-    toast('Please enter a valid amount', '⚠️');
-    return;
-  }
-
-  var payBtn = document.querySelector('#modal-detail .btn-solid');
-  if (payBtn) {
-    payBtn.disabled = true;
-    payBtn.textContent = '⏳ Processing payment...';
-  }
-
-  var ref = 'TXN' + Math.floor(100000 + Math.random() * 900000);
-  var dateStr = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-
-  try {
-    const res = await api('/api/payments', {
-      method: 'POST',
-      body: JSON.stringify({
-        roll: u.roll || 'RV2024001',
-        amount: amt,
-        method: method,
-        type: 'fee',
-        item: 'Course Fee Payment',
-        date: dateStr
-      })
-    });
-    if (res && res.txnId) ref = res.txnId;
-
-    toast('🎉 Payment of ₹' + amt.toLocaleString() + ' successful! Receipt generated ✅', '✅');
-    closeModal('modal-detail');
-    await syncLMSData();
-    if (G.page) loadPage(G.page, false);
-
-    setTimeout(function() {
-      openFeeReceipt(dateStr, '₹' + amt.toLocaleString(), method, ref);
-    }, 350);
-  } catch(err) {
-    console.warn('Payment API notice, simulating successful payment:', err);
-    toast('🎉 Payment of ₹' + amt.toLocaleString() + ' recorded! Receipt generated ✅', '✅');
-    closeModal('modal-detail');
-    await syncLMSData();
-    if (G.page) loadPage(G.page, false);
-
-    setTimeout(function() {
-      openFeeReceipt(dateStr, '₹' + amt.toLocaleString(), method, ref);
-    }, 350);
-  }
-};
 
 
 
@@ -3506,7 +3339,7 @@ PAGES['admin_dashboard'] = function() {
     + [
       { icon:'👨‍🎓', val:'1,248', label:'Total Students',  change:'+23 this week',     col:'var(--student)' },
       { icon:'👨‍🏫', val:'42',    label:'Active Faculty',  change:'All subjects',       col:'var(--faculty)' },
-      { icon:'💰',  val:'₹8.4L', label:'Monthly Revenue', change:'↑12% vs last month', col:'var(--yellow)' },
+      { icon:'📝',  val:'156',   label:'Tests Conducted', change:'+8 this week',        col:'var(--yellow)' },
       { icon:'📚',  val:'18',    label:'Active Courses',  change:'JEE, NEET, Commerce',col:'var(--purple)' },
       { icon:'🎬',  val:'324',   label:'Total Videos',    change:'+12 this week',      col:'var(--orange)' },
     ].map(function(s) {
@@ -3531,12 +3364,13 @@ PAGES['admin_dashboard'] = function() {
       + '<span class="badge ' + (e.s==='approved'?'badge-green':'badge-yellow') + '">' + e.s + '</span></div>';
   }).join('');
 
-  var fees = window.LMS_FEES || [['JEE Advanced','₹72,000',8],['NEET Batch','₹43,500',5],['Commerce','₹29,500',4]];
-  var feeHtml = fees.map(function(f) {
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">'
-      + '<div><div style="font-size:13px;font-weight:600">' + f[0] + '</div><div style="font-size:11px;color:var(--muted)">' + f[2] + ' payments</div></div>'
-      + '<span style="color:var(--yellow);font-weight:700">' + f[1] + '</span></div>';
-  }).join('');
+  var recentAnnouncements = (window.LMS_ANNOUNCEMENTS || []).slice(0, 3);
+  var annHtml = recentAnnouncements.length > 0 ? recentAnnouncements.map(function(a) {
+    return '<div class="list-item" style="cursor:pointer" onclick="loadPage(\'announcements\')">'
+      + '<div class="li-icon" style="background:rgba(108,71,255,.1)">📢</div>'
+      + '<div class="li-content"><div class="li-title">' + (a.title || 'Announcement') + '</div><div class="li-sub">' + (a.date || 'Recent') + ' • ' + (a.cat || 'General') + '</div></div>'
+      + '</div>';
+  }).join('') : '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">No active announcements</div>';
 
   // Enrollment by Course - interactive chart
   var courseEnrollData = [
@@ -3563,8 +3397,8 @@ PAGES['admin_dashboard'] = function() {
     { label:'👨‍🏫 Add Faculty',   fn:'openAddFacultyModal()' },
     { label:'📢 Announcement',   fn:"loadPage('announcements')" },
     { label:'📊 Generate Report',fn:'openGenerateReportModal()' },
-    { label:'💳 Record Payment', fn:"loadPage('fees')" },
     { label:'🏗️ Create Course',  fn:'openCreateCourseModal()' },
+    { label:'🎬 Upload Media',   fn:"loadPage('media')" },
   ];
   var actHtml = actions.map(function(a) {
     return '<button class="btn btn-purple" style="justify-content:flex-start" onclick="' + a.fn + '">' + a.label + '</button>';
@@ -3574,10 +3408,8 @@ PAGES['admin_dashboard'] = function() {
   var activities = [
     { icon:'🎬', iconBg:'rgba(255,107,53,.12)',  title:'New video uploaded for approval',    sub:'Dr. Priya Mehta uploaded "Electrostatics Part 3"',         time:'5 min ago',  badge:'badge-orange', bLabel:'Pending Approval', action:'openActivityModal(\'video\',\'Electrostatics Part 3\',\'Dr. Priya Mehta\')' },
     { icon:'📄', iconBg:'rgba(108,71,255,.12)', title:'Study material uploaded',            sub:'Prof. Amit Singh added "Organic Chemistry Notes PDF"',      time:'22 min ago', badge:'badge-purple', bLabel:'Material',         action:'openActivityModal(\'material\',\'Organic Chemistry Notes PDF\',\'Prof. Amit Singh\')' },
-    { icon:'💳', iconBg:'rgba(251,191,36,.12)',  title:'Course material purchased',          sub:'Kavya Reddy purchased JEE Advanced notes pack (₹499)',      time:'1 hr ago',   badge:'badge-yellow', bLabel:'Purchase',         action:'openActivityModal(\'purchase\',\'JEE Advanced Notes Pack\',\'Kavya Reddy\')' },
     { icon:'📢', iconBg:'rgba(74,222,128,.12)',  title:'Announcement posted',               sub:'Admin posted "JEE Mock Test 14 — Sunday" to all batches',   time:'2 hrs ago',  badge:'badge-green',  bLabel:'Announcement',     action:"loadPage('announcements')" },
     { icon:'🎬', iconBg:'rgba(255,107,53,.12)',  title:'New video uploaded for approval',    sub:'Mr. Raj Sharma uploaded "Integration by Parts — Part 2"',   time:'3 hrs ago',  badge:'badge-orange', bLabel:'Pending Approval', action:'openActivityModal(\'video\',\'Integration by Parts — Part 2\',\'Mr. Raj Sharma\')' },
-    { icon:'💳', iconBg:'rgba(251,191,36,.12)',  title:'Material purchase',                 sub:'Aman Joshi purchased NEET Biology DPP pack (₹299)',          time:'4 hrs ago',  badge:'badge-yellow', bLabel:'Purchase',         action:'openActivityModal(\'purchase\',\'NEET Biology DPP Pack\',\'Aman Joshi\')' },
     { icon:'👨‍🎓',iconBg:'rgba(255,45,107,.12)',   title:'New student enrollment request',    sub:'Riya Shah applied for Commerce XI batch',                  time:'5 hrs ago',  badge:'badge-red',    bLabel:'Enrollment',       action:"openEnrollmentApproval('Riya Shah','Commerce XI','pending')" },
   ];
   var activityHtml = activities.map(function(a) {
@@ -3592,17 +3424,13 @@ PAGES['admin_dashboard'] = function() {
   return statsHtml
     + '<div class="grid-2">'
     + '<div class="card"><div class="card-header"><div class="card-title">👥 Recent Enrollments</div><button class="card-act" onclick="loadPage(\'users\')">Manage</button></div>' + enrHtml + '</div>'
-    + '<div class="card"><div class="card-header"><div class="card-title">💰 Fee Collection Today</div><button class="card-act" onclick="loadPage(\'fees\')">View All</button></div>'
-    + '<div style="text-align:center;padding:14px 0;border-bottom:1px solid var(--border);margin-bottom:13px">'
-    + '<div style="font-family:Syne,sans-serif;font-size:30px;font-weight:800;color:var(--yellow)">₹1,45,000</div>'
-    + '<div style="color:var(--muted);font-size:12px;margin-top:3px">Collected today</div></div>' + feeHtml + '</div>'
+    + '<div class="card"><div class="card-header"><div class="card-title">📢 Latest Announcements</div><button class="card-act" onclick="loadPage(\'announcements\')">View All</button></div>' + annHtml + '</div>'
     + '</div>'
     + '<div class="grid-2">'
     + '<div class="card"><div class="card-header"><div class="card-title">📊 Enrollment by Course</div><button class="card-act" onclick="toast(\'Opening course details...\',\'📊\')">View All</button></div>' + enrollChartHtml + '</div>'
     + '<div class="card"><div class="card-title" style="margin-bottom:14px">📣 Quick Actions</div><div style="display:flex;flex-direction:column;gap:7px">' + actHtml + '</div></div>'
     + '</div>'
     + '<div class="card"><div class="card-header"><div class="card-title">⚡ Recent Activities</div><button class="card-act" onclick="toast(\'Full activity log\',\'📋\')">View All</button></div>'
-    + activityHtml + '</div>';
 };
 
 function openEnrollmentApproval(name, course, status) {
@@ -3734,9 +3562,8 @@ PAGES['admin_users'] = function() {
     + '<option>RVPU North</option><option>RVPU South</option><option>RVPU Ecity</option><option>RVPU Harohgalli</option><option>RVPU Mysore</option><option>NMKRV PU</option><option>SSMRV PU</option>'
     + '</select>'
     + '<button class="btn btn-red" onclick="openAddStudentModal()">➕ Add Student</button></div>'
-    + '<div class="tbl-wrap"><table id="st-table"><thead><tr><th>Student</th><th>Roll No</th><th>Mail ID</th><th>Course</th><th>Campus</th><th>Fee</th><th>Status</th><th>Actions</th></tr></thead><tbody>'
+    + '<div class="tbl-wrap"><table id="st-table"><thead><tr><th>Student</th><th>Roll No</th><th>Mail ID</th><th>Course</th><th>Campus</th><th>Status</th><th>Actions</th></tr></thead><tbody>'
     + students.map(function(s, idx) {
-        const feeBadge = s.fee==='Paid'?'badge-green':s.fee==='Due'?'badge-yellow':'badge-red';
         const stBadge = s.st==='active'?'badge-teal':'badge-red';
         return '<tr data-name="' + s.n.toLowerCase() + '" data-course="' + s.course + '" data-campus="' + s.campus + '">'
           + '<td><div style="display:flex;align-items:center;gap:7px">' + makeAv(s.n.charAt(0), 'rgba(255,45,107,.1)') + '<div><div style="font-weight:600">' + s.n + '</div><div style="font-size:11px;color:var(--muted)">' + s.gender + ' • ' + s.mobile + '</div></div></div></td>'
@@ -3744,7 +3571,6 @@ PAGES['admin_users'] = function() {
           + '<td style="color:var(--muted);font-size:12px">' + s.email + '</td>'
           + '<td>' + s.course + '</td>'
           + '<td style="font-size:12px">' + s.campus + '</td>'
-          + '<td><span class="badge ' + feeBadge + '">' + s.fee + '</span></td>'
           + '<td><span class="badge ' + stBadge + '">' + s.st + '</span></td>'
           + '<td><div style="display:flex;gap:5px">'
           + '<button class="btn btn-sm btn-purple" onclick="event.stopPropagation();openStudentEditModal(' + idx + ')">✏️ Edit</button>'
@@ -3997,7 +3823,7 @@ window.batchShowFaculty = function() {
 
 window.batchExport = function() {
   var students = (window.ADMIN_STUDENTS || []).filter(function(s){return s.course===window._batchCourse;});
-  var rows = ['Name,Roll No,Email,Campus,Fee Status,Status'].concat(students.map(function(s){return [s.n,s.roll,s.email,s.campus,s.fee,s.st].join(',');}));
+  var rows = ['Name,Roll No,Email,Campus,Status'].concat(students.map(function(s){return [s.n,s.roll,s.email,s.campus,s.st].join(',');}));
   var blob = new Blob([rows.join('\n')],{type:'text/csv'});
   var url = URL.createObjectURL(blob);
   var a = document.createElement('a'); a.href=url; a.download=(window._batchName||'batch')+'_students.csv';
@@ -4020,12 +3846,9 @@ window.openStudentEditModal = function(idx) {
     + '<div class="inp-group"><label>Course</label><select class="inp-field" id="se-course">'
     + ['JEE Advanced (Main + KCET Decoded)','JEE (Main + KCET Decoded)','NEET UG Decoded','Commerce Decoded Programme'].map(function(c) { return '<option' + (s.course===c?' selected':'') + '>' + c + '</option>'; }).join('')
     + '</select></div>'
-    + '<div class="inp-row">'
     + '<div class="inp-group"><label>Campus</label><select class="inp-field" id="se-campus">'
     + ['RVPU North','RVPU South','RVPU Ecity','RVPU Harohgalli','RVPU Mysore','NMKRV PU','SSMRV PU'].map(function(c) { return '<option' + (s.campus===c?' selected':'') + '>' + c + '</option>'; }).join('')
-    + '</select></div>'
-    + '<div class="inp-group"><label>Fee Status</label><select class="inp-field" id="se-fee"><option' + (s.fee==='Paid'?' selected':'') + '>Paid</option><option' + (s.fee==='Due'?' selected':'') + '>Due</option><option' + (s.fee==='Overdue'?' selected':'') + '>Overdue</option></select></div>'
-    + '</div>';
+    + '</select></div>';
   openDetail('✏️ Edit Student — ' + s.n, body,
     '<button class="btn btn-solid" onclick="saveStudentEdit(' + idx + ')">💾 Save Changes</button>'
   );
@@ -4040,7 +3863,6 @@ window.saveStudentEdit = async function(idx) {
   var gender = document.getElementById('se-gender').value;
   var course = document.getElementById('se-course').value;
   var campus = document.getElementById('se-campus').value;
-  var fee = document.getElementById('se-fee').value;
   
   try {
     await api('/api/auth/users/' + s._id, {
@@ -4052,11 +3874,7 @@ window.saveStudentEdit = async function(idx) {
         phone: mobile,
         gender: gender,
         batch: course,
-        campus: campus,
-        feeStatus: fee,
-        feeAmount: fee === 'Paid' ? 45000 : s.feeAmount,
-        feePaid: fee === 'Paid' ? s.feeAmount : s.feePaid,
-        feePending: fee === 'Paid' ? 0 : s.feePending
+        campus: campus
       })
     });
     closeModal('modal-detail');
@@ -4535,342 +4353,7 @@ async function submitCreateCourse() {
   }
 }
 
-// ── FEE DATABASE ──
-var FEE_STUDENTS = [
-  { n:'Sneha Patel',  roll:'RV2024002', course:'JEE Advanced (Main + KCET Decoded)', amount:45000, paid:45000, pending:0,    due:'Mar 1',  method:'UPI',   date:'Mar 12', st:'paid',    campus:'RV Rajajinagar' },
-  { n:'Kavya Reddy',  roll:'RV2024015', course:'NEET UG Decoded',                   amount:38000, paid:38000, pending:0,    due:'Mar 1',  method:'Card',  date:'Mar 12', st:'paid',    campus:'RV Electronic City' },
-  { n:'Aman Joshi',   roll:'RV2024010', course:'Commerce Decoded Programme',         amount:28000, paid:28000, pending:0,    due:'Mar 1',  method:'Cash',  date:'Mar 11', st:'paid',    campus:'RV Jayanagar' },
-  { n:'Arjun Sharma', roll:'RV2024001', course:'JEE Advanced (Main + KCET Decoded)', amount:45000, paid:22500, pending:22500,due:'Mar 31', method:'—',     date:'—',      st:'pending', campus:'RV Jayanagar' },
-  { n:'Rohan Gupta',  roll:'RV2024003', course:'JEE (Main + KCET Decoded)',          amount:30000, paid:15000, pending:15000,due:'Mar 20', method:'—',     date:'—',      st:'pending', campus:'RV Jayanagar' },
-  { n:'Meera Shah',   roll:'RV2024008', course:'JEE Advanced (Main + KCET Decoded)', amount:45000, paid:30000, pending:15000,due:'Mar 10', method:'—',     date:'—',      st:'overdue', campus:'RV Rajajinagar' },
-  { n:'Dev Verma',    roll:'RV2024020', course:'Commerce Decoded Programme',          amount:28000, paid:0,     pending:28000,due:'Mar 1',  method:'—',     date:'—',      st:'overdue', campus:'RV Rajajinagar' },
-  { n:'Ravi Kumar',   roll:'RV2024012', course:'NEET UG Decoded',                   amount:38000, paid:19000, pending:19000,due:'Mar 15', method:'—',     date:'—',      st:'overdue', campus:'RV Electronic City' },
-];
-var FEE_COURSE_DATA = [
-  { n:'JEE Advanced (Main + KCET Decoded)', students:142, fee:45000, collected:4230000, pending:375000, col:'#ff2d6b' },
-  { n:'JEE (Main + KCET Decoded)',          students:98,  fee:30000, collected:2205000, pending:150000, col:'#6c47ff' },
-  { n:'NEET UG Decoded',                    students:72,  fee:38000, collected:2166000, pending:190000, col:'#4ade80' },
-  { n:'Commerce Decoded Programme',         students:56,  fee:28000, collected:1372000, pending:84000,  col:'#fbbf24' },
-];
 
-PAGES['admin_fees'] = function() {
-  var totalCollected = FEE_STUDENTS.filter(function(s){return s.st==='paid';}).reduce(function(a,s){return a+s.paid;},0);
-  var totalRevenue   = FEE_COURSE_DATA.reduce(function(a,c){return a+c.collected;},0);
-  var annualRevenue  = totalRevenue;
-  var totalPending   = FEE_STUDENTS.filter(function(s){return s.st!=='paid';}).reduce(function(a,s){return a+s.pending;},0);
-  var totalOverdue   = FEE_STUDENTS.filter(function(s){return s.st==='overdue';}).reduce(function(a,s){return a+s.pending;},0);
-
-  function fmt(n){return '₹'+n.toLocaleString('en-IN');}
-
-  // 1. Stats Grid (5 KPI Cards)
-  var stats = '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px">'
-    + [
-      { icon:'🪙', val:fmt(totalCollected), label:'Fees Collected', col:'#4ade80' },
-      { icon:'📈', val:fmt(totalRevenue),   label:'Total Revenue',   col:'#fbbf24' },
-      { icon:'📅', val:fmt(annualRevenue),  label:'Annual Revenue',  col:'#6c47ff' },
-      { icon:'⏳', val:fmt(totalPending),   label:'Fees Pending',   col:'#fb923c' },
-      { icon:'⚠️', val:fmt(totalOverdue),   label:'Overdue',        col:'#ff2d6b' }
-    ].map(function(s) {
-      return '<div class="stat-card" style="border-color:color-mix(in srgb,' + s.col + ' 28%,var(--border))">'
-        + '<div class="stat-icon" style="background:color-mix(in srgb,' + s.col + ' 10%,var(--surface2));color:' + s.col + '">' + s.icon + '</div>'
-        + '<div class="stat-val" style="font-size:18px;color:' + s.col + ';font-weight:800;font-family:Syne,sans-serif;background:none;-webkit-text-fill-color:' + s.col + ';text-fill-color:' + s.col + '">' + s.val + '</div>'
-        + '<div class="stat-label" style="font-size:11px;color:var(--muted)">' + s.label + '</div></div>';
-    }).join('') + '</div>';
-
-  // 2. Tabs (4 Filter Tabs + Record Payment Button)
-  var activeTab = window._activeFeeTab || 'all';
-  window._activeFeeTab = activeTab;
-  
-  var tabs = '<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">'
-    + [
-      ['all','All'],
-      ['collected','💳 Collected'],
-      ['pending','⏳ Pending'],
-      ['overdue','⚠️ Overdue']
-    ].map(function(t) {
-        var active = t[0]===activeTab;
-        return '<button class="btn btn-sm" id="ftab-'+t[0]+'" onclick="switchFeeTab(\''+t[0]+'\')" style="'+(active?'background:var(--admin);color:#fff;':'')+'">'+t[1]+'</button>';
-      }).join('')
-    + '<button class="btn btn-sm btn-teal" onclick="openRecordPaymentModal()" style="margin-left:auto; display:flex; align-items:center; gap:5px">+ Record Payment</button>'
-    + '</div>';
-
-  // Course Filter Dropdown
-  var feeCourseFilter = window._feeCourseFilter || '';
-  window._feeCourseFilter = feeCourseFilter;
-  var feeCoursesList = [''].concat(FEE_STUDENTS.map(function(s){return s.course;}).filter(function(v,i,a){return a.indexOf(v)===i;}));
-  var courseFilterHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">'
-    + '<label style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Filter by Course:</label>'
-    + '<select class="inp-field" style="max-width:280px;height:34px;padding:4px 10px;" id="fee-course-filter" onchange="window._feeCourseFilter=this.value;window.renderFeeTableBody()">'
-    + feeCoursesList.map(function(fc){return '<option value="'+fc+'"'+(feeCourseFilter===fc?' selected':'')+'>'
-        +(fc?fc.replace(' (Main + KCET Decoded)','').replace(' Decoded','').replace(' Programme',''):'All Courses')+'</option>';}).join('')
-    + '</select>'
-    + '</div>';
-
-  // 3. Students Table
-  var tableHtml = '<div class="card"><div class="card-header"><div class="card-title" id="fee-table-title">💳 Fee Details — All Students</div>'
-    + '<button class="btn btn-sm btn-purple" onclick="exportFeeData()">⬇ Export</button></div>'
-    + courseFilterHtml
-    + '<div class="tbl-wrap"><table id="fee-student-table"><thead><tr><th>STUDENT</th><th>COURSE</th><th>TOTAL FEE</th><th>PAID</th><th>PENDING</th><th>DUE DATE</th><th>PAYMENT MODE</th><th>TYPE</th><th>STATUS</th><th>ACTIONS</th></tr></thead>'
-    + '<tbody id="fee-tbody"></tbody></table></div></div>';
-
-  // 4. Fee by Course Table
-  var courseTable = '<div class="card" style="margin-top:16px"><div class="card-header"><div class="card-title">📊 Fee Collection by Course</div></div>'
-    + '<div class="tbl-wrap"><table><thead><tr><th>COURSE</th><th>STUDENTS</th><th>FEE/STUDENT</th><th>COLLECTED</th><th>PENDING</th><th>% COLLECTED</th><th>DOWNLOAD</th></tr></thead><tbody>'
-    + FEE_COURSE_DATA.map(function(cd) {
-        var totalPossible = cd.collected + cd.pending;
-        var pct = totalPossible > 0 ? Math.round(cd.collected / totalPossible * 100) : 0;
-        return '<tr>'
-          + '<td><div style="display:flex;align-items:center;gap:7px"><div style="width:10px;height:10px;border-radius:50%;background:'+cd.col+'"></div><span style="font-weight:600;font-size:12px">'+cd.n.replace(' (Main + KCET Decoded)','').replace(' Decoded','').replace(' Programme','')+'</span></div></td>'
-          + '<td><span style="font-weight:700;color:var(--purple)">'+cd.students+'</span></td>'
-          + '<td style="font-weight:600">'+fmt(cd.fee)+'</td>'
-          + '<td style="color:#4ade80;font-weight:600">'+fmt(cd.collected)+'</td>'
-          + '<td style="color:#ff2d6b;font-weight:600">'+fmt(cd.pending)+'</td>'
-          + '<td><div style="display:flex;align-items:center;gap:7px;min-width:140px"><div style="flex:1;height:6px;background:var(--surface2);border-radius:3px"><div style="height:6px;border-radius:3px;background:'+cd.col+';width:'+pct+'%"></div></div><span style="font-size:12px;font-weight:700">'+pct+'%</span></div></td>'
-          + '<td><button class="btn btn-sm btn-purple" onclick="downloadCourseData(\''+cd.n.replace(/'/g,"\\'")+'\')" title="Download '+cd.n+' fee data">⬇ CSV</button></td>'
-          + '</tr>';
-      }).join('') + '</tbody></table></div></div>';
-
-  // Trigger content render on tick
-  setTimeout(function() {
-    window.renderFeeTableBody();
-  }, 50);
-
-  return stats + tabs + tableHtml + courseTable;
-};
-
-// Global Row Builder
-function getFeeRowHtml(s, idx) {
-  function fmt(n){return '₹'+n.toLocaleString('en-IN');}
-  var payType = s.payType || (s.st==='paid' ? (idx===0 ? 'materials' : 'course') : '—');
-  var modeIcon = s.method==='UPI'?'📲':s.method==='Card'?'💳':s.method==='Cash'?'💵':s.method==='Net Banking'?'🏦':'—';
-  var isPaid = s.st==='paid';
-  
-  var statusClass = s.st==='paid' ? 'badge-green' : s.st==='pending' ? 'badge-yellow' : 'badge-red';
-  var statusLabel = s.st.charAt(0).toUpperCase() + s.st.slice(1);
-
-  return '<tr>'
-    + '<td><div style="font-weight:600">' + s.n + '</div><div style="font-size:11px;color:var(--muted)">' + s.roll + '</div></td>'
-    + '<td style="font-size:12px">' + s.course.replace(' (Main + KCET Decoded)','').replace(' Decoded','').replace(' Programme','') + '</td>'
-    + '<td style="font-weight:600">' + fmt(s.amount) + '</td>'
-    + '<td style="color:#4ade80;font-weight:600">' + fmt(s.paid) + '</td>'
-    + '<td style="font-weight:600">' + (s.pending > 0 ? fmt(s.pending) : '<span style="color:var(--muted)">—</span>') + '</td>'
-    + '<td style="font-size:12px">' + s.due + '</td>'
-    + '<td style="font-size:12px">' + (s.method && s.method !== '—' ? modeIcon + ' ' + s.method : '<span style="color:var(--muted)">—</span>') + '</td>'
-    + '<td>' + (payType !== '—' ? '<span class="badge ' + (payType==='course'?'badge-purple':'badge-teal') + '">' + (payType==='course'?'Course':'Materials') + '</span>' : '<span style="color:var(--muted);font-size:12px">—</span>') + '</td>'
-    + '<td><span class="badge ' + statusClass + '">' + statusLabel + '</span></td>'
-    + '<td><div style="display:flex;gap:5px">'
-    + (isPaid
-        ? '<button class="btn btn-sm btn-teal" onclick="openFeeReceiptModal('+idx+')">🧾 Receipt</button>'
-        : '<button class="btn btn-sm btn-red" onclick="openFeeReminderModal(\''+s.n+'\',\''+fmt(s.pending)+'\')">📨 Remind</button>')
-    + '</div></td></tr>';
-}
-
-window.renderFeeTableBody = function() {
-  var tab = window._activeFeeTab || 'all';
-  var courseFilter = window._feeCourseFilter || '';
-  var students = window.FEE_STUDENTS || FEE_STUDENTS;
-  
-  // 1. Filter by Course
-  var filtered = courseFilter ? students.filter(function(s) { return s.course === courseFilter; }) : students;
-  
-  // 2. Filter by Tab
-  if (tab === 'collected') {
-    filtered = filtered.filter(function(s) { return s.st === 'paid'; });
-  } else if (tab === 'pending') {
-    filtered = filtered.filter(function(s) { return s.st === 'pending'; });
-  } else if (tab === 'overdue') {
-    filtered = filtered.filter(function(s) { return s.st === 'overdue'; });
-  }
-  
-  var tbody = document.getElementById('fee-tbody');
-  if (tbody) {
-    tbody.innerHTML = filtered.map(function(s) {
-      var idx = students.indexOf(s);
-      return getFeeRowHtml(s, idx);
-    }).join('');
-  }
-  
-  var title = document.getElementById('fee-table-title');
-  if (title) {
-    var labels = { all: 'All Students', collected: 'Collected Invoices', pending: 'Pending Invoices', overdue: 'Overdue Invoices' };
-    title.innerHTML = '💳 Fee Details — ' + labels[tab];
-  }
-};
-
-window.switchFeeTab = function(tab) {
-  window._activeFeeTab = tab;
-  var tabs = ['all', 'collected', 'pending', 'overdue'];
-  tabs.forEach(function(t) {
-    var btn = document.getElementById('ftab-' + t);
-    if (btn) {
-      btn.style.cssText = t === tab ? 'background:var(--admin);color:#fff;' : '';
-    }
-  });
-  window.renderFeeTableBody();
-};
-
-window.openFeeReceiptModal = function(idx) {
-  var students = window.FEE_STUDENTS || FEE_STUDENTS;
-  var s = students[idx];
-  var body = '<div style="background:linear-gradient(135deg,rgba(74,222,128,.08),rgba(0,212,200,.08));border:1px solid rgba(74,222,128,.2);border-radius:12px;padding:16px;margin-bottom:14px">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">'
-    + '<div style="font-size:18px;font-weight:800;font-family:Syne,sans-serif">🧾 Payment Receipt</div>'
-    + '<span class="badge badge-green">✅ PAID</span></div>'
-    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
-    + [['Student',s.n],['Roll No',s.roll],['Course',s.course.split('(')[0].trim()],['Amount Paid','₹'+s.paid.toLocaleString('en-IN')],['Payment Method',s.method],['Date',s.date],['Campus',s.campus],['Receipt No','RV-RCP-'+Math.floor(Math.random()*90000+10000)]].map(function(e){
-        return '<div style="background:var(--surface2);border-radius:7px;padding:8px"><div style="font-size:10px;color:var(--muted)">'+e[0]+'</div><div style="font-size:13px;font-weight:600;margin-top:2px">'+e[1]+'</div></div>';
-      }).join('') + '</div></div>';
-  openDetail('🧾 Receipt — '+s.n, body, '<button class="btn btn-teal" onclick="window.downloadStudentFeeReceipt(\'' + s.roll + '\');closeModal(\'modal-detail\')">⬇ Download PDF</button>');
-};
-
-window.openRecordPaymentModal = function() {
-  var students = window.FEE_STUDENTS || FEE_STUDENTS;
-  var body = '<div class="inp-group"><label>Student</label><select class="inp-field" id="rp-st">'
-    + students.map(function(s){return '<option value="' + s.roll + '">'+s.n+' ('+s.roll+')</option>';}).join('')
-    + '</select></div>'
-    + '<div class="inp-row">'
-    + '<div class="inp-group"><label>Amount (₹)</label><input class="inp-field" id="rp-amt" type="number" placeholder="e.g. 15000"></div>'
-    + '<div class="inp-group"><label>Payment Method</label><select class="inp-field" id="rp-method"><option>UPI</option><option>Net Banking</option><option>Credit Card</option><option>Debit Card</option><option>Cash</option><option>Cheque</option></select></div>'
-    + '</div>'
-    + '<div class="inp-row">'
-    + '<div class="inp-group"><label>Payment Mode — Type</label>'
-    + '<select class="inp-field" id="rp-type" style="border-color:var(--purple)">'
-    + '<option value="course">📚 Course Fee</option>'
-    + '<option value="materials">📄 Materials Purchase</option>'
-    + '</select>'
-    + '<div style="font-size:10px;color:var(--muted);margin-top:3px">Specify whether this payment is for a course enrollment or materials purchase</div>'
-    + '</div>'
-    + '<div class="inp-group"><label>Reference No</label><input class="inp-field" id="rp-ref" placeholder="UTR/Transaction ID"></div>'
-    + '</div>'
-    + '<div class="inp-row">'
-    + '<div class="inp-group"><label>Payment Date</label><input class="inp-field" id="rp-date" type="date"></div>'
-    + '<div class="inp-group"><label>Course / Material Name</label><input class="inp-field" id="rp-item" placeholder="e.g. JEE Advanced 2025"></div>'
-    + '</div>'
-    + '<div class="inp-group"><label>Notes</label><textarea class="inp-field" id="rp-notes" rows="2" placeholder="Optional notes..."></textarea></div>';
-  openDetail('+ Record Payment', body, '<button class="btn btn-solid" onclick="submitRecordPayment()">💾 Record Payment</button>');
-};
-
-window.submitRecordPayment = async function() {
-  var rollSelect = document.getElementById('rp-st');
-  var amt = document.getElementById('rp-amt');
-  var method = document.getElementById('rp-method');
-  var type = document.getElementById('rp-type');
-  var ref = document.getElementById('rp-ref');
-  var date = document.getElementById('rp-date');
-  var item = document.getElementById('rp-item');
-  var notes = document.getElementById('rp-notes');
-
-  if (!rollSelect || !rollSelect.value) { toast('Select student!', '⚠️'); return; }
-  if (!amt || !amt.value) { toast('Enter amount!', '⚠️'); return; }
-  
-  var roll = rollSelect.value;
-  var payAmt = parseInt(amt.value);
-  var methodVal = method ? method.value : 'UPI';
-  var typeVal = type ? type.value : 'course';
-  var dateVal = date && date.value ? date.value : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  var itemVal = item && item.value ? item.value : 'LMS Course Fee';
-  var notesVal = notes && notes.value ? notes.value : '';
-
-  try {
-    await api('/api/payments', {
-      method: 'POST',
-      body: JSON.stringify({
-        roll: roll,
-        amount: payAmt,
-        method: methodVal,
-        type: typeVal,
-        date: dateVal,
-        item: itemVal,
-        notes: notesVal
-      })
-    });
-    closeModal('modal-detail');
-    toast('Payment of ₹' + payAmt.toLocaleString('en-IN') + ' recorded successfully!', '✅');
-    await syncLMSData();
-    loadPage('fees');
-  } catch (err) {
-    toast('Failed to record payment: ' + err.message, '❌');
-  }
-};
-
-window.submitFeeReminder = function(name) {
-  var wa = document.getElementById('reminder-toggle-wa').classList.contains('on');
-  var em = document.getElementById('reminder-toggle-em').classList.contains('on');
-  var sms = document.getElementById('reminder-toggle-sms').classList.contains('on');
-  
-  var channels = [];
-  if (wa) channels.push('WhatsApp');
-  if (em) channels.push('Email');
-  if (sms) channels.push('SMS');
-  
-  if (channels.length === 0) {
-    toast('Please select at least one channel!', '⚠️');
-    return;
-  }
-  
-  toast('Reminder sent to ' + name + ' via ' + channels.join(', ') + '!', '📨');
-  closeModal('modal-detail');
-};
-
-window.openFeeReminderModal = function(name, due) {
-  var body = '<div style="background:rgba(255,45,107,.07);border:1px solid rgba(255,45,107,.2);border-radius:10px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:12px">'
-    + '<div style="font-size:28px">⚠️</div>'
-    + '<div><div style="font-size:12px;color:var(--muted)">Amount Due</div>'
-    + '<div style="font-size:22px;font-weight:800;color:var(--admin);font-family:Syne,sans-serif">'+due+'</div></div></div>'
-    + '<div class="inp-group"><label>Send Reminder Via</label>'
-    + '<div style="display:flex;gap:12px;margin-top:6px;flex-wrap:wrap">'
-    + [['wa','💬 WhatsApp',true],['em','📧 Email',true],['sms','📱 SMS',false]].map(function(ch){
-        return '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">'
-          + '<div class="toggle'+(ch[2]?' on':'')+'" id="reminder-toggle-'+ch[0]+'" onclick="this.classList.toggle(\'on\')"></div>'+ch[1]+'</label>';
-      }).join('') + '</div></div>'
-    + '<div class="inp-group"><label>Reminder Message</label>'
-    + '<textarea class="inp-field" id="reminder-msg" rows="4">Dear '+name+',\n\nYour outstanding fee of '+due+' for RV Learning Hub is due. Please clear the payment at the earliest to avoid any disruption to your studies.\n\nFor queries, contact: fees@rvhub.com\n\nRV Learning Hub Team</textarea></div>'
-    + '<div class="inp-row">'
-    + '<div class="inp-group"><label>Follow-up Date</label><input class="inp-field" type="date"></div>'
-    + '<div class="inp-group"><label>Priority</label><select class="inp-field"><option>Normal</option><option>High</option><option>Urgent</option></select></div>'
-    + '</div>';
-  openDetail('📨 Fee Reminder — '+name, body,
-    '<button class="btn btn-solid" onclick="submitFeeReminder(\'' + name.replace(/'/g, "\\'") + '\')">📨 Send Reminder</button>'
-    + '<button class="btn btn-red" onclick="toast(\'Marked escalated!\',\'⚠️\');closeModal(\'modal-detail\')">⚠️ Escalate</button>');
-};
-
-window.downloadCourseData = function(courseName) {
-  var courseData = window.FEE_COURSE_DATA || FEE_COURSE_DATA;
-  var students = window.FEE_STUDENTS || FEE_STUDENTS;
-  var cd = courseData.find(function(x){return x.n===courseName;});
-  var filtered = students.filter(function(s){return s.course===courseName;});
-  var rows = ['Roll No,Name,Fee Amount,Paid,Pending,Status,Campus'];
-  filtered.forEach(function(s){
-    rows.push([s.roll,s.n,s.amount,s.paid,s.pending,s.st,s.campus].join(','));
-  });
-  rows.push(''); rows.push('SUMMARY,,,,,,');
-  rows.push('Total Students,'+( cd?cd.students:'N/A')+',,,,');
-  rows.push('Total Collected,₹'+(cd?cd.collected.toLocaleString('en-IN'):'0')+',,,,');
-  rows.push('Total Pending,₹'+(cd?cd.pending.toLocaleString('en-IN'):'0')+',,,,');
-  var csv = rows.join('\n');
-  var blob = new Blob([csv], {type:'text/csv'});
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  a.href = url; a.download = courseName.replace(/[^a-z0-9]/gi,'_')+'_fee_data.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  toast('Fee data for "'+courseName.split('(')[0].trim()+'" downloaded!','⬇');
-};
-
-window.exportFeeData = function() {
-  var students = window.FEE_STUDENTS || FEE_STUDENTS;
-  var rows = ['Roll No,Name,Course,Total Fee,Paid,Pending,Status,Campus,Due Date'];
-  students.forEach(function(s){
-    rows.push([s.roll,s.n,s.course,s.amount,s.paid,s.pending,s.st,s.campus,s.due].join(','));
-  });
-  var csv = rows.join('\n');
-  var blob = new Blob([csv],{type:'text/csv'});
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a'); a.href=url; a.download='fee_report_all.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  toast('Full fee report downloaded!','⬇');
-};
 
 
 function downloadMaterialFile(title) {

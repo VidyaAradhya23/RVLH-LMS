@@ -35,13 +35,6 @@ const StudentSchema = new mongoose.Schema({
   roll: { type: String, unique: true },
   streak: { type: Number, default: 1 },
   avgScore: { type: Number, default: 0 },
-  feeStatus: { type: String, default: 'Paid' },
-  feeAmount: { type: Number, default: 45000 },
-  feePaid: { type: Number, default: 0 },
-  feePending: { type: Number, default: 45000 },
-  feeDueDate: String,
-  feeMethod: String,
-  feeDate: String,
   campus: String,
   gender: String,
   dob: String,
@@ -139,11 +132,6 @@ const AnnouncementSchema = new mongoose.Schema({
   urgent: { type: Boolean, default: false }, target: String, draft: { type: Boolean, default: false }
 }, { timestamps: true, collection: 'announcements' });
 
-const FeeSchema = new mongoose.Schema({
-  student: String, roll: String, status: String, amount: Number,
-  paid: Number, pending: Number, dueDate: String, method: String, date: String
-}, { timestamps: true, collection: 'fees' });
-
 const AttendanceSchema = new mongoose.Schema({
   date: String, status: String, sub: String, topic: String, student: String
 }, { timestamps: true, collection: 'attendance' });
@@ -217,7 +205,6 @@ ChatMessageSchema.index({ createdAt: -1 });
 DoubtSchema.index({ createdAt: -1 });
 MaterialSchema.index({ createdAt: -1 });
 AnnouncementSchema.index({ createdAt: -1 });
-FeeSchema.index({ createdAt: -1 });
 AttendanceSchema.index({ createdAt: -1 });
 TestSchema.index({ createdAt: -1 });
 ApprovalSchema.index({ createdAt: -1 });
@@ -233,7 +220,6 @@ const LiveClass    = mongoose.model('LiveClass', LiveClassSchema);
 const Doubt        = mongoose.model('Doubt', DoubtSchema);
 const Material     = mongoose.model('Material', MaterialSchema);
 const Announcement = mongoose.model('Announcement', AnnouncementSchema);
-const Fee          = mongoose.model('Fee', FeeSchema);
 const Attendance   = mongoose.model('Attendance', AttendanceSchema);
 const Leaderboard  = mongoose.model('Leaderboard', LeaderboardSchema);
 const QuizResult   = mongoose.model('QuizResult', QuizResultSchema);
@@ -334,14 +320,14 @@ async function seedData() {
 
   // 3. STUDENTS COLLECTION
   const studentSeeds = [
-    { name:'Arjun Sharma', email:'arjun@rvhub.com', phone:'9876543210', batch:'JEE Advanced (Main + KCET Decoded)', roll:'RV2024001', streak:7, avgScore:85, feeStatus:'Paid', feeAmount:45000, feePaid:22500, feePending:22500, feeDueDate:'Mar 31', feeMethod:'—', feeDate:'—', campus:'RV Jayanagar', gender:'Male' },
-    { name:'Sneha Patel', email:'sneha.patel@student.rvhub.com', phone:'9800100002', batch:'JEE Advanced (Main + KCET Decoded)', roll:'RV2024002', streak:1, avgScore:88, feeStatus:'Paid', feeAmount:45000, feePaid:45000, feePending:0, feeDueDate:'Mar 1', feeMethod:'UPI', feeDate:'Mar 12', campus:'RV Rajajinagar', gender:'Female' },
-    { name:'Rohan Gupta', email:'rohan.gupta@student.rvhub.com', phone:'9800100003', batch:'JEE (Main + KCET Decoded)', roll:'RV2024003', streak:2, avgScore:68, feeStatus:'Due', feeAmount:30000, feePaid:15000, feePending:15000, feeDueDate:'Mar 20', feeMethod:'—', feeDate:'—', campus:'RV Jayanagar', gender:'Male' },
-    { name:'Kavya Reddy', email:'kavya.reddy@student.rvhub.com', phone:'9800100015', batch:'NEET UG Decoded', roll:'RV2024015', streak:5, avgScore:88, feeStatus:'Paid', feeAmount:38000, feePaid:38000, feePending:0, feeDueDate:'Mar 1', feeMethod:'Card', feeDate:'Mar 12', campus:'RV Electronic City', gender:'Female' },
-    { name:'Dev Verma', email:'dev.verma@student.rvhub.com', phone:'9800100020', batch:'Commerce Decoded Programme', roll:'RV2024020', streak:0, avgScore:58, feeStatus:'Overdue', feeAmount:28000, feePaid:0, feePending:28000, feeDueDate:'Mar 1', feeMethod:'—', feeDate:'—', campus:'RV Rajajinagar', gender:'Male' },
-    { name:'Ravi Kumar', email:'ravi.kumar@student.rvhub.com', phone:'9800100012', batch:'NEET UG Decoded', roll:'RV2024012', streak:3, avgScore:70, feeStatus:'Overdue', feeAmount:38000, feePaid:19000, feePending:19000, feeDueDate:'Mar 15', feeMethod:'—', feeDate:'—', campus:'RV Electronic City', gender:'Male' },
-    { name:'Meera Shah', email:'meera.shah@student.rvhub.com', phone:'9800100008', batch:'JEE Advanced (Main + KCET Decoded)', roll:'RV2024008', streak:4, avgScore:78, feeStatus:'Overdue', feeAmount:45000, feePaid:30000, feePending:15000, feeDueDate:'Mar 10', feeMethod:'—', feeDate:'—', campus:'RV Rajajinagar', gender:'Female' },
-    { name:'Aman Joshi', email:'aman.joshi@student.rvhub.com', phone:'9800100010', batch:'Commerce Decoded Programme', roll:'RV2024010', streak:1, avgScore:75, feeStatus:'Paid', feeAmount:28000, feePaid:28000, feePending:0, feeDueDate:'Mar 1', feeMethod:'Cash', feeDate:'Mar 11', campus:'RV Jayanagar', gender:'Male' }
+    { name:'Arjun Sharma', email:'arjun@rvhub.com', phone:'9876543210', batch:'JEE Advanced (Main + KCET Decoded)', roll:'RV2024001', streak:7, avgScore:85, campus:'RV Jayanagar', gender:'Male' },
+    { name:'Sneha Patel', email:'sneha.patel@student.rvhub.com', phone:'9800100002', batch:'JEE Advanced (Main + KCET Decoded)', roll:'RV2024002', streak:1, avgScore:88, campus:'RV Rajajinagar', gender:'Female' },
+    { name:'Rohan Gupta', email:'rohan.gupta@student.rvhub.com', phone:'9800100003', batch:'JEE (Main + KCET Decoded)', roll:'RV2024003', streak:2, avgScore:68, campus:'RV Jayanagar', gender:'Male' },
+    { name:'Kavya Reddy', email:'kavya.reddy@student.rvhub.com', phone:'9800100015', batch:'NEET UG Decoded', roll:'RV2024015', streak:5, avgScore:88, campus:'RV Electronic City', gender:'Female' },
+    { name:'Dev Verma', email:'dev.verma@student.rvhub.com', phone:'9800100020', batch:'Commerce Decoded Programme', roll:'RV2024020', streak:0, avgScore:58, campus:'RV Rajajinagar', gender:'Male' },
+    { name:'Ravi Kumar', email:'ravi.kumar@student.rvhub.com', phone:'9800100012', batch:'NEET UG Decoded', roll:'RV2024012', streak:3, avgScore:70, campus:'RV Electronic City', gender:'Male' },
+    { name:'Meera Shah', email:'meera.shah@student.rvhub.com', phone:'9800100008', batch:'JEE Advanced (Main + KCET Decoded)', roll:'RV2024008', streak:4, avgScore:78, campus:'RV Rajajinagar', gender:'Female' },
+    { name:'Aman Joshi', email:'aman.joshi@student.rvhub.com', phone:'9800100010', batch:'Commerce Decoded Programme', roll:'RV2024010', streak:1, avgScore:75, campus:'RV Jayanagar', gender:'Male' }
   ];
   for (const s of studentSeeds) {
     await Student.create({ ...s, password: studentHash, role: 'student', ava: s.name.charAt(0), st: 'active' });
@@ -349,11 +335,11 @@ async function seedData() {
 
   // 4. COURSES COLLECTION
   await Course.insertMany([
-    { e:'⚛️', title:'JEE Advanced (Main + KCET Decoded)', desc:'Comprehensive JEE preparation', videos:22, materials:18, quizzes:15, col:'linear-gradient(90deg,#6c47ff,#a855f7)', p:65, done:42, total:65, maxSt:150, fac:'Dr. Priya Mehta', fee:45000, cat:'JEE', dur:'1 Year', subjects:['Physics','Chemistry','Mathematics'], rating:4.9, reviews:124, pub:true },
-    { e:'🧪', title:'JEE (Main + KCET Decoded)', desc:'JEE Main focused course', videos:18, materials:14, quizzes:12, col:'linear-gradient(90deg,#ff6b35,#ff2d6b)', p:45, done:28, total:62, maxSt:150, fac:'Prof. Amit Singh', fee:30000, cat:'JEE', dur:'1 Year', subjects:['Physics','Chemistry','Mathematics'], rating:4.8, reviews:98, pub:true },
-    { e:'🧬', title:'NEET UG Decoded', desc:'Complete NEET preparation', videos:20, materials:16, quizzes:14, col:'linear-gradient(90deg,#4ade80,#00c6ff)', p:72, done:50, total:70, maxSt:120, fac:'Dr. Kavya R.', fee:38000, cat:'NEET', dur:'1 Year', subjects:['Physics','Chemistry','Biology'], rating:4.9, reviews:112, pub:true },
-    { e:'📊', title:'Commerce Decoded Programme', desc:'XI & XII Commerce full prep', videos:15, materials:12, quizzes:10, col:'linear-gradient(90deg,#fbbf24,#f97316)', p:55, done:35, total:64, maxSt:100, fac:'Prof. Neha K.', fee:28000, cat:'Commerce', dur:'1 Year', subjects:['Accountancy','Economics','Business Studies'], rating:4.7, reviews:78, pub:true },
-    { e:'📐', title:'Foundation (Grade 8-10)', desc:'School foundation batch', videos:12, materials:10, quizzes:8, col:'linear-gradient(90deg,#00c6ff,#6c47ff)', p:30, done:18, total:60, maxSt:120, fac:'Mr. Raj Sharma', fee:20000, cat:'Foundation', dur:'1 Year', subjects:['Mathematics','Science','English'], rating:4.6, reviews:56, pub:true }
+    { e:'⚛️', title:'JEE Advanced (Main + KCET Decoded)', desc:'Comprehensive JEE preparation', videos:22, materials:18, quizzes:15, col:'linear-gradient(90deg,#6c47ff,#a855f7)', p:65, done:42, total:65, maxSt:150, fac:'Dr. Priya Mehta', cat:'JEE', dur:'1 Year', subjects:['Physics','Chemistry','Mathematics'], rating:4.9, reviews:124, pub:true },
+    { e:'🧪', title:'JEE (Main + KCET Decoded)', desc:'JEE Main focused course', videos:18, materials:14, quizzes:12, col:'linear-gradient(90deg,#ff6b35,#ff2d6b)', p:45, done:28, total:62, maxSt:150, fac:'Prof. Amit Singh', cat:'JEE', dur:'1 Year', subjects:['Physics','Chemistry','Mathematics'], rating:4.8, reviews:98, pub:true },
+    { e:'🧬', title:'NEET UG Decoded', desc:'Complete NEET preparation', videos:20, materials:16, quizzes:14, col:'linear-gradient(90deg,#4ade80,#00c6ff)', p:72, done:50, total:70, maxSt:120, fac:'Dr. Kavya R.', cat:'NEET', dur:'1 Year', subjects:['Physics','Chemistry','Biology'], rating:4.9, reviews:112, pub:true },
+    { e:'📊', title:'Commerce Decoded Programme', desc:'XI & XII Commerce full prep', videos:15, materials:12, quizzes:10, col:'linear-gradient(90deg,#fbbf24,#f97316)', p:55, done:35, total:64, maxSt:100, fac:'Prof. Neha K.', cat:'Commerce', dur:'1 Year', subjects:['Accountancy','Economics','Business Studies'], rating:4.7, reviews:78, pub:true },
+    { e:'📐', title:'Foundation (Grade 8-10)', desc:'School foundation batch', videos:12, materials:10, quizzes:8, col:'linear-gradient(90deg,#00c6ff,#6c47ff)', p:30, done:18, total:60, maxSt:120, fac:'Mr. Raj Sharma', cat:'Foundation', dur:'1 Year', subjects:['Mathematics','Science','English'], rating:4.6, reviews:56, pub:true }
   ]);
 
   // 5. VIDEOS COLLECTION
@@ -403,7 +389,6 @@ async function seedData() {
   // 9. ANNOUNCEMENTS COLLECTION
   await Announcement.insertMany([
     { title:'JEE Advanced 2025 Mock Test 1', body:'Full syllabus mock test scheduled for March 25.', cat:'Exam', date:'Mar 12', urgent:true, target:'all', draft:false },
-    { title:'Fee Payment Reminder', body:'Last date for fee payment is March 31.', cat:'Fee', date:'Mar 10', urgent:false, target:'students', draft:false },
     { title:'Parent-Teacher Meeting', body:'PTM scheduled on March 28, 10 AM – 2 PM.', cat:'Event', date:'Mar 9', urgent:false, target:'all', draft:false }
   ]);
 
@@ -494,10 +479,7 @@ app.post('/api/auth/register', async (req, res) => {
         roll: req.body.roll || ('RV2024' + String(studentCount + 1).padStart(3, '0')),
         streak: req.body.streak || 1, avgScore: req.body.avgScore || 0,
         campus: req.body.campus || 'RV Jayanagar', gender: req.body.gender || 'Male',
-        feeStatus: req.body.feeStatus || 'Paid', feeAmount: req.body.feeAmount || 45000,
-        feePaid: req.body.feePaid || 0, feePending: req.body.feePending || 45000,
-        feeDueDate: req.body.feeDueDate || 'Mar 31',
-        feeMethod: req.body.feeMethod || '—', feeDate: req.body.feeDate || '—', st: 'active'
+        st: 'active'
       });
     } else if (userRole === 'faculty') {
       const teacherCount = await Teacher.countDocuments();
@@ -582,7 +564,7 @@ app.put('/api/auth/users/:id', protect, async (req, res) => {
     const result = await findUserById(req.params.id);
     if (!result || !result.user) return res.status(404).json({ message: 'User not found' });
 
-    const fields = ['name','email','phone','gender','dob','designation','dept','subject','campus','joinDate','roll','batch','feeStatus','feeAmount','feePaid','feePending'];
+    const fields = ['name','email','phone','gender','dob','designation','dept','subject','campus','joinDate','roll','batch'];
     fields.forEach(f => { if (req.body[f] !== undefined) result.user[f] = req.body[f]; });
 
     if (req.body.password) {
@@ -1229,16 +1211,8 @@ app.put('/api/approvals/:id/reject', protect, async (req, res) => {
 });
 
 // ═══════════════════════════════════════════════════
-// FEES & PAYMENTS API (WITH REAL-TIME BROADCASTS)
+// PAYMENTS API (WITH REAL-TIME BROADCASTS)
 // ═══════════════════════════════════════════════════
-app.get('/api/fees', protect, async (req, res) => {
-  if (req.user.role === 'student') {
-    res.json(await Fee.find({ $or: [{ student: req.user.name }, { roll: req.user.roll }] }).sort({ createdAt: -1 }));
-  } else {
-    res.json(await Fee.find().sort({ createdAt: -1 }));
-  }
-});
-
 app.get('/api/payments', protect, async (req, res) => {
   if (req.user.role === 'student') {
     res.json(await Payment.find({ student: req.user.name }).sort({ createdAt: -1 }));
@@ -1258,62 +1232,31 @@ app.post('/api/payments', protect, async (req, res) => {
     const payment = await Payment.create({
       id: txnId,
       student: req.user.name,
-      material: req.body.item || 'Course Fee Payment',
+      material: req.body.item || 'Course Material',
       amount: amt,
       date: dateStr,
       method: method,
       status: 'success',
-      type: req.body.type || 'fee',
-      notes: req.body.notes || `Online Fee Payment via ${method}`
+      type: req.body.type || 'material',
+      notes: req.body.notes || `Payment via ${method}`
     });
 
-    // 2. Update Fee record in MongoDB
-    let fee = await Fee.findOne({ $or: [{ student: req.user.name }, { roll: req.user.roll }] });
-    if (fee) {
-      fee.paid = (fee.paid || 0) + amt;
-      fee.pending = Math.max(0, (fee.amount || (fee.paid + fee.pending || 45000)) - fee.paid);
-      fee.status = fee.pending === 0 ? 'Paid' : 'Partial';
-      fee.method = method;
-      fee.date = dateStr;
-      await fee.save();
-    } else {
-      fee = await Fee.create({
-        student: req.user.name,
-        roll: req.user.roll || 'RV2024001',
-        amount: 45000,
-        paid: amt,
-        pending: Math.max(0, 45000 - amt),
-        status: (45000 - amt) === 0 ? 'Paid' : 'Partial',
-        method: method,
-        dueDate: 'Mar 31, 2026',
-        date: dateStr
-      });
-    }
-
-    // 3. Update Student feeStatus in MongoDB
-    await Student.findOneAndUpdate(
-      { $or: [{ name: req.user.name }, { email: req.user.email }] },
-      { feeStatus: fee.status === 'Paid' ? 'Paid' : 'Partial' }
-    );
-
-    // 4. Send Confirmation Notification
+    // 2. Send Confirmation Notification
     await sendNotification({
       recipientName: req.user.name,
       recipientRole: 'student',
-      title: '💳 Fee Payment Received',
+      title: '💳 Payment Received',
       message: `Your payment of ₹${amt.toLocaleString()} via ${method} was successful. Transaction ID: ${txnId}`,
-      type: 'fee',
+      type: 'purchase',
       icon: '💳',
-      link: 'fees'
+      link: 'materials'
     });
 
     broadcastRealtimeEvent('PAYMENT_CREATED', payment);
-    broadcastRealtimeEvent('FEE_UPDATED', fee);
 
     res.status(201).json({
       success: true,
       payment: payment,
-      fee: fee,
       txnId: txnId
     });
   } catch (err) {
@@ -1336,7 +1279,7 @@ app.get('/api/sync', protect, async (req, res) => {
 
     const [
       courses, videos, liveClasses, doubts, materials,
-      announcements, fees, attendance, leaderboard, tests,
+      announcements, attendance, leaderboard, tests,
       quizResults, approvals, payments, students, teachers, notifications
     ] = await Promise.all([
       Course.find().sort({ createdAt: -1 }).lean(),
@@ -1345,7 +1288,6 @@ app.get('/api/sync', protect, async (req, res) => {
       Doubt.find().sort({ createdAt: -1 }).lean(),
       Material.find().sort({ createdAt: -1 }).lean(),
       Announcement.find().sort({ createdAt: -1 }).lean(),
-      Fee.find().sort({ createdAt: -1 }).lean(),
       Attendance.find().sort({ createdAt: -1 }).lean(),
       Leaderboard.find().sort({ rank: 1 }).lean(),
       Test.find().sort({ createdAt: -1 }).lean(),
@@ -1359,7 +1301,7 @@ app.get('/api/sync', protect, async (req, res) => {
 
     res.json({
       courses, videos, liveClasses, doubts, materials,
-      announcements, fees, attendance, leaderboard, tests,
+      announcements, attendance, leaderboard, tests,
       quizResults, approvals, payments, students, teachers, notifications
     });
   } catch (err) {
